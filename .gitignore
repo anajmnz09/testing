@@ -1,0 +1,12 @@
+# Dependencias (hoisteadas por workspaces en la raíz)
+node_modules/
+
+# Variables de entorno / credenciales (global y por módulo)
+.env
+**/.env
+
+# Reportes generados en cada módulo
+**/reports/
+
+# Logs
+npm-debug.log*

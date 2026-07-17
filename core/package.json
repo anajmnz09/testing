@@ -1,0 +1,23 @@
+{
+  "name": "@triple/core",
+  "version": "1.0.0",
+  "description": "Framework core reutilizable de automatización (Selenium + Mochawesome) para el sistema Triple",
+  "main": "index.js",
+  "type": "commonjs",
+  "bin": {
+    "triple-run-tests": "scripts/run-tests.js",
+    "triple-report-generate": "scripts/generate-report.js",
+    "triple-report-open": "scripts/open-report.js",
+    "triple-report-clean": "scripts/clean-reports.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "chromedriver": "^151.0.0",
+    "dotenv": "^17.4.2",
+    "mocha": "^11.7.6",
+    "mochawesome": "^7.1.4",
+    "mochawesome-merge": "^5.1.1",
+    "mochawesome-report-generator": "^6.3.2",
+    "selenium-webdriver": "^4.46.0"
+  }
+}

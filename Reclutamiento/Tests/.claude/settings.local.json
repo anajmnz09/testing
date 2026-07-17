@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node inspect.js)",
+      "Bash(node inspect2.js)",
+      "Bash(node inspect3.js)",
+      "Bash(node inspect4.js)",
+      "Bash(npm test *)",
+      "Bash(node inspect5.js)",
+      "Bash(node -e ' *)",
+      "Bash(node scripts/generate-report.js)",
+      "Bash(npm run *)",
+      "Bash(node _verify-report.js)",
+      "Bash(node _verify-report2.js)",
+      "Bash(node _verify.js)",
+      "Bash(SCREENSHOT_MODE=all npm test)",
+      "Bash(SCREENSHOT_MODE=none npm test)",
+      "Bash(node _show.js)",
+      "Bash(node _explore.js)",
+      "Bash(node _explore2.js)",
+      "Bash(node _explore3.js)",
+      "Bash(mkdir -p /c/Users/Anabel/Desktop/desarrollo/Selenium/core)",
+      "Bash(mv /c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/config /c/Users/Anabel/Desktop/desarrollo/Selenium/core/config)",
+      "Bash(mv /c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/utils /c/Users/Anabel/Desktop/desarrollo/Selenium/core/utils)",
+      "Bash(mv /c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/scripts /c/Users/Anabel/Desktop/desarrollo/Selenium/core/scripts)",
+      "Bash(mv /c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/.env /c/Users/Anabel/Desktop/desarrollo/Selenium/.env)",
+      "Bash(node _explore_logout.js)",
+      "Bash(node _explore_grid.js)",
+      "Bash(node _explore_grid2.js)"
+    ]
+  }
+}

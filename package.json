@@ -1,0 +1,11 @@
+{
+  "name": "triple-e2e",
+  "version": "1.0.0",
+  "description": "Monorepo de automatización E2E del sistema Triple: core reutilizable + un proyecto por módulo",
+  "private": true,
+  "workspaces": [
+    "core",
+    "Reclutamiento/Tests"
+  ],
+  "license": "ISC"
+}
