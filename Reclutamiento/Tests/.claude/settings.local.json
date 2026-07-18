@@ -27,7 +27,25 @@
       "Bash(mv /c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/.env /c/Users/Anabel/Desktop/desarrollo/Selenium/.env)",
       "Bash(node _explore_logout.js)",
       "Bash(node _explore_grid.js)",
-      "Bash(node _explore_grid2.js)"
+      "Bash(node _explore_grid2.js)",
+      "Bash(node _analisis_form.js)",
+      "Bash(node _analisis_form2.js)",
+      "Bash(node _analisis_dom.js)",
+      "Bash(node _analisis_full.js)",
+      "Bash(node _analisis_deps.js)",
+      "Bash(node _analisis_val.js)",
+      "Bash(node _dev_form.js)",
+      "Bash(node _dev_crear.js)",
+      "Bash(node _dev_crear2.js)",
+      "Bash(node _dev_diag.js)",
+      "Bash(node _dev_final.js)",
+      "Bash(node _dev_detalle.js)",
+      "Bash(grep -v '^$')",
+      "Bash(rm -rf \"/c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/reports\"/*)",
+      "Read(//c/Users/Anabel/AppData/Local/Temp/**)",
+      "Bash(rm -rf /c/Users/Anabel/AppData/Local/Temp/scoped_dir*)",
+      "Bash(rm -rf /c/Users/Anabel/AppData/Local/Temp/.com.google.Chrome*)",
+      "Bash(awk '/Iniciando: .*TC-001/{f=1} /Finalizado: .*TC-001/{f=0} f' reports/latest/logs/execution.log)"
     ]
   }
 }
