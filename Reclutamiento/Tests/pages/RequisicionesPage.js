@@ -94,6 +94,99 @@ class RequisicionesPage extends BasePage {
     throw ultimoError;
   }
 
+  /**
+   * Espera a que el grid tenga FILAS con datos (no solo el contenedor visible) y
+   * sin overlay de carga. El listado renderiza el grid antes de traer los datos,
+   * así que esperar solo el contenedor lleva a leer 0 filas.
+   */
+  async esperarFilas(timeout = config.timeouts.explicitWaitMs * 2) {
+    // El loader se comprueba con isDisplayed() de Selenium (no con offsetWidth:
+    // un elemento con visibility/opacity oculta conserva dimensiones y daría un
+    // falso positivo de "loader visible").
+    await this._esperarSinLoader(timeout);
+    await this.driver.wait(async () => {
+      const filas = await this.driver.findElements(this.grid.dataRow);
+      return filas.length > 0;
+    }, timeout);
+    logger.info('RequisicionesPage: listado con filas cargadas');
+    return this;
+  }
+
+  /**
+   * Cantidad de filas visibles cuyo texto contiene `estado` (ej. 'Autorizada').
+   * Se busca por texto de fila (no por índice de columna) para no acoplarse al
+   * orden de columnas, que es configurable por el usuario en el grid.
+   */
+  async contarConEstado(estado) {
+    return this.driver.executeScript((est) => {
+      return Array.from(document.querySelectorAll('.dx-data-row')).filter((f) =>
+        new RegExp(est, 'i').test(f.textContent || '')
+      ).length;
+    }, estado);
+  }
+
+  /** Celdas de la n-ésima fila (0-based) que contiene `estado`, o null. */
+  async datosDeFilaConEstado(estado, indice = 0) {
+    return this.driver.executeScript(
+      (est, i) => {
+        const filas = Array.from(document.querySelectorAll('.dx-data-row')).filter((f) =>
+          new RegExp(est, 'i').test(f.textContent || '')
+        );
+        const f = filas[i];
+        return f ? Array.from(f.querySelectorAll('td')).map((c) => c.textContent.trim()).filter(Boolean) : null;
+      },
+      estado,
+      indice
+    );
+  }
+
+  /**
+   * Abre el DETALLE de la n-ésima requisición cuyo estado sea `estado`
+   * (doble-click: el Nombre no es un link). Devuelve una RequisicionDetallePage
+   * o null si no hay una fila en ese índice.
+   *
+   * El doble-click a veces entra en edición inline en lugar de abrir el detalle:
+   * se reintenta un número ACOTADO de veces (política de ejecución del framework).
+   */
+  async abrirPorEstado(estado, indice = 0, intentos = 3) {
+    const timeout = config.timeouts.explicitWaitMs;
+    const labelDetalle = By.xpath("//label[contains(normalize-space(.),'Nombre de requisición')]");
+    let ultimoError;
+
+    for (let intento = 0; intento < intentos; intento++) {
+      // marcar la fila objetivo en cada intento (el grid puede re-renderizar)
+      const marcada = await this.driver.executeScript(
+        (est, i) => {
+          const prev = document.querySelector('tr[data-qa="fila-objetivo"]');
+          if (prev) prev.removeAttribute('data-qa');
+          const filas = Array.from(document.querySelectorAll('.dx-data-row')).filter((f) =>
+            new RegExp(est, 'i').test(f.textContent || '')
+          );
+          if (!filas[i]) return false;
+          filas[i].setAttribute('data-qa', 'fila-objetivo');
+          return true;
+        },
+        estado,
+        indice
+      );
+      if (!marcada) return null;
+
+      try {
+        const fila = await this.driver.findElement(By.css('tr[data-qa="fila-objetivo"]'));
+        await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', fila);
+        await this.driver.actions().doubleClick(fila).perform();
+        await this._esperarSinLoader(timeout);
+        await this.driver.wait(until.elementLocated(labelDetalle), timeout);
+        logger.info(`RequisicionesPage: detalle abierto (estado="${estado}", índice ${indice})`);
+        return new RequisicionDetallePage(this.driver).estaCargado();
+      } catch (err) {
+        ultimoError = err;
+        logger.info(`RequisicionesPage: reintentando abrir por estado (intento ${intento + 1}/${intentos})`);
+      }
+    }
+    throw ultimoError;
+  }
+
   /** Abre el formulario para crear una nueva requisición. */
   async crearRequisicion() {
     await this.grid.crear();

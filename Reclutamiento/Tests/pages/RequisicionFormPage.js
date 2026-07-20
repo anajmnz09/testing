@@ -1,6 +1,7 @@
 const { By, Key, until } = require('selenium-webdriver');
 const { BasePage } = require('@triple/core');
 const Form = require('@triple/core/components/Form');
+const Notify = require('@triple/core/components/Notify');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 
@@ -24,6 +25,7 @@ class RequisicionFormPage extends BasePage {
     this.btnGuardar = By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Guardar']");
     this.btnAgregarPregunta = By.xpath("//div[contains(@class,'dx-button')][contains(normalize-space(.),'Pregunta')]");
     this.notify = By.css('[class*="notify_record"]');
+    this.notifyComponent = new Notify(driver); // toast app-wide (core)
   }
 
   static get RAZON() {
@@ -210,19 +212,12 @@ class RequisicionFormPage extends BasePage {
     await this.driver.executeScript('arguments[0].click()', btn);
   }
 
-  /** Espera y devuelve el texto del notify que aparece (o '' si no aparece). */
+  /**
+   * Espera y devuelve el texto del notify que aparece (o '' si no aparece).
+   * Delega en el componente Notify del core (el toast es app-wide).
+   */
   async esperarNotify(timeoutMs = config.timeouts.explicitWaitMs) {
-    let texto = '';
-    await this.driver
-      .wait(async () => {
-        texto = await this.driver.executeScript(() => {
-          const n = document.querySelector('[class*="notify_record"]');
-          return n ? (n.textContent || '').trim() : '';
-        });
-        return !!texto;
-      }, timeoutMs)
-      .catch(() => {});
-    return texto;
+    return this.notifyComponent.esperarTexto(timeoutMs);
   }
 
   /**

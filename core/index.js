@@ -16,6 +16,9 @@ module.exports = {
   recovery: require('./utils/recovery'),
   problemLog: require('./utils/problemLog'),
   retry: require('./utils/retry'),
+  // caché de metadata de pantallas (inspeccionar una vez, reutilizar siempre)
+  screenMetadata: require('./utils/screenMetadata'),
+  screenInspector: require('./utils/screenInspector'),
   // bases de capas
   UiContext: require('./utils/UiContext'),
   BasePage: require('./pages/base/BasePage'),
@@ -27,6 +30,7 @@ module.exports = {
   NavBar: require('./components/NavBar'),
   DataGrid: require('./components/DataGrid'),
   Form: require('./components/Form'),
+  Notify: require('./components/Notify'),
   // flujos de negocio reutilizables
   authFlow: require('./flows/authFlow'),
   navigationFlow: require('./flows/navigationFlow'),

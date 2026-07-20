@@ -45,7 +45,10 @@
       "Read(//c/Users/Anabel/AppData/Local/Temp/**)",
       "Bash(rm -rf /c/Users/Anabel/AppData/Local/Temp/scoped_dir*)",
       "Bash(rm -rf /c/Users/Anabel/AppData/Local/Temp/.com.google.Chrome*)",
-      "Bash(awk '/Iniciando: .*TC-001/{f=1} /Finalizado: .*TC-001/{f=0} f' reports/latest/logs/execution.log)"
+      "Bash(awk '/Iniciando: .*TC-001/{f=1} /Finalizado: .*TC-001/{f=0} f' reports/latest/logs/execution.log)",
+      "Bash(node _explora-publicar.js)",
+      "Bash(rm -f \"/c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/_explora-publicar.js\")",
+      "Bash(TEST_RETRIES=0 npm test -- tests/requisiciones-crear.test.js)"
     ]
   }
 }
