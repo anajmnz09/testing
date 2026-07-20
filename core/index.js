@@ -19,6 +19,11 @@ module.exports = {
   // caché de metadata de pantallas (inspeccionar una vez, reutilizar siempre)
   screenMetadata: require('./utils/screenMetadata'),
   screenInspector: require('./utils/screenInspector'),
+  // Execution Context: DATOS de prueba desacoplados de la lógica del test.
+  // (distinto de utils/executionContext.js, que es la metadata del REPORTE)
+  testContext: require('./context/testContext'),
+  // Selection Strategies: cómo se opera cada tipo de control
+  strategies: require('./strategies'),
   // bases de capas
   UiContext: require('./utils/UiContext'),
   BasePage: require('./pages/base/BasePage'),

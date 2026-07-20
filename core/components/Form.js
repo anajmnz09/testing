@@ -44,10 +44,16 @@ class Form extends BaseComponent {
     }, this._timeout());
   }
 
-  /** Espera y devuelve el item VISIBLE cuyo texto contiene `texto`. */
-  async _itemVisiblePorTexto(texto) {
+  /**
+   * Espera y devuelve el item VISIBLE cuyo texto contiene `texto`.
+   * `selectorCss` es opcional: permite apuntar a otro tipo de item (ej. nodos de
+   * un treeview) sin duplicar la lógica de espera. Sin él, comportamiento igual
+   * que siempre.
+   */
+  async _itemVisiblePorTexto(texto, selectorCss) {
+    const locator = selectorCss ? By.css(selectorCss) : this._opcionLocator();
     return this.driver.wait(async () => {
-      const items = await this.driver.findElements(this._opcionLocator());
+      const items = await this.driver.findElements(locator);
       for (const it of items) {
         try {
           if (await it.isDisplayed()) {
@@ -190,6 +196,60 @@ class Form extends BaseComponent {
     if (!eds.length) return true;
     const cls = (await eds[0].getAttribute('class')) || '';
     return /dx-texteditor-empty/.test(cls);
+  }
+
+  /**
+   * Input donde se escribe para FILTRAR un dropdown abierto. Puede ser un
+   * buscador propio dentro del overlay (lookup / list con búsqueda) o el input
+   * del propio campo (selectbox/tagbox con searchEnabled). Se prefiere el del
+   * overlay si está visible.
+   */
+  async _inputBusqueda(label) {
+    const enOverlay = await this.driver.findElements(
+      By.css(
+        '.dx-overlay-content .dx-list-search .dx-texteditor-input, ' +
+          '.dx-overlay-content .dx-searchbox .dx-texteditor-input, ' +
+          '.dx-popup-content input.dx-texteditor-input'
+      )
+    );
+    for (const el of enOverlay) {
+      try { if (await el.isDisplayed()) return el; } catch (e) { /* stale */ }
+    }
+    const campo = await this._elemCampo(label);
+    return campo.findElement(By.css('.dx-texteditor-input'));
+  }
+
+  /**
+   * Pone un valor en un control DELEGANDO en una Selection Strategy.
+   *
+   * Es el punto de entrada que usan los Page Objects: el test dice "quiero este
+   * valor"; la estrategia sabe cómo interactuar con ese tipo de control. Si no
+   * se indica estrategia, se usa la de por defecto (primera opción), que es el
+   * comportamiento histórico.
+   *
+   * @param label     label del control
+   * @param valor     valor deseado (undefined/'' => la estrategia decide, ej. primera opción)
+   * @param opciones  { estrategia: 'searchAndSelect'|'text'|..., ...extras }
+   */
+  async setValor(label, valor, opciones = {}) {
+    const strategies = require('../strategies');
+    const estrategia = strategies.obtener(opciones.estrategia || strategies.POR_DEFECTO);
+    return estrategia.aplicar(this, label, valor, opciones);
+  }
+
+  /**
+   * Textos de los tags SELECCIONADOS en un tagbox (multi-select). El valor de un
+   * tagbox no vive en un input, sino en chips `.dx-tag-content`, así que
+   * getValor() no sirve para verificarlo.
+   */
+  async getTags(label) {
+    const campo = await this._elemCampo(label);
+    const tags = await campo.findElements(By.css('.dx-tag-content'));
+    const textos = [];
+    for (const t of tags) {
+      try { textos.push((await t.getText()).trim()); } catch (e) { /* stale */ }
+    }
+    return textos.filter(Boolean);
   }
 
   /** Valor actual mostrado en el input del campo. */

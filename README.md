@@ -14,6 +14,9 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 - [Arquitectura de capas](#arquitectura-de-capas)
 - [Configuración (`.env` + framework)](#configuración)
 - [Reportes, evidencias y logging](#reportes-evidencias-y-logging)
+- [Política de ejecución](#política-de-ejecución-aplica-a-todo-el-framework)
+- [Execution Context (datos de prueba)](#execution-context-datos-de-prueba)
+- [Selection Strategies](#selection-strategies)
 - [Recetas (mini-ejemplos)](#recetas-mini-ejemplos)
   - [Correr un solo test](#receta-correr-un-solo-test)
   - [Escribir un test nuevo](#receta-escribir-un-test-nuevo)
@@ -53,9 +56,22 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 │   │   ├── logger.js              # logger con timestamp (consola + archivo)
 │   │   ├── evidence.js            # registro extensible de evidencias (image/video/pdf/log/json/…)
 │   │   ├── screenshot.js          # guardado de PNG de bajo nivel
-│   │   ├── executionContext.js    # ambiente, SO, navegador, usuario, timezone
+│   │   ├── executionContext.js    # metadata del REPORTE: ambiente, SO, navegador, usuario, timezone
+│   │   ├── recovery.js            # recuperar el estado con los controles de la app (Descartar/Cancelar/…)
+│   │   ├── problemLog.js          # registro estructurado de bloqueos (reproducible)
+│   │   ├── retry.js               # ejecución con intentos ACOTADOS + recuperación entre intentos
+│   │   ├── screenMetadata.js      # caché persistente de metadata de pantallas
+│   │   ├── screenInspector.js     # inspector genérico de cualquier pantalla (controles, ids, validaciones…)
 │   │   ├── paths.js               # rutas de reports/ (historial por ejecución + retención + latest)
-│   │   └── mochaRootHooks.js      # Root Hooks: automatiza logging/screenshot/cierre de driver
+│   │   └── mochaRootHooks.js      # Root Hooks: logging/screenshot/cierre + política ante fallos
+│   │
+│   ├── context/
+│   │   └── testContext.js         # EXECUTION CONTEXT: datos de prueba desacoplados del test
+│   │
+│   ├── strategies/                # Selection Strategies (cómo se opera cada tipo de control)
+│   │   ├── SelectionStrategy.js   # contrato base
+│   │   ├── builtinStrategies.js   # searchAndSelect, directSelect, tagSelect, text, switch, datePicker…
+│   │   └── index.js               # registro Open/Closed (registrar / obtener)
 │   │
 │   ├── pages/                     # páginas APP-GLOBAL (compartidas por todos los módulos)
 │   │   ├── base/BasePage.js       # base de todos los Page Objects (extiende UiContext)
@@ -65,7 +81,9 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 │   ├── components/                # widgets reutilizables (se repiten en muchas pantallas)
 │   │   ├── BaseComponent.js       # base de los componentes (extiende UiContext)
 │   │   ├── NavBar.js              # barra superior: logout, volver al dashboard, sync, notif, usuario…
-│   │   └── DataGrid.js            # grid DevExtreme: buscar, filtrar, crear, paginar, contar filas…
+│   │   ├── DataGrid.js            # grid DevExtreme: buscar, filtrar, crear, paginar, contar filas…
+│   │   ├── Form.js                # formularios DevExtreme POR LABEL (+ setValor con estrategias)
+│   │   └── Notify.js              # toast `notify_record` (éxito / inválido / error del sistema)
 │   │
 │   ├── flows/                     # flujos de negocio reutilizables (cruzan varias pantallas)
 │   │   ├── authFlow.js            # login / logout
@@ -81,11 +99,23 @@ Selenium/                          # raíz del monorepo (npm workspaces)
     └── Tests/                     # === proyecto del módulo Reclutamiento (consume @triple/core) ===
         ├── package.json           # deps: @triple/core; scripts: test, report:*
         ├── pages/                 # Page Objects PROPIOS del módulo
-        │   └── RequisicionesPage.js
+        │   ├── RequisicionesPage.js       # listado (grid): buscar, abrir por estado, volver…
+        │   ├── RequisicionFormPage.js     # form de creación + mapa control→estrategia
+        │   └── RequisicionDetallePage.js  # detalle + switch "Publicada"
+        ├── flows/                 # flujos de negocio DEL MÓDULO (componen los flows del core)
+        │   └── requisicionesFlow.js
+        ├── data/                  # datos del módulo
+        │   ├── requisiciones.data.js      # textos y config de casos
+        │   └── execution-context.json     # EXECUTION CONTEXT (editable a mano)
+        ├── metadata/screens/      # caché de metadata de pantallas (se versiona)
+        │   ├── requisiciones-listado.json
+        │   └── requisiciones-detalle.json
         ├── tests/                 # specs de Mocha (solo flujo de negocio)
         │   ├── login.test.js
         │   ├── navegacion.test.js
-        │   └── reclutamiento-requisiciones.test.js
+        │   ├── reclutamiento-requisiciones.test.js
+        │   ├── requisiciones-crear.test.js
+        │   └── requisiciones-publicar.test.js
         └── reports/               # reportes generados de ESTE módulo (no se versiona)
 ```
 
@@ -265,6 +295,113 @@ Cada caso tiene un número **acotado** de intentos:
 
 ### 4. No generar registros innecesarios
 La **exploración** de formularios se hace **inspeccionando el DOM** (validaciones, campos requeridos, listas desplegables, atributos) — **no** creando registros. Solo se crean registros cuando un caso de prueba lo exige para validar el resultado. La recuperación por **Descartar** permite salir de un formulario sin guardar.
+
+---
+
+## Execution Context (datos de prueba)
+
+Desacopla los **datos** de la **lógica** de los tests. Un test nunca hardcodea un valor: se lo pregunta al contexto.
+
+> ⚠️ No confundir con `core/utils/executionContext.js`, que ya existía y hace otra cosa: arma la metadata del **reporte** (ambiente, SO, navegador). El Execution Context de **datos** es `core/context/testContext.js`.
+
+### Cómo funciona
+
+El archivo vive en **`<proyecto>/data/execution-context.json`** (uno por módulo, editable a mano y versionable):
+
+```json
+{
+  "global":     { "usuario": "", "empresa": "" },
+  "TC-PUB-001": { "nombreRequisicion": "REQ-000125", "estado": "" }
+}
+```
+
+La regla es una sola:
+
+| ¿El dato está definido (no vacío)? | Qué hace el test |
+|---|---|
+| **SÍ** | Usa exactamente ese dato. |
+| **NO** | Se comporta **igual que hoy**: descubre el dato automáticamente. |
+
+Se considera "no definido" el string vacío, `null`, `undefined` o un array vacío. La resolución busca primero en la sección del caso y después en `global`; si no encuentra nada, devuelve `undefined`, y ese `undefined` es la señal para el descubrimiento automático.
+
+```js
+const testContext = require('@triple/core/context/testContext');
+
+// Opción A: leer y decidir
+const nombre = testContext.get('TC-PUB-001', 'nombreRequisicion'); // undefined si está vacío
+
+// Opción B: azúcar para el patrón completo
+const req = await testContext.getODescubrir('TC-PUB-001', 'nombreRequisicion',
+  async () => buscarUnaRequisicionAutomaticamente()   // solo corre si el dato está vacío
+);
+```
+
+### Agregar parámetros y casos nuevos
+
+- **Un parámetro nuevo**: agregá la clave al JSON. No hay que tocar código del framework.
+- **Un caso nuevo**: al implementarlo, registrá su sección; queda vacía y lista para que la completes:
+
+```js
+const CASO = 'TC-VAC-001';
+testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
+```
+
+`registrarCaso` **no pisa** valores ya cargados ni borra claves que hayas agregado: solo crea lo que falta.
+
+---
+
+## Selection Strategies
+
+En esta app muchos controles DevExtreme filtran al escribir, pero **escribir no alcanza**: la aplicación solo da por válido el valor cuando se **selecciona explícitamente** el item del listado. Esa mecánica está centralizada en estrategias, no repetida en cada test.
+
+**Los tests nunca conocen el tipo de control.** Solo dicen qué valor quieren; el Page Object declara la estrategia; la estrategia sabe cómo interactuar.
+
+```js
+// En el Page Object: mapa control -> estrategia
+const ESTRATEGIAS = {
+  'Razón de solicitud': 'directSelect',
+  'Descripción': 'text',
+  'Rotativo': 'switch',
+  // Un control puede declarar OPCIONES además de la estrategia.
+  // `multiple: true` es necesario en los tagbox: no cierran solos al elegir.
+  'Persona(s) a sustituir': { estrategia: 'searchAndSelect', multiple: true },
+};
+
+// En el test: solo el valor. El test no sabe si es tagbox, selectbox ni nada.
+await form.setCampo('Persona(s) a sustituir', 'Hugo Valentina Cordero');
+```
+
+> **Ojo con los labels**: la clave del mapa debe coincidir con el label REAL del control. Si tenés la pantalla cacheada en `metadata/screens/`, podés validar el mapa contra ella sin abrir el navegador — así se detectó que el label real era `Persona(s) a sustituir`, con "(s)", y no `Persona a sustituir`.
+
+`searchAndSelect` hace los 4 pasos obligatorios: **abre** el dropdown → **escribe** para filtrar → **espera** el filtrado → **clickea** el item.
+
+> **Verificado en la app**: no todos los controles filtran igual. `Puesto` sí filtra (141 opciones → 3 al escribir "ADMIN"), mientras que `Persona(s) a sustituir` **no filtra** (63 opciones antes y después). `searchAndSelect` funciona en ambos casos, porque su paso decisivo no es escribir sino **seleccionar explícitamente el item** — que es justo lo que la app exige para dar el valor por válido.
+
+### Estrategias incluidas
+
+`firstOption` (por defecto — primera opción válida, el comportamiento histórico) · `directSelect` · `searchAndSelect` · `tagSelect` · `text` · `switch` · `datePicker` · `treeView` · `custom`
+
+Si un control no declara estrategia, se usa `firstOption`: por eso todo lo que ya existía sigue funcionando igual.
+
+### Agregar una estrategia nueva (Open/Closed)
+
+No se toca ningún test, ni el `Form`, ni las estrategias existentes:
+
+```js
+const SelectionStrategy = require('@triple/core/strategies/SelectionStrategy');
+const strategies = require('@triple/core/strategies');
+
+class MiEstrategia extends SelectionStrategy {
+  async aplicar(form, label, valor) {
+    await form._abrirDropdown(label);
+    // ... mecánica propia del control, componiendo las primitivas de Form
+  }
+}
+
+strategies.registrar('miEstrategia', new MiEstrategia());
+```
+
+Después basta con apuntar el control a `'miEstrategia'` en el mapa del Page Object. Las estrategias **componen** las primitivas ya verificadas de `Form` (`_abrirDropdown`, `_itemVisiblePorTexto`, `_esperarOverlayCerrado`), así que si cambia el DOM se arregla en un solo lugar.
 
 ---
 
@@ -457,12 +594,18 @@ const {
   // infra
   createDriver, quitDriver, getCurrentDriver,
   config, wait, logger, evidence, paths, executionContext,
+  // política de ejecución (recuperación, bloqueos, intentos acotados)
+  recovery, problemLog, retry,
+  // metadata de pantallas (inspeccionar una vez, reutilizar siempre)
+  screenMetadata, screenInspector,
+  // Execution Context (DATOS de prueba) + Selection Strategies
+  testContext, strategies,
   // bases de capas
   UiContext, BasePage, BaseComponent,
   // páginas app-global
   LoginPage, DashboardPage,
   // componentes reutilizables
-  NavBar, DataGrid,
+  NavBar, DataGrid, Form, Notify,
   // flows
   authFlow, navigationFlow,
 } = require('@triple/core');

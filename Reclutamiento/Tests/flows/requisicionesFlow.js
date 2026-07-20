@@ -41,8 +41,31 @@ async function abrirListado(driver) {
  *          `detalle` es la RequisicionDetallePage lista para publicar, o null si
  *          no se encontró ninguna publicable dentro del límite.
  */
-async function buscarRequisicionPublicable(driver, { estado = 'Autorizada', maxRevisadas = 5 } = {}) {
+async function buscarRequisicionPublicable(
+  driver,
+  { estado = 'Autorizada', maxRevisadas = 5, nombreRequisicion } = {}
+) {
   const listado = new RequisicionesPage(driver);
+
+  // --- Modo DIRIGIDO: el Execution Context indicó una requisición concreta ---
+  // Se va derecho a esa y NO se busca ninguna otra: el usuario pidió ese dato.
+  if (nombreRequisicion) {
+    logger.info(`requisicionesFlow: modo dirigido por contexto -> "${nombreRequisicion}"`);
+    const detalle = await listado.abrirDetalle(nombreRequisicion); // filtra + doble-click (ya existía)
+    await screenInspector.inspeccionarYGuardar(driver, 'requisiciones-detalle');
+    const yaPublicada = await detalle.estaPublicada();
+    return {
+      detalle,
+      dirigido: true,
+      nombreRequisicion,
+      yaPublicada,
+      indice: 0,
+      revisadas: [{ indice: 0, datos: [nombreRequisicion], yaPublicada }],
+      total: 1,
+    };
+  }
+
+  // --- Modo AUTOMÁTICO: comportamiento actual, sin cambios ---
   const total = await listado.contarConEstado(estado);
   const revisadas = [];
   const limite = Math.min(maxRevisadas, total);
@@ -70,7 +93,7 @@ async function buscarRequisicionPublicable(driver, { estado = 'Autorizada', maxR
     await listado.esperarFilas();
   }
 
-  return { detalle: null, indice: -1, revisadas, total };
+  return { detalle: null, dirigido: false, indice: -1, revisadas, total };
 }
 
 module.exports = { abrirListado, buscarRequisicionPublicable };

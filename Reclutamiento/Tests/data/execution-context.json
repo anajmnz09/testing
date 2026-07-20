@@ -1,0 +1,44 @@
+{
+  "global": {
+    "usuario": "",
+    "empresa": "",
+    "sucursal": "",
+    "departamento": ""
+  },
+  "TC-001": {
+    "nombreRequisicion": "",
+    "puesto": "",
+    "sucursal": "",
+    "departamento": "",
+    "reclutador": "",
+    "horario": "",
+    "tipoContrato": "",
+    "modalidad": ""
+  },
+  "TC-002": {
+    "nombreRequisicion": "",
+    "empleado": "",
+    "horario": "",
+    "tipoContrato": ""
+  },
+  "TC-003": {
+    "empleado": "",
+    "maxEmpleados": ""
+  },
+  "TC-004": {},
+  "TC-005": {
+    "nombreRequisicion": "",
+    "puesto": "",
+    "pregunta": "",
+    "nombreCampo": ""
+  },
+  "TC-006": {
+    "nombreRequisicion": "",
+    "puesto": "",
+    "comentario": ""
+  },
+  "TC-PUB-001": {
+    "nombreRequisicion": "GERENTE DE COMPRAS",
+    "estado": ""
+  }
+}

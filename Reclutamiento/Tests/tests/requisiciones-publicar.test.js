@@ -1,7 +1,15 @@
 const assert = require('assert');
 const { createDriver, authFlow, evidence } = require('@triple/core');
 const problemLog = require('@triple/core/utils/problemLog');
+const testContext = require('@triple/core/context/testContext');
 const requisicionesFlow = require('../flows/requisicionesFlow');
+
+const CASO = 'TC-PUB-001';
+
+// Deja la sección del caso en el Execution Context (vacía) para que el usuario
+// pueda dirigir la prueba si quiere. Si queda vacía, el test se comporta igual
+// que antes: descubre la requisición automáticamente.
+testContext.registrarCaso(CASO, ['nombreRequisicion', 'estado']);
 
 /**
  * TC-PUB-001 — Publicar una requisición.
@@ -30,10 +38,29 @@ describe('Reclutamiento - Publicar Requisición', function () {
     // 2) Buscar la primera "Autorizada" con el switch apagado. Si alguna ya está
     //    publicada, el flow vuelve al listado por el menú del módulo (sin
     //    re-login ni reinicio del flujo) y sigue con la siguiente. Búsqueda acotada.
-    const { detalle, indice, revisadas, total } = await requisicionesFlow.buscarRequisicionPublicable(
-      driver,
-      { estado: 'Autorizada', maxRevisadas: 5 }
-    );
+    //    Los datos NO están hardcodeados: salen del Execution Context. Si están
+    //    vacíos, `undefined` hace que el flow use su descubrimiento automático.
+    const { detalle, dirigido, yaPublicada, indice, revisadas, total } =
+      await requisicionesFlow.buscarRequisicionPublicable(driver, {
+        estado: testContext.get(CASO, 'estado') || 'Autorizada',
+        nombreRequisicion: testContext.get(CASO, 'nombreRequisicion'),
+        maxRevisadas: 5,
+      });
+
+    // Si el usuario dirigió la prueba a una requisición concreta y esa ya está
+    // publicada, NO se busca otra: se falla indicando el dato exacto pedido.
+    if (dirigido && yaPublicada) {
+      await problemLog.registrarBloqueo(this, driver, {
+        caso: this.test.fullTitle(),
+        accion: 'publicar la requisición indicada en el Execution Context',
+        campo: 'Publicada',
+        valor: testContext.get(CASO, 'nombreRequisicion'),
+      });
+      assert.fail(
+        `La requisición "${testContext.get(CASO, 'nombreRequisicion')}" indicada en el ` +
+          `Execution Context ya está publicada; no se puede ejecutar la publicación.`
+      );
+    }
 
     evidence.saveEvidenceBuffer(
       'json',

@@ -8,6 +8,45 @@ const config = require('@triple/core/config');
 const RAZON = { CREACION: 'Creacion', SUSTITUCION: 'Sustitucion' };
 
 /**
+ * Mapa CONTROL -> SELECTION STRATEGY de esta pantalla.
+ *
+ * Es la única pieza que sabe cómo se opera cada control. Los tests solo pasan
+ * valores. Si mañana un control cambia de tipo (o aparece uno nuevo de
+ * DevExtreme), se ajusta acá o se registra una estrategia nueva, sin tocar
+ * ningún test.
+ *
+ * Los catálogos usan searchAndSelect porque filtran al escribir y la app SOLO
+ * da por válido el valor cuando se selecciona explícitamente el item del
+ * listado (escribir no alcanza).
+ */
+const ESTRATEGIAS = {
+  'Razón de solicitud': 'directSelect',
+  // Tagbox (multi-select) de 63 items. VERIFICADO en la app: este control NO
+  // filtra al escribir (la lista queda igual), pero searchAndSelect igual sirve
+  // porque su paso decisivo es CLICKEAR el item, no escribir. No cierra solo al
+  // elegir, de ahí multiple:true. El label real lleva "(s)".
+  'Persona(s) a sustituir': { estrategia: 'searchAndSelect', multiple: true },
+  'Documentos Requeridos': { estrategia: 'searchAndSelect', multiple: true },
+  Supervisor: 'searchAndSelect',
+  Ubicación: 'searchAndSelect',
+  'Fecha de Creación': 'datePicker',
+  Puesto: 'searchAndSelect',
+  Sucursal: 'searchAndSelect',
+  Departamento: 'searchAndSelect',
+  Reclutador: 'searchAndSelect',
+  Horario: 'searchAndSelect',
+  'Tipo de contrato': 'searchAndSelect',
+  Modalidad: 'searchAndSelect',
+  'Nombre de requisición': 'text',
+  Requisitos: 'text',
+  Responsabilidades: 'text',
+  Descripción: 'text',
+  Comentario: 'text',
+  'Cantidad de empleado': 'text',
+  Rotativo: 'switch',
+};
+
+/**
  * Page Object del formulario "Crear Requisición" (módulo Reclutamiento).
  * Compone el componente reutilizable Form del core para operar los controles
  * DevExtreme por label. Expone lenguaje de negocio para los casos de prueba.
@@ -30,6 +69,25 @@ class RequisicionFormPage extends BasePage {
 
   static get RAZON() {
     return RAZON;
+  }
+
+  /** Mapa control -> estrategia de esta pantalla (lo consumen los flows/PO, no los tests). */
+  static get ESTRATEGIAS() {
+    return ESTRATEGIAS;
+  }
+
+  /**
+   * Pone un valor en un control usando la estrategia DECLARADA para ese control.
+   * El test solo dice qué valor quiere; la mecánica queda acá.
+   * Si `valor` viene vacío/undefined, la estrategia aplica su comportamiento por
+   * defecto (para los catálogos: primera opción válida = comportamiento actual).
+   */
+  async setCampo(label, valor, extras = {}) {
+    // El mapa admite un string ('text') o un objeto con opciones
+    // ({ estrategia: 'searchAndSelect', multiple: true }).
+    const declarado = ESTRATEGIAS[label];
+    const base = typeof declarado === 'string' ? { estrategia: declarado } : declarado || {};
+    return this.form.setValor(label, valor, { ...base, ...extras });
   }
 
   async estaCargado() {
