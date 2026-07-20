@@ -15,6 +15,7 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 - [Configuración (`.env` + framework)](#configuración)
 - [Reportes, evidencias y logging](#reportes-evidencias-y-logging)
 - [Política de ejecución](#política-de-ejecución-aplica-a-todo-el-framework)
+- [Nomenclatura de casos de prueba](#nomenclatura-de-casos-de-prueba)
 - [Execution Context (datos de prueba)](#execution-context-datos-de-prueba)
 - [Selection Strategies](#selection-strategies)
 - [Recetas (mini-ejemplos)](#recetas-mini-ejemplos)
@@ -110,12 +111,19 @@ Selenium/                          # raíz del monorepo (npm workspaces)
         ├── metadata/screens/      # caché de metadata de pantallas (se versiona)
         │   ├── requisiciones-listado.json
         │   └── requisiciones-detalle.json
-        ├── tests/                 # specs de Mocha (solo flujo de negocio)
+        ├── support/               # fixtures compartidos por los tests del módulo
+        │   └── fixtures.js
+        ├── tests/                 # specs de Mocha — UN CASO POR ARCHIVO
         │   ├── login.test.js
         │   ├── navegacion.test.js
         │   ├── reclutamiento-requisiciones.test.js
-        │   ├── requisiciones-crear.test.js
-        │   └── requisiciones-publicar.test.js
+        │   ├── crear-req-campos-requeridos.test.js
+        │   ├── crear-req-sustitucion-requeridos.test.js
+        │   ├── crear-req-validacion-requeridos.test.js
+        │   ├── crear-req-persona-sustituir.test.js
+        │   ├── crear-req-pregunta-personalizada.test.js
+        │   ├── crear-req-comentarios.test.js
+        │   └── publicar-requisicion.test.js
         └── reports/               # reportes generados de ESTE módulo (no se versiona)
 ```
 
@@ -298,6 +306,51 @@ La **exploración** de formularios se hace **inspeccionando el DOM** (validacion
 
 ---
 
+## Nomenclatura de casos de prueba
+
+Cada caso se identifica con un **nombre descriptivo y estable**, no con un código secuencial. Ese nombre es la **única fuente de verdad**: se usa igual para el archivo, el Execution Context, el logger, las evidencias, los screenshots y las carpetas generadas.
+
+### Reglas
+
+- **Minúsculas**, palabras separadas por **guiones**.
+- **Descriptivo del comportamiento**, no del orden: `crear-req-comentarios`, no `TC-006`.
+- **Sin** espacios, acentos, caracteres especiales ni numeraciones secuenciales.
+- Prefijo por acción/pantalla para que ordene bien alfabéticamente: `crear-req-…`, `publicar-…`.
+- **Un caso = un archivo**: `<nombre-descriptivo>.test.js`.
+
+### Ejemplos vigentes
+
+| Archivo | Sección en el Execution Context |
+|---|---|
+| `crear-req-campos-requeridos.test.js` | `crear-req-campos-requeridos` |
+| `crear-req-sustitucion-requeridos.test.js` | `crear-req-sustitucion-requeridos` |
+| `crear-req-validacion-requeridos.test.js` | `crear-req-validacion-requeridos` |
+| `crear-req-persona-sustituir.test.js` | `crear-req-persona-sustituir` |
+| `crear-req-pregunta-personalizada.test.js` | `crear-req-pregunta-personalizada` |
+| `crear-req-comentarios.test.js` | `crear-req-comentarios` |
+| `publicar-requisicion.test.js` | `publicar-requisicion` |
+
+### Cómo nombrar un caso nuevo
+
+1. Elegí el nombre: `<acción>-<entidad>-<aspecto>` → ej. `crear-vacante-requeridos`, `editar-candidato-documentos`.
+2. Creá `tests/<ese-nombre>.test.js`.
+3. Dentro, declaralo **una sola vez** y reutilizalo en todo el archivo:
+
+```js
+const CASO = 'crear-vacante-requeridos';
+testContext.registrarCaso(CASO, ['nombreVacante', 'puesto']);
+
+describe('Reclutamiento - Vacantes', function () {
+  const ctx = fixtures.usarListadoRequisiciones();
+
+  it(`${CASO}: completa los requeridos y guarda`, async function () { /* … */ });
+});
+```
+
+Al usar `${CASO}` en el título del `it`, el nombre aparece automáticamente en el reporte, en el log y en los nombres de carpeta de evidencias/screenshots — sin repetirlo a mano en ningún otro lado.
+
+---
+
 ## Execution Context (datos de prueba)
 
 Desacopla los **datos** de la **lógica** de los tests. Un test nunca hardcodea un valor: se lo pregunta al contexto.
@@ -311,7 +364,7 @@ El archivo vive en **`<proyecto>/data/execution-context.json`** (uno por módulo
 ```json
 {
   "global":     { "usuario": "", "empresa": "" },
-  "TC-PUB-001": { "nombreRequisicion": "REQ-000125", "estado": "" }
+  "publicar-requisicion": { "nombreRequisicion": "REQ-000125", "estado": "" }
 }
 ```
 
@@ -328,10 +381,10 @@ Se considera "no definido" el string vacío, `null`, `undefined` o un array vac�
 const testContext = require('@triple/core/context/testContext');
 
 // Opción A: leer y decidir
-const nombre = testContext.get('TC-PUB-001', 'nombreRequisicion'); // undefined si está vacío
+const nombre = testContext.get('publicar-requisicion', 'nombreRequisicion'); // undefined si está vacío
 
 // Opción B: azúcar para el patrón completo
-const req = await testContext.getODescubrir('TC-PUB-001', 'nombreRequisicion',
+const req = await testContext.getODescubrir('publicar-requisicion', 'nombreRequisicion',
   async () => buscarUnaRequisicionAutomaticamente()   // solo corre si el dato está vacío
 );
 ```
@@ -342,7 +395,7 @@ const req = await testContext.getODescubrir('TC-PUB-001', 'nombreRequisicion',
 - **Un caso nuevo**: al implementarlo, registrá su sección; queda vacía y lista para que la completes:
 
 ```js
-const CASO = 'TC-VAC-001';
+const CASO = 'crear-vacante-requeridos';
 testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
 ```
 
@@ -416,6 +469,17 @@ npm test -- tests/login.test.js
 ```
 
 El `--` es obligatorio: le dice a npm que pase el argumento al script. Sin argumento corre toda la carpeta `tests/`.
+
+**También podés correrlo estando dentro de `tests/`.** `npm` normaliza el directorio a la raíz del módulo, y el runner antepone `tests/` al nombre si hace falta, así que desde `Reclutamiento/Tests/tests` funciona el nombre pelado:
+
+```bash
+npm test -- login.test.js            # equivale a tests/login.test.js
+npm test -- "crear-req-*.test.js"    # glob (entre comillas para que no lo expanda el shell)
+```
+
+El runner avisa cuando resolvió el path: `Target: tests/login.test.js (resuelto desde "login.test.js")`.
+
+> Esto vale para `npm test`. Si en cambio invocás `mocha`/`npx mocha` a mano desde `tests/`, el `cwd` queda en esa subcarpeta y el framework busca `data/`, `metadata/` y `reports/` en el lugar equivocado (falla en silencio). Usá siempre `npm test`.
 
 ### Receta: escribir un test nuevo
 
@@ -682,5 +746,6 @@ await this.getText(locator);
 - **`USERNAME` vs `APP_USERNAME`** (Windows): ver la sección de configuración. Nunca uses `USERNAME` para credenciales.
 - **Los reportes salen en el módulo, no en el core** (`paths.js` deriva la carpeta del `cwd` del módulo). Si ves reportes dentro de `core/`, algo corrió con el cwd equivocado.
 - **`npm test` desde la raíz** no corre un módulo puntual; ubicate en `Reclutamiento/Tests` (o el módulo que sea). Para correr todos, se puede `npm test --workspaces` desde la raíz.
+- **Correr desde `tests/`**: `npm test` funciona igual (npm normaliza el cwd a la raíz del módulo) y el runner antepone `tests/` al nombre si hace falta. Lo que NO funciona es invocar `mocha`/`npx mocha` a mano desde una subcarpeta: ahí el `cwd` queda mal y `data/`, `metadata/` y `reports/` se resuelven en el lugar equivocado, fallando en silencio.
 - **El logout dispara un diálogo de confirmación** ("¿Estás seguro?"); `NavBar.logout()` ya lo maneja (clic en "Aceptar").
 - **Screenshot de fallo automático**: con `SCREENSHOT_MODE=fail` (default) cada test que falla deja su captura embebida en el reporte — clave para diagnosticar sin reproducir.

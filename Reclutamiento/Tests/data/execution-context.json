@@ -5,40 +5,35 @@
     "sucursal": "",
     "departamento": ""
   },
-  "TC-001": {
+  "crear-req-campos-requeridos": {
     "nombreRequisicion": "",
     "puesto": "",
     "sucursal": "",
     "departamento": "",
-    "reclutador": "",
-    "horario": "",
-    "tipoContrato": "",
-    "modalidad": ""
+    "reclutador": ""
   },
-  "TC-002": {
+  "crear-req-sustitucion-requeridos": {
     "nombreRequisicion": "",
     "empleado": "",
     "horario": "",
     "tipoContrato": ""
   },
-  "TC-003": {
+  "crear-req-validacion-requeridos": {},
+  "crear-req-persona-sustituir": {
     "empleado": "",
     "maxEmpleados": ""
   },
-  "TC-004": {},
-  "TC-005": {
+  "crear-req-pregunta-personalizada": {
     "nombreRequisicion": "",
-    "puesto": "",
     "pregunta": "",
     "nombreCampo": ""
   },
-  "TC-006": {
+  "crear-req-comentarios": {
     "nombreRequisicion": "",
-    "puesto": "",
     "comentario": ""
   },
-  "TC-PUB-001": {
-    "nombreRequisicion": "GERENTE DE COMPRAS",
+  "publicar-requisicion": {
+    "nombreRequisicion": "",
     "estado": ""
   }
 }

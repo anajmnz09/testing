@@ -7,20 +7,23 @@
  * los datos genéricos coherentes (textos) y la configuración de los casos.
  */
 
-// Nombre de requisición único y reconocible (marcador QA + caso + timestamp).
-function nombreQA(tc) {
-  return `QA-AUTO-${tc}-${Date.now()}`;
+// Nombre de requisición único y reconocible: marcador QA + nombre del caso +
+// timestamp. Recibe el nombre descriptivo del caso (ej. 'crear-req-comentarios'),
+// de modo que el registro creado en la app sea rastreable hasta su test.
+function nombreQA(caso) {
+  return `QA-${caso}-${Date.now()}`;
 }
 
 module.exports = {
   nombreQA,
-  // Cantidad de empleados a probar en TC-003 (detección del bug de "Persona a sustituir").
-  TC003_MAX_EMPLEADOS: 10,
-  // Texto para la pregunta personalizada (TC-005).
+  // Cantidad de empleados a probar en crear-req-persona-sustituir
+  // (detección del bug de "Persona(s) a sustituir").
+  maxEmpleadosPersonaSustituir: 10,
+  // Texto para crear-req-pregunta-personalizada.
   preguntaPersonalizada: {
     pregunta: '¿Cuenta con disponibilidad inmediata? (QA automatizado)',
     nombreCampo: 'qa_disponibilidad',
   },
-  // Comentario para TC-006.
+  // Comentario para crear-req-comentarios.
   comentario: 'Comentario de prueba automatizada QA.',
 };

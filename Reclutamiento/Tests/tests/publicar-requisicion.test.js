@@ -4,7 +4,7 @@ const problemLog = require('@triple/core/utils/problemLog');
 const testContext = require('@triple/core/context/testContext');
 const requisicionesFlow = require('../flows/requisicionesFlow');
 
-const CASO = 'TC-PUB-001';
+const CASO = 'publicar-requisicion';
 
 // Deja la sección del caso en el Execution Context (vacía) para que el usuario
 // pueda dirigir la prueba si quiere. Si queda vacía, el test se comporta igual
@@ -12,7 +12,7 @@ const CASO = 'TC-PUB-001';
 testContext.registrarCaso(CASO, ['nombreRequisicion', 'estado']);
 
 /**
- * TC-PUB-001 — Publicar una requisición.
+ * publicar-requisicion — Publicar una requisición.
  *
  * El test es DELGADO a propósito: el login y la navegación vienen de los flows
  * del core (authFlow / navigationFlow), la búsqueda y el retorno al listado del
@@ -30,7 +30,7 @@ describe('Reclutamiento - Publicar Requisición', function () {
     driver = await createDriver();
   });
 
-  it('TC-PUB-001: publica una requisición autorizada y valida el switch y el notify', async function () {
+  it(`${CASO}: publica una requisición autorizada y valida el switch y el notify`, async function () {
     // 1) Login + módulo + listado (flows existentes, sin replicar lógica).
     await authFlow.login(driver);
     await requisicionesFlow.abrirListado(driver);

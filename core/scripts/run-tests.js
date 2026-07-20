@@ -10,6 +10,32 @@ function toGlobPath(p) {
   return p.split(path.sep).join('/');
 }
 
+/**
+ * Resuelve el target de Mocha de forma tolerante a la carpeta desde la que se
+ * invoca. npm normaliza el cwd a la raíz del módulo, pero el ARGUMENTO del path
+ * se sigue interpretando desde ahí; entonces, parado en `tests/`, uno escribe el
+ * nombre del archivo "pelado" y Mocha no lo encuentra. Este helper antepone
+ * `tests/` cuando tiene sentido, así `npm test -- foo.test.js` funciona desde
+ * cualquier lado, sin romper las formas que ya andaban.
+ *
+ * Reglas (conservadoras: solo reescribe cuando es claramente correcto):
+ *  - ya apunta a `tests/…` o es ruta absoluta -> se deja igual.
+ *  - existe tal cual desde la raíz del módulo -> se deja igual.
+ *  - `tests/<target>` existe como archivo/carpeta -> se usa esa.
+ *  - es un glob (`*?{[`) -> se asume dentro de `tests/`.
+ *  - si nada aplica -> se deja igual (que Mocha reporte el error original).
+ */
+function resolverTarget(target) {
+  const primerSeg = target.replace(/\\/g, '/').split('/')[0];
+  if (primerSeg === 'tests' || path.isAbsolute(target)) return target;
+  if (fs.existsSync(path.join(paths.ROOT_DIR, target))) return target;
+
+  const prefijado = `tests/${target}`;
+  if (fs.existsSync(path.join(paths.ROOT_DIR, prefijado))) return prefijado;
+  if (/[*?{[]/.test(target)) return prefijado;
+  return target;
+}
+
 async function runMocha(target) {
   // Se resuelven por nombre/ubicación del core (no por rutas del módulo), así
   // funciona con node_modules hoisteado por workspaces y desde cualquier módulo.
@@ -58,11 +84,16 @@ async function runMocha(target) {
 }
 
 async function main() {
-  const target = process.argv[2] || 'tests';
+  const targetSolicitado = process.argv[2] || 'tests';
+  const target = resolverTarget(targetSolicitado);
 
   paths.ensureReportDirs();
   console.log(`Ejecución: ${paths.RUN_ID}`);
-  console.log(`Target: ${target}`);
+  console.log(
+    target === targetSolicitado
+      ? `Target: ${target}`
+      : `Target: ${target} (resuelto desde "${targetSolicitado}")`
+  );
 
   const { exitCode, logPath } = await runMocha(target);
 

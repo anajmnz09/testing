@@ -22,7 +22,7 @@ const logger = require('../utils/logger');
  * Estructura:
  *   {
  *     "global":     { "usuario": "", "empresa": "" },     // aplica a todos los casos
- *     "TC-PUB-001": { "nombreRequisicion": "REQ-000125" } // específico del caso
+ *     "publicar-requisicion": { "nombreRequisicion": "REQ-000125" } // específico del caso
  *   }
  *
  * Resolución de un dato: primero la sección del caso, luego `global`; si en
@@ -108,7 +108,7 @@ function tiene(caso, clave) {
  * `descubrir()` — la función que implementa el comportamiento automático actual.
  * Azúcar para el patrón que repiten todos los tests.
  *
- * @param caso      código del caso (ej. 'TC-PUB-001')
+ * @param caso      nombre descriptivo del caso (ej. 'publicar-requisicion')
  * @param clave     nombre del dato (ej. 'nombreRequisicion')
  * @param descubrir async () => valor  (comportamiento actual si no hay dato)
  */

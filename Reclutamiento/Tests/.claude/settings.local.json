@@ -48,7 +48,16 @@
       "Bash(awk '/Iniciando: .*TC-001/{f=1} /Finalizado: .*TC-001/{f=0} f' reports/latest/logs/execution.log)",
       "Bash(node _explora-publicar.js)",
       "Bash(rm -f \"/c/Users/Anabel/Desktop/desarrollo/Selenium/Reclutamiento/Tests/_explora-publicar.js\")",
-      "Bash(TEST_RETRIES=0 npm test -- tests/requisiciones-crear.test.js)"
+      "Bash(TEST_RETRIES=0 npm test -- tests/requisiciones-crear.test.js)",
+      "Bash(sed -i \"s/\\\\\"TC-PUB-001\\\\\": { \\\\\"nombreRequisicion\\\\\": \\\\\"REQ-000125\\\\\" } \\\\/\\\\/ específico del caso/\\\\\"publicar-requisicion\\\\\": { \\\\\"nombreRequisicion\\\\\": \\\\\"REQ-000125\\\\\" } \\\\/\\\\/ específico del caso/; s/@param caso código del caso \\(ej. 'TC-PUB-001'\\)/@param caso nombre descriptivo del caso \\(ej. 'publicar-requisicion'\\)/\" core/context/testContext.js)",
+      "Bash(sed -i \"s/\\\\\"TC-PUB-001\\\\\": { \\\\\"nombreRequisicion\\\\\": \\\\\"REQ-000125\\\\\", \\\\\"estado\\\\\": \\\\\"\\\\\" }/\\\\\"publicar-requisicion\\\\\": { \\\\\"nombreRequisicion\\\\\": \\\\\"REQ-000125\\\\\", \\\\\"estado\\\\\": \\\\\"\\\\\" }/; s/testContext.get\\('TC-PUB-001', 'nombreRequisicion'\\)/testContext.get\\('publicar-requisicion', 'nombreRequisicion'\\)/; s/testContext.getODescubrir\\('TC-PUB-001', 'nombreRequisicion',/testContext.getODescubrir\\('publicar-requisicion', 'nombreRequisicion',/; s/const CASO = 'TC-VAC-001';/const CASO = 'crear-vacante-requeridos';/\" README.md)",
+      "Bash(node -e \"const tc=require\\('@triple/core/context/testContext'\\); console.log\\('CONTEXT_FILE:', tc.CONTEXT_FILE\\); console.log\\('secciones:', Object.keys\\(tc.todo\\(\\)\\).join\\(', '\\)||'\\(NINGUNA\\)'\\);\")",
+      "Bash(node -e \"const m=require\\('@triple/core/utils/screenMetadata'\\); console.log\\('METADATA_DIR:', m.METADATA_DIR\\); console.log\\('pantallas:', m.listar\\(\\).join\\(', '\\)||'\\(NINGUNA\\)'\\);\")",
+      "Bash(node -e \"const p=require\\('@triple/core/utils/paths'\\); console.log\\('REPORTS_DIR:', p.REPORTS_DIR\\);\")",
+      "Bash(node -e \"const tc=require\\('@triple/core/context/testContext'\\); const m=require\\('@triple/core/utils/screenMetadata'\\); console.log\\('contexto:', Object.keys\\(tc.todo\\(\\)\\).length, 'secciones'\\); console.log\\('metadata:', m.listar\\(\\).length, 'pantallas'\\);\")",
+      "Bash(npx mocha *)",
+      "Bash(node -e \"console.log\\('node cwd:', process.cwd\\(\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const pk=JSON.parse\\(fs.readFileSync\\('package.json'\\)\\); delete pk.scripts._cwd; fs.writeFileSync\\('package.json',JSON.stringify\\(pk,null,2\\)\\); fs.unlinkSync\\('_cwdcheck.js'\\);\")"
     ]
   }
 }
