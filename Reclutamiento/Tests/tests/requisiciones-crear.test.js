@@ -120,7 +120,7 @@ describe('Reclutamiento - Crear Requisición', function () {
         logger.error(`TC-003: empleado problemático -> ${JSON.stringify(detalle)}`);
         try {
           await evidence.attachScreenshot(driver, this, { label: `Fallo con empleado: ${emp}` });
-          await evidence.saveEvidenceBuffer('json', this, JSON.stringify(detalle, null, 2), { label: 'contexto-fallo' });
+          await evidence.saveEvidenceBuffer('json', this, JSON.stringify(detalle, null, 2), { label: 'contexto-fallo', encoding: 'utf8' });
         } catch (e) { /* la app puede estar colgada; igual reportamos */ }
         fallidos.push(detalle);
         break; // no seguir usando un empleado que rompe la app

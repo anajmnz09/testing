@@ -235,6 +235,39 @@ Todo esto es **automático** para cualquier test dentro de `tests/` gracias a `m
 
 ---
 
+## Política de ejecución (aplica a TODO el framework)
+
+El framework se comporta como un **QA humano experimentado**: ante un problema, intenta recuperar el estado con la propia app antes de reiniciar, evita generar registros innecesarios y sigue con la mayor cantidad de casos posible. Aplica a **cualquier pantalla/módulo** — está centralizada en el core, no hay que reimplementarla por test.
+
+### 1. Recuperación del estado con la propia app
+Ante un fallo, **no se cierra el navegador de inmediato ni se reinicia todo el flujo**. Primero se intenta volver a un estado limpio con los controles normales del usuario, en orden: **Descartar → Cancelar → Cerrar → X del modal → volver al listado** (manejando diálogos de confirmación tipo "¿descartar cambios?"). Solo si ninguna vía funciona se considera el estado inconsistente.
+- Automático en `mochaRootHooks.js` (afterEach de un test fallido).
+- Reutilizable en tests/flows: `const { recovery } = require('@triple/core'); await recovery.recuperarEstado(driver);`
+
+### 2. Registro de bloqueos (reproducible)
+Un fallo se documenta con información suficiente para reproducirlo, **no solo la excepción**: caso, pantalla, acción, campo, valor, mensaje de la app, URL, timestamp y stack de Selenium. Se adjunta como **JSON + screenshot** a la evidencia y al reporte.
+- Automático ante cualquier test fallido.
+- Manual: `const { problemLog } = require('@triple/core'); await problemLog.registrarBloqueo(this, driver, { accion, campo, valor, error });`
+
+### 3. Límite de intentos (sin ciclos infinitos)
+Cada caso tiene un número **acotado** de intentos:
+- **A nivel test**: `TEST_RETRIES` (en `.env`) reintenta el caso completo N veces; agotado, se marca **Failed** y se continúa con el siguiente.
+- **A nivel flujo** (dentro de un test/page object): `retry.conRecuperacion(fn, { intentos, recuperar })` ejecuta con tope de intentos y recuperación entre ellos.
+  ```js
+  const { retry, recovery } = require('@triple/core');
+  await retry.conRecuperacion(() => flujoDeLectura(driver), {
+    intentos: 2,
+    recuperar: () => recovery.recuperarEstado(driver),
+    etiqueta: 'abrir detalle',
+  });
+  ```
+  > ⚠️ No envuelvas el "guardar" con reintentos automáticos: podría **duplicar registros**. Usá `conRecuperacion` para pasos de lectura/navegación/preparación.
+
+### 4. No generar registros innecesarios
+La **exploración** de formularios se hace **inspeccionando el DOM** (validaciones, campos requeridos, listas desplegables, atributos) — **no** creando registros. Solo se crean registros cuando un caso de prueba lo exige para validar el resultado. La recuperación por **Descartar** permite salir de un formulario sin guardar.
+
+---
+
 ## Recetas (mini-ejemplos)
 
 ### Receta: correr un solo test

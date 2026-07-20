@@ -12,6 +12,10 @@ module.exports = {
   evidence: require('./utils/evidence'),
   paths: require('./utils/paths'),
   executionContext: require('./utils/executionContext'),
+  // política de ejecución (recuperación de estado, registro de bloqueos, reintentos)
+  recovery: require('./utils/recovery'),
+  problemLog: require('./utils/problemLog'),
+  retry: require('./utils/retry'),
   // bases de capas
   UiContext: require('./utils/UiContext'),
   BasePage: require('./pages/base/BasePage'),
@@ -22,6 +26,7 @@ module.exports = {
   // componentes reutilizables
   NavBar: require('./components/NavBar'),
   DataGrid: require('./components/DataGrid'),
+  Form: require('./components/Form'),
   // flujos de negocio reutilizables
   authFlow: require('./flows/authFlow'),
   navigationFlow: require('./flows/navigationFlow'),
