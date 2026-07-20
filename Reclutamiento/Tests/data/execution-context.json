@@ -1,0 +1,39 @@
+{
+  "global": {
+    "usuario": "",
+    "empresa": "",
+    "sucursal": "",
+    "departamento": ""
+  },
+  "crear-req-campos-requeridos": {
+    "nombreRequisicion": "",
+    "puesto": "",
+    "sucursal": "",
+    "departamento": "",
+    "reclutador": ""
+  },
+  "crear-req-sustitucion-requeridos": {
+    "nombreRequisicion": "",
+    "empleado": "",
+    "horario": "",
+    "tipoContrato": ""
+  },
+  "crear-req-validacion-requeridos": {},
+  "crear-req-persona-sustituir": {
+    "empleado": "",
+    "maxEmpleados": ""
+  },
+  "crear-req-pregunta-personalizada": {
+    "nombreRequisicion": "",
+    "pregunta": "",
+    "nombreCampo": ""
+  },
+  "crear-req-comentarios": {
+    "nombreRequisicion": "",
+    "comentario": ""
+  },
+  "publicar-requisicion": {
+    "nombreRequisicion": "",
+    "estado": ""
+  }
+}

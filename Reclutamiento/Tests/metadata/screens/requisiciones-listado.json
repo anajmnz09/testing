@@ -1,0 +1,208 @@
+{
+  "pantalla": "requisiciones-listado",
+  "capturadoEn": "2026-07-20T13:26:14.867Z",
+  "baseUrl": "https://test.triple.com.do/",
+  "botones": [
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "id": null,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "id": null,
+      "texto": "Mi Trabajo"
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": "SyncCacheButton",
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Cia_0042025"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn dx-state-disabled",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "id": null,
+      "texto": "Crear"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Filtro"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text dx-button-has-icon dx-datagrid-toolbar-",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Selector de Columnas"
+    }
+  ],
+  "controles": [],
+  "grids": [
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": "Página #1. Cantidad de páginas: 1 (-1 Registros)"
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    }
+  ],
+  "headers": [],
+  "identificadores": [
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "viewport",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "theme-color",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "description",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "rootBody",
+      "name": null,
+      "tag": "body",
+      "texto": "You need to enable JavaScript to run this app.RequisicionesS"
+    },
+    {
+      "dataTestId": null,
+      "id": "root",
+      "name": null,
+      "tag": "div",
+      "texto": "RequisicionesSolicitudes de EmpleoMi TrabajoCia_0042025ANABE"
+    },
+    {
+      "dataTestId": null,
+      "id": "Layer_1",
+      "name": null,
+      "tag": "svg",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "selectModulos",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "SyncCacheButton",
+      "name": null,
+      "tag": "button",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "NotificationDropDown",
+      "name": null,
+      "tag": "a",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "ConfiguracionDropdown",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "CompanyDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cia_0042025"
+    },
+    {
+      "dataTestId": null,
+      "id": "userDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "dataTestId": null,
+      "id": "titleColumn",
+      "name": null,
+      "tag": "div",
+      "texto": "Requisición de personal"
+    },
+    {
+      "dataTestId": null,
+      "id": "buttonsColumn",
+      "name": null,
+      "tag": "div",
+      "texto": "CrearFiltro"
+    },
+    {
+      "dataTestId": null,
+      "id": "childrenOuterWrapper",
+      "name": null,
+      "tag": "div",
+      "texto": "Selector de ColumnasCargando datos...20TodosPágina #1. Canti"
+    },
+    {
+      "dataTestId": null,
+      "id": "childrenInnerWrapper",
+      "name": null,
+      "tag": "div",
+      "texto": "Selector de ColumnasCargando datos...20TodosPágina #1. Canti"
+    }
+  ],
+  "navegacion": [
+    {
+      "clase": "\n                  navItemLink \n                  undefined \n                  link-disable-2\n                ",
+      "href": "/srhh/reclutamiento/requisicion",
+      "id": null,
+      "texto": "Requisiciones"
+    }
+  ],
+  "switchesSueltos": [],
+  "titulo": "Triple",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19hIb_qXNTTczSCocnm9TOVE2ccatq3OQs2C1MN4JwaFW-njnox9Bgz",
+  "validaciones": {
+    "camposInvalidos": [],
+    "notifyVisible": ""
+  }
+}

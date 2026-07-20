@@ -14,6 +14,10 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 - [Arquitectura de capas](#arquitectura-de-capas)
 - [Configuración (`.env` + framework)](#configuración)
 - [Reportes, evidencias y logging](#reportes-evidencias-y-logging)
+- [Política de ejecución](#política-de-ejecución-aplica-a-todo-el-framework)
+- [Nomenclatura de casos de prueba](#nomenclatura-de-casos-de-prueba)
+- [Execution Context (datos de prueba)](#execution-context-datos-de-prueba)
+- [Selection Strategies](#selection-strategies)
 - [Recetas (mini-ejemplos)](#recetas-mini-ejemplos)
   - [Correr un solo test](#receta-correr-un-solo-test)
   - [Escribir un test nuevo](#receta-escribir-un-test-nuevo)
@@ -53,9 +57,22 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 │   │   ├── logger.js              # logger con timestamp (consola + archivo)
 │   │   ├── evidence.js            # registro extensible de evidencias (image/video/pdf/log/json/…)
 │   │   ├── screenshot.js          # guardado de PNG de bajo nivel
-│   │   ├── executionContext.js    # ambiente, SO, navegador, usuario, timezone
+│   │   ├── executionContext.js    # metadata del REPORTE: ambiente, SO, navegador, usuario, timezone
+│   │   ├── recovery.js            # recuperar el estado con los controles de la app (Descartar/Cancelar/…)
+│   │   ├── problemLog.js          # registro estructurado de bloqueos (reproducible)
+│   │   ├── retry.js               # ejecución con intentos ACOTADOS + recuperación entre intentos
+│   │   ├── screenMetadata.js      # caché persistente de metadata de pantallas
+│   │   ├── screenInspector.js     # inspector genérico de cualquier pantalla (controles, ids, validaciones…)
 │   │   ├── paths.js               # rutas de reports/ (historial por ejecución + retención + latest)
-│   │   └── mochaRootHooks.js      # Root Hooks: automatiza logging/screenshot/cierre de driver
+│   │   └── mochaRootHooks.js      # Root Hooks: logging/screenshot/cierre + política ante fallos
+│   │
+│   ├── context/
+│   │   └── testContext.js         # EXECUTION CONTEXT: datos de prueba desacoplados del test
+│   │
+│   ├── strategies/                # Selection Strategies (cómo se opera cada tipo de control)
+│   │   ├── SelectionStrategy.js   # contrato base
+│   │   ├── builtinStrategies.js   # searchAndSelect, directSelect, tagSelect, text, switch, datePicker…
+│   │   └── index.js               # registro Open/Closed (registrar / obtener)
 │   │
 │   ├── pages/                     # páginas APP-GLOBAL (compartidas por todos los módulos)
 │   │   ├── base/BasePage.js       # base de todos los Page Objects (extiende UiContext)
@@ -65,7 +82,9 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 │   ├── components/                # widgets reutilizables (se repiten en muchas pantallas)
 │   │   ├── BaseComponent.js       # base de los componentes (extiende UiContext)
 │   │   ├── NavBar.js              # barra superior: logout, volver al dashboard, sync, notif, usuario…
-│   │   └── DataGrid.js            # grid DevExtreme: buscar, filtrar, crear, paginar, contar filas…
+│   │   ├── DataGrid.js            # grid DevExtreme: buscar, filtrar, crear, paginar, contar filas…
+│   │   ├── Form.js                # formularios DevExtreme POR LABEL (+ setValor con estrategias)
+│   │   └── Notify.js              # toast `notify_record` (éxito / inválido / error del sistema)
 │   │
 │   ├── flows/                     # flujos de negocio reutilizables (cruzan varias pantallas)
 │   │   ├── authFlow.js            # login / logout
@@ -81,11 +100,30 @@ Selenium/                          # raíz del monorepo (npm workspaces)
     └── Tests/                     # === proyecto del módulo Reclutamiento (consume @triple/core) ===
         ├── package.json           # deps: @triple/core; scripts: test, report:*
         ├── pages/                 # Page Objects PROPIOS del módulo
-        │   └── RequisicionesPage.js
-        ├── tests/                 # specs de Mocha (solo flujo de negocio)
+        │   ├── RequisicionesPage.js       # listado (grid): buscar, abrir por estado, volver…
+        │   ├── RequisicionFormPage.js     # form de creación + mapa control→estrategia
+        │   └── RequisicionDetallePage.js  # detalle + switch "Publicada"
+        ├── flows/                 # flujos de negocio DEL MÓDULO (componen los flows del core)
+        │   └── requisicionesFlow.js
+        ├── data/                  # datos del módulo
+        │   ├── requisiciones.data.js      # textos y config de casos
+        │   └── execution-context.json     # EXECUTION CONTEXT (editable a mano)
+        ├── metadata/screens/      # caché de metadata de pantallas (se versiona)
+        │   ├── requisiciones-listado.json
+        │   └── requisiciones-detalle.json
+        ├── support/               # fixtures compartidos por los tests del módulo
+        │   └── fixtures.js
+        ├── tests/                 # specs de Mocha — UN CASO POR ARCHIVO
         │   ├── login.test.js
         │   ├── navegacion.test.js
-        │   └── reclutamiento-requisiciones.test.js
+        │   ├── reclutamiento-requisiciones.test.js
+        │   ├── crear-req-campos-requeridos.test.js
+        │   ├── crear-req-sustitucion-requeridos.test.js
+        │   ├── crear-req-validacion-requeridos.test.js
+        │   ├── crear-req-persona-sustituir.test.js
+        │   ├── crear-req-pregunta-personalizada.test.js
+        │   ├── crear-req-comentarios.test.js
+        │   └── publicar-requisicion.test.js
         └── reports/               # reportes generados de ESTE módulo (no se versiona)
 ```
 
@@ -235,6 +273,191 @@ Todo esto es **automático** para cualquier test dentro de `tests/` gracias a `m
 
 ---
 
+## Política de ejecución (aplica a TODO el framework)
+
+El framework se comporta como un **QA humano experimentado**: ante un problema, intenta recuperar el estado con la propia app antes de reiniciar, evita generar registros innecesarios y sigue con la mayor cantidad de casos posible. Aplica a **cualquier pantalla/módulo** — está centralizada en el core, no hay que reimplementarla por test.
+
+### 1. Recuperación del estado con la propia app
+Ante un fallo, **no se cierra el navegador de inmediato ni se reinicia todo el flujo**. Primero se intenta volver a un estado limpio con los controles normales del usuario, en orden: **Descartar → Cancelar → Cerrar → X del modal → volver al listado** (manejando diálogos de confirmación tipo "¿descartar cambios?"). Solo si ninguna vía funciona se considera el estado inconsistente.
+- Automático en `mochaRootHooks.js` (afterEach de un test fallido).
+- Reutilizable en tests/flows: `const { recovery } = require('@triple/core'); await recovery.recuperarEstado(driver);`
+
+### 2. Registro de bloqueos (reproducible)
+Un fallo se documenta con información suficiente para reproducirlo, **no solo la excepción**: caso, pantalla, acción, campo, valor, mensaje de la app, URL, timestamp y stack de Selenium. Se adjunta como **JSON + screenshot** a la evidencia y al reporte.
+- Automático ante cualquier test fallido.
+- Manual: `const { problemLog } = require('@triple/core'); await problemLog.registrarBloqueo(this, driver, { accion, campo, valor, error });`
+
+### 3. Límite de intentos (sin ciclos infinitos)
+Cada caso tiene un número **acotado** de intentos:
+- **A nivel test**: `TEST_RETRIES` (en `.env`) reintenta el caso completo N veces; agotado, se marca **Failed** y se continúa con el siguiente.
+- **A nivel flujo** (dentro de un test/page object): `retry.conRecuperacion(fn, { intentos, recuperar })` ejecuta con tope de intentos y recuperación entre ellos.
+  ```js
+  const { retry, recovery } = require('@triple/core');
+  await retry.conRecuperacion(() => flujoDeLectura(driver), {
+    intentos: 2,
+    recuperar: () => recovery.recuperarEstado(driver),
+    etiqueta: 'abrir detalle',
+  });
+  ```
+  > ⚠️ No envuelvas el "guardar" con reintentos automáticos: podría **duplicar registros**. Usá `conRecuperacion` para pasos de lectura/navegación/preparación.
+
+### 4. No generar registros innecesarios
+La **exploración** de formularios se hace **inspeccionando el DOM** (validaciones, campos requeridos, listas desplegables, atributos) — **no** creando registros. Solo se crean registros cuando un caso de prueba lo exige para validar el resultado. La recuperación por **Descartar** permite salir de un formulario sin guardar.
+
+---
+
+## Nomenclatura de casos de prueba
+
+Cada caso se identifica con un **nombre descriptivo y estable**, no con un código secuencial. Ese nombre es la **única fuente de verdad**: se usa igual para el archivo, el Execution Context, el logger, las evidencias, los screenshots y las carpetas generadas.
+
+### Reglas
+
+- **Minúsculas**, palabras separadas por **guiones**.
+- **Descriptivo del comportamiento**, no del orden: `crear-req-comentarios`, no `TC-006`.
+- **Sin** espacios, acentos, caracteres especiales ni numeraciones secuenciales.
+- Prefijo por acción/pantalla para que ordene bien alfabéticamente: `crear-req-…`, `publicar-…`.
+- **Un caso = un archivo**: `<nombre-descriptivo>.test.js`.
+
+### Ejemplos vigentes
+
+| Archivo | Sección en el Execution Context |
+|---|---|
+| `crear-req-campos-requeridos.test.js` | `crear-req-campos-requeridos` |
+| `crear-req-sustitucion-requeridos.test.js` | `crear-req-sustitucion-requeridos` |
+| `crear-req-validacion-requeridos.test.js` | `crear-req-validacion-requeridos` |
+| `crear-req-persona-sustituir.test.js` | `crear-req-persona-sustituir` |
+| `crear-req-pregunta-personalizada.test.js` | `crear-req-pregunta-personalizada` |
+| `crear-req-comentarios.test.js` | `crear-req-comentarios` |
+| `publicar-requisicion.test.js` | `publicar-requisicion` |
+
+### Cómo nombrar un caso nuevo
+
+1. Elegí el nombre: `<acción>-<entidad>-<aspecto>` → ej. `crear-vacante-requeridos`, `editar-candidato-documentos`.
+2. Creá `tests/<ese-nombre>.test.js`.
+3. Dentro, declaralo **una sola vez** y reutilizalo en todo el archivo:
+
+```js
+const CASO = 'crear-vacante-requeridos';
+testContext.registrarCaso(CASO, ['nombreVacante', 'puesto']);
+
+describe('Reclutamiento - Vacantes', function () {
+  const ctx = fixtures.usarListadoRequisiciones();
+
+  it(`${CASO}: completa los requeridos y guarda`, async function () { /* … */ });
+});
+```
+
+Al usar `${CASO}` en el título del `it`, el nombre aparece automáticamente en el reporte, en el log y en los nombres de carpeta de evidencias/screenshots — sin repetirlo a mano en ningún otro lado.
+
+---
+
+## Execution Context (datos de prueba)
+
+Desacopla los **datos** de la **lógica** de los tests. Un test nunca hardcodea un valor: se lo pregunta al contexto.
+
+> ⚠️ No confundir con `core/utils/executionContext.js`, que ya existía y hace otra cosa: arma la metadata del **reporte** (ambiente, SO, navegador). El Execution Context de **datos** es `core/context/testContext.js`.
+
+### Cómo funciona
+
+El archivo vive en **`<proyecto>/data/execution-context.json`** (uno por módulo, editable a mano y versionable):
+
+```json
+{
+  "global":     { "usuario": "", "empresa": "" },
+  "publicar-requisicion": { "nombreRequisicion": "REQ-000125", "estado": "" }
+}
+```
+
+La regla es una sola:
+
+| ¿El dato está definido (no vacío)? | Qué hace el test |
+|---|---|
+| **SÍ** | Usa exactamente ese dato. |
+| **NO** | Se comporta **igual que hoy**: descubre el dato automáticamente. |
+
+Se considera "no definido" el string vacío, `null`, `undefined` o un array vacío. La resolución busca primero en la sección del caso y después en `global`; si no encuentra nada, devuelve `undefined`, y ese `undefined` es la señal para el descubrimiento automático.
+
+```js
+const testContext = require('@triple/core/context/testContext');
+
+// Opción A: leer y decidir
+const nombre = testContext.get('publicar-requisicion', 'nombreRequisicion'); // undefined si está vacío
+
+// Opción B: azúcar para el patrón completo
+const req = await testContext.getODescubrir('publicar-requisicion', 'nombreRequisicion',
+  async () => buscarUnaRequisicionAutomaticamente()   // solo corre si el dato está vacío
+);
+```
+
+### Agregar parámetros y casos nuevos
+
+- **Un parámetro nuevo**: agregá la clave al JSON. No hay que tocar código del framework.
+- **Un caso nuevo**: al implementarlo, registrá su sección; queda vacía y lista para que la completes:
+
+```js
+const CASO = 'crear-vacante-requeridos';
+testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
+```
+
+`registrarCaso` **no pisa** valores ya cargados ni borra claves que hayas agregado: solo crea lo que falta.
+
+---
+
+## Selection Strategies
+
+En esta app muchos controles DevExtreme filtran al escribir, pero **escribir no alcanza**: la aplicación solo da por válido el valor cuando se **selecciona explícitamente** el item del listado. Esa mecánica está centralizada en estrategias, no repetida en cada test.
+
+**Los tests nunca conocen el tipo de control.** Solo dicen qué valor quieren; el Page Object declara la estrategia; la estrategia sabe cómo interactuar.
+
+```js
+// En el Page Object: mapa control -> estrategia
+const ESTRATEGIAS = {
+  'Razón de solicitud': 'directSelect',
+  'Descripción': 'text',
+  'Rotativo': 'switch',
+  // Un control puede declarar OPCIONES además de la estrategia.
+  // `multiple: true` es necesario en los tagbox: no cierran solos al elegir.
+  'Persona(s) a sustituir': { estrategia: 'searchAndSelect', multiple: true },
+};
+
+// En el test: solo el valor. El test no sabe si es tagbox, selectbox ni nada.
+await form.setCampo('Persona(s) a sustituir', 'Hugo Valentina Cordero');
+```
+
+> **Ojo con los labels**: la clave del mapa debe coincidir con el label REAL del control. Si tenés la pantalla cacheada en `metadata/screens/`, podés validar el mapa contra ella sin abrir el navegador — así se detectó que el label real era `Persona(s) a sustituir`, con "(s)", y no `Persona a sustituir`.
+
+`searchAndSelect` hace los 4 pasos obligatorios: **abre** el dropdown → **escribe** para filtrar → **espera** el filtrado → **clickea** el item.
+
+> **Verificado en la app**: no todos los controles filtran igual. `Puesto` sí filtra (141 opciones → 3 al escribir "ADMIN"), mientras que `Persona(s) a sustituir` **no filtra** (63 opciones antes y después). `searchAndSelect` funciona en ambos casos, porque su paso decisivo no es escribir sino **seleccionar explícitamente el item** — que es justo lo que la app exige para dar el valor por válido.
+
+### Estrategias incluidas
+
+`firstOption` (por defecto — primera opción válida, el comportamiento histórico) · `directSelect` · `searchAndSelect` · `tagSelect` · `text` · `switch` · `datePicker` · `treeView` · `custom`
+
+Si un control no declara estrategia, se usa `firstOption`: por eso todo lo que ya existía sigue funcionando igual.
+
+### Agregar una estrategia nueva (Open/Closed)
+
+No se toca ningún test, ni el `Form`, ni las estrategias existentes:
+
+```js
+const SelectionStrategy = require('@triple/core/strategies/SelectionStrategy');
+const strategies = require('@triple/core/strategies');
+
+class MiEstrategia extends SelectionStrategy {
+  async aplicar(form, label, valor) {
+    await form._abrirDropdown(label);
+    // ... mecánica propia del control, componiendo las primitivas de Form
+  }
+}
+
+strategies.registrar('miEstrategia', new MiEstrategia());
+```
+
+Después basta con apuntar el control a `'miEstrategia'` en el mapa del Page Object. Las estrategias **componen** las primitivas ya verificadas de `Form` (`_abrirDropdown`, `_itemVisiblePorTexto`, `_esperarOverlayCerrado`), así que si cambia el DOM se arregla en un solo lugar.
+
+---
+
 ## Recetas (mini-ejemplos)
 
 ### Receta: correr un solo test
@@ -246,6 +469,17 @@ npm test -- tests/login.test.js
 ```
 
 El `--` es obligatorio: le dice a npm que pase el argumento al script. Sin argumento corre toda la carpeta `tests/`.
+
+**También podés correrlo estando dentro de `tests/`.** `npm` normaliza el directorio a la raíz del módulo, y el runner antepone `tests/` al nombre si hace falta, así que desde `Reclutamiento/Tests/tests` funciona el nombre pelado:
+
+```bash
+npm test -- login.test.js            # equivale a tests/login.test.js
+npm test -- "crear-req-*.test.js"    # glob (entre comillas para que no lo expanda el shell)
+```
+
+El runner avisa cuando resolvió el path: `Target: tests/login.test.js (resuelto desde "login.test.js")`.
+
+> Esto vale para `npm test`. Si en cambio invocás `mocha`/`npx mocha` a mano desde `tests/`, el `cwd` queda en esa subcarpeta y el framework busca `data/`, `metadata/` y `reports/` en el lugar equivocado (falla en silencio). Usá siempre `npm test`.
 
 ### Receta: escribir un test nuevo
 
@@ -424,12 +658,18 @@ const {
   // infra
   createDriver, quitDriver, getCurrentDriver,
   config, wait, logger, evidence, paths, executionContext,
+  // política de ejecución (recuperación, bloqueos, intentos acotados)
+  recovery, problemLog, retry,
+  // metadata de pantallas (inspeccionar una vez, reutilizar siempre)
+  screenMetadata, screenInspector,
+  // Execution Context (DATOS de prueba) + Selection Strategies
+  testContext, strategies,
   // bases de capas
   UiContext, BasePage, BaseComponent,
   // páginas app-global
   LoginPage, DashboardPage,
   // componentes reutilizables
-  NavBar, DataGrid,
+  NavBar, DataGrid, Form, Notify,
   // flows
   authFlow, navigationFlow,
 } = require('@triple/core');
@@ -506,5 +746,6 @@ await this.getText(locator);
 - **`USERNAME` vs `APP_USERNAME`** (Windows): ver la sección de configuración. Nunca uses `USERNAME` para credenciales.
 - **Los reportes salen en el módulo, no en el core** (`paths.js` deriva la carpeta del `cwd` del módulo). Si ves reportes dentro de `core/`, algo corrió con el cwd equivocado.
 - **`npm test` desde la raíz** no corre un módulo puntual; ubicate en `Reclutamiento/Tests` (o el módulo que sea). Para correr todos, se puede `npm test --workspaces` desde la raíz.
+- **Correr desde `tests/`**: `npm test` funciona igual (npm normaliza el cwd a la raíz del módulo) y el runner antepone `tests/` al nombre si hace falta. Lo que NO funciona es invocar `mocha`/`npx mocha` a mano desde una subcarpeta: ahí el `cwd` queda mal y `data/`, `metadata/` y `reports/` se resuelven en el lugar equivocado, fallando en silencio.
 - **El logout dispara un diálogo de confirmación** ("¿Estás seguro?"); `NavBar.logout()` ya lo maneja (clic en "Aceptar").
 - **Screenshot de fallo automático**: con `SCREENSHOT_MODE=fail` (default) cada test que falla deja su captura embebida en el reporte — clave para diagnosticar sin reproducir.

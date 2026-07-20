@@ -1,0 +1,747 @@
+{
+  "pantalla": "requisiciones-detalle",
+  "capturadoEn": "2026-07-20T13:34:50.133Z",
+  "baseUrl": "https://test.triple.com.do/",
+  "botones": [
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Mi Trabajo"
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": "SyncCacheButton",
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Cia_0042025"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Crear"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Editar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Importar archivos"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Cerrar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn undefined",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Agregar nuevo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Cancelar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn undefined",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "B. Elegibles"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn undefined",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Cerrar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtnreq rounded-12px dx-state-disabled",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "id": null,
+      "texto": "Pregunta(s) Personalizada(s)"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "TODO"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Aceptar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Cancelar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Guardar comentario"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "id": null,
+      "texto": "Descartar"
+    }
+  ],
+  "controles": [
+    {
+      "claseContenedor": "group-field-3 grupo-publicada",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": "false",
+      "id": null,
+      "label": "Publicada:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "switch",
+      "valor": "false"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Razón de solicitud:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "1"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Persona(s) a sustituir:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "tagbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Puesto:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "565"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Nombre de requisición:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": "QA-AUTO-TC005-1784401654721"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Compañía:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "4"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Reclutador:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "2114"
+    },
+    {
+      "claseContenedor": "group-field-2 estado-rq",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Estado:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": "Autorizada"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Documentos Requeridos:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "tagbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Sucursal:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "55"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Departamento:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "635"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Fecha de Creación:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "datebox",
+      "valor": "2026-07-18"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Supervisor:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "selectbox",
+      "valor": "0"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Horario:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "4"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": "false",
+      "id": null,
+      "label": "Rotativo:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "switch",
+      "valor": "false"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Cantidad de empleado:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "numberbox",
+      "valor": "1"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Tipo de contrato:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "1"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Modalidad:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "1"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Ubicación:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Requisitos:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textarea",
+      "valor": "Requisitos QA - QA-AUTO-TC005-1784401654721"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Responsabilidades:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textarea",
+      "valor": "Responsabilidades QA - QA-AUTO-TC005-1784401654721"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Descripción:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textarea",
+      "valor": "Descripción QA - QA-AUTO-TC005-1784401654721"
+    },
+    {
+      "claseContenedor": "group-field-2",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Comentario:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textarea",
+      "valor": null
+    }
+  ],
+  "grids": [
+    {
+      "cantidadFilasVisibles": 1,
+      "columnas": [
+        "Pregunta(s) Personalizada(s)",
+        "Acciones"
+      ],
+      "ejemploPrimeraFila": [
+        "¿Cuenta con disponibilidad inmediata? (QA automatizado)",
+        ""
+      ],
+      "info": "Página #1. Cantidad de páginas: 1 (1 Registros)"
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    }
+  ],
+  "headers": [
+    {
+      "botones": [
+        "Crear",
+        "Editar",
+        "Importar archivos",
+        "Cerrar",
+        "Solicitudes de Empleo",
+        "Agregar nuevo",
+        "Cancelar",
+        "B. Elegibles",
+        "Cerrar"
+      ],
+      "clase": "forms-header requisicion-header",
+      "labels": [
+        "Crear",
+        "Editar",
+        "Publicada:",
+        "Importar archivos",
+        "Cerrar",
+        "Habilite la opción 'Publicada' para poder compartir esta vacante.",
+        "Solicitudes de Empleo",
+        "Seguimiento",
+        "Agregar nuevo",
+        "Cancelar",
+        "B. Elegibles",
+        "Cerrar"
+      ],
+      "switches": [
+        {
+          "ariaPressed": "false",
+          "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+          "id": null
+        }
+      ],
+      "texto": "RequisicionesQA-AUTO-TC005-1784401654721CrearEditarPublicada:DocumentosDesliza hacia abajo para actualizar...Suelta para actualizar...Actualizando...Por el momento, no hay datos para mostrarCargando.."
+    }
+  ],
+  "identificadores": [
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "viewport",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "theme-color",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "description",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "rootBody",
+      "name": null,
+      "tag": "body",
+      "texto": "You need to enable JavaScript to run this app.RequisicionesS"
+    },
+    {
+      "dataTestId": null,
+      "id": "root",
+      "name": null,
+      "tag": "div",
+      "texto": "RequisicionesSolicitudes de EmpleoMi TrabajoCia_0042025ANABE"
+    },
+    {
+      "dataTestId": null,
+      "id": "Layer_1",
+      "name": null,
+      "tag": "svg",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "selectModulos",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "SyncCacheButton",
+      "name": null,
+      "tag": "button",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "NotificationDropDown",
+      "name": null,
+      "tag": "a",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "ConfiguracionDropdown",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "CompanyDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cia_0042025"
+    },
+    {
+      "dataTestId": null,
+      "id": "userDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "dataTestId": null,
+      "id": "scrollView",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "scrollView",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-23",
+      "name": null,
+      "tag": "td",
+      "texto": "Pregunta(s) Personalizada(s)"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-24",
+      "name": null,
+      "tag": "td",
+      "texto": "Acciones"
+    }
+  ],
+  "navegacion": [
+    {
+      "clase": "\n                  navItemLink \n                  undefined \n                  false\n                ",
+      "href": "/srhh/reclutamiento/requisicion",
+      "id": null,
+      "texto": "Requisiciones"
+    }
+  ],
+  "switchesSueltos": [
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": "group-field-3 grupo-publicada",
+      "etiqueta": "Publicada:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler dx-state-disabled",
+      "contenedor": "group-field-2",
+      "etiqueta": "Rotativo:"
+    }
+  ],
+  "titulo": "Triple",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19gMi3SQN8kM2P41yGrCTp7X91fIXGkgTp__HudK1L8Eoh39SDOHnMXK5jgJTMhXsEZYVNQba9qMw",
+  "validaciones": {
+    "camposInvalidos": [],
+    "notifyVisible": ""
+  }
+}
