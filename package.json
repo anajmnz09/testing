@@ -5,7 +5,12 @@
   "private": true,
   "workspaces": [
     "core",
-    "Reclutamiento/Tests"
+    "reclutamiento"
   ],
+  "scripts": {
+    "test:unit": "npm run test:unit --workspace core",
+    "test:e2e": "npm test --workspace reclutamiento",
+    "test:all": "npm run test:unit && npm run test:e2e"
+  },
   "license": "ISC"
 }

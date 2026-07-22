@@ -24,9 +24,11 @@
     "maxEmpleados": ""
   },
   "crear-req-pregunta-personalizada": {
-    "nombreRequisicion": "",
+    "nombreRequisicion": "Requisición de prueba con Pregunta Personalizada",
     "pregunta": "",
-    "nombreCampo": ""
+    "nombreCampo": "",
+        "maxEmpleados": "3"
+
   },
   "crear-req-comentarios": {
     "nombreRequisicion": "",
@@ -35,5 +37,11 @@
   "publicar-requisicion": {
     "nombreRequisicion": "",
     "estado": ""
+  },
+  "pausar-requisicion": {
+    "nombreRequisicion": "",
+    "idRequisicion": "1078",
+    "estado": ""
+    
   }
 }

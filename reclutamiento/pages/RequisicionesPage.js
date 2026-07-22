@@ -141,6 +141,62 @@ class RequisicionesPage extends BasePage {
   }
 
   /**
+   * Celdas de la fila que contiene `texto` (o null si no está en la página).
+   * Complementa a `datosDeFilaConEstado`: allí se busca por estado, acá por el
+   * identificador de la requisición.
+   */
+  async datosDeFila(texto) {
+    return this.driver.executeScript((t) => {
+      const fila = Array.from(document.querySelectorAll('.dx-data-row')).find((f) =>
+        (f.textContent || '').includes(t)
+      );
+      return fila
+        ? Array.from(fila.querySelectorAll('td')).map((c) => c.textContent.trim()).filter(Boolean)
+        : null;
+    }, texto);
+  }
+
+  /**
+   * Filtra el listado por `texto` y espera a que la fila correspondiente muestre
+   * el `estado` indicado. El estado del listado se actualiza de forma asíncrona
+   * tras operar sobre la requisición, por eso se poll-ea con espera explícita en
+   * vez de leerlo una sola vez.
+   *
+   * Se busca el estado por TEXTO DE FILA (no por índice de columna) igual que
+   * `contarConEstado`: el orden de columnas es configurable por el usuario.
+   *
+   * @returns {Promise<{coincide:boolean, celdas:string[]|null}>} `celdas` sirve
+   *          para mostrar en el reporte qué se leyó realmente cuando falla.
+   */
+  async esperarEstadoDeRequisicion(texto, estado, timeout = config.timeouts.explicitWaitMs) {
+    await this.buscarRequisicion(texto);
+    await this._esperarSinLoader(timeout);
+
+    let coincide = false;
+    await this.driver
+      .wait(async () => {
+        coincide = await this.driver.executeScript(
+          (t, est) => {
+            const fila = Array.from(document.querySelectorAll('.dx-data-row')).find((f) =>
+              (f.textContent || '').includes(t)
+            );
+            return !!fila && new RegExp(est, 'i').test(fila.textContent || '');
+          },
+          texto,
+          estado
+        );
+        return coincide;
+      }, timeout)
+      .catch(() => {});
+
+    const celdas = await this.datosDeFila(texto);
+    logger.info(
+      `RequisicionesPage: estado de "${texto}" ${coincide ? 'coincide' : 'NO coincide'} con "${estado}" -> ${JSON.stringify(celdas)}`
+    );
+    return { coincide, celdas };
+  }
+
+  /**
    * Abre el DETALLE de la n-ésima requisición cuyo estado sea `estado`
    * (doble-click: el Nombre no es un link). Devuelve una RequisicionDetallePage
    * o null si no hay una fila en ese índice.
@@ -214,17 +270,14 @@ class RequisicionesPage extends BasePage {
     logger.info('RequisicionesPage: formulario "Crear Requisición" abierto');
   }
 
-  /** Espera a que no haya overlay de carga (loader-manager) visible. */
+  /**
+   * Espera a que no haya overlay de carga (loader-manager) visible.
+   * La implementación se subió a UiContext (`esperarSinLoader`) para que la
+   * reutilicen todas las páginas y componentes; este método se mantiene como
+   * alias interno para no cambiar el código que ya lo usaba.
+   */
   async _esperarSinLoader(timeout) {
-    await this.driver.wait(async () => {
-      const loaders = await this.driver.findElements(
-        By.css('[class*="loader_manager"], [class*="loader-manager"]')
-      );
-      for (const l of loaders) {
-        try { if (await l.isDisplayed()) return false; } catch (e) { /* stale = ya no está */ }
-      }
-      return true;
-    }, timeout);
+    await this.esperarSinLoader(timeout);
   }
 
   /** Texto del pie de paginación del listado. */

@@ -4,6 +4,10 @@
 //   const { waitForElementVisible } = require('@triple/core/utils/wait');
 require('./utils/env'); // asegura la carga de .env apenas se importa el core
 
+// Registro de componentes reutilizables (ver components/README.md): es la única
+// fuente de verdad de qué componentes existen; este barrel los re-exporta.
+const components = require('./components');
+
 module.exports = {
   config: require('./config'),
   driver: require('./utils/driver'),
@@ -27,15 +31,19 @@ module.exports = {
   // bases de capas
   UiContext: require('./utils/UiContext'),
   BasePage: require('./pages/base/BasePage'),
-  BaseComponent: require('./components/BaseComponent'),
+  BaseComponent: components.BaseComponent,
   // páginas app-global (compartidas por todos los módulos)
   LoginPage: require('./pages/LoginPage'),
   DashboardPage: require('./pages/DashboardPage'),
-  // componentes reutilizables
-  NavBar: require('./components/NavBar'),
-  DataGrid: require('./components/DataGrid'),
-  Form: require('./components/Form'),
-  Notify: require('./components/Notify'),
+  // componentes reutilizables (registro en components/index.js)
+  NavBar: components.NavBar,
+  DataGrid: components.DataGrid,
+  Form: components.Form,
+  Notify: components.Notify,
+  // barra de acciones superior de las pantallas de detalle (`forms-header`)
+  FormsHeader: components.FormsHeader,
+  // acceso al registro completo: const { components } = require('@triple/core')
+  components,
   // flujos de negocio reutilizables
   authFlow: require('./flows/authFlow'),
   navigationFlow: require('./flows/navigationFlow'),

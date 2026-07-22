@@ -1,4 +1,6 @@
+const { By } = require('selenium-webdriver');
 const { waitForElementVisible } = require('./wait');
+const config = require('../config');
 
 /**
  * Base compartida por TODOS los Page Objects (BasePage) y Componentes
@@ -47,6 +49,36 @@ class UiContext {
   async getText(locator, timeout) {
     const el = await this.waitVisible(locator, timeout);
     return el.getText();
+  }
+
+  /**
+   * Espera a que no quede ningún overlay de carga (`loader-manager`) VISIBLE.
+   *
+   * La app monta el overlay en cualquier pantalla (listado, detalle, formulario)
+   * y mientras esté arriba intercepta los clicks. Estaba implementado como
+   * método privado de RequisicionesPage; se subió acá para que cualquier página
+   * o componente lo reutilice sin duplicarlo (RequisicionesPage lo sigue
+   * exponiendo con su nombre anterior, así nada existente cambia).
+   *
+   * La visibilidad se comprueba con `isDisplayed()` de Selenium y no con
+   * dimensiones: un elemento con visibility/opacity oculta conserva su tamaño y
+   * daría un falso positivo de "loader visible".
+   */
+  async esperarSinLoader(timeout = config.timeouts.explicitWaitMs) {
+    await this.driver.wait(async () => {
+      const loaders = await this.driver.findElements(
+        By.css('[class*="loader_manager"], [class*="loader-manager"]')
+      );
+      for (const l of loaders) {
+        try {
+          if (await l.isDisplayed()) return false;
+        } catch (e) {
+          /* stale = el loader ya no está en el DOM */
+        }
+      }
+      return true;
+    }, timeout);
+    return this;
   }
 }
 

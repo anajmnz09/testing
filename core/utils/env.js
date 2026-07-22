@@ -5,9 +5,10 @@ const dotenv = require('dotenv');
 //
 // Orden (dotenv NO pisa variables ya definidas, así que la primera fuente gana):
 //   1. .env del módulo que corre (cwd) → override opcional por módulo.
-//   2. .env global del repo (Selenium/.env) → credenciales y URL compartidas.
+//   2. .env global en la raíz del monorepo → credenciales y URL compartidas.
 //
-// __dirname aquí es Selenium/core/utils, así que la raíz del repo es "../../".
+// La raíz se deriva de la ubicación del core (`<raíz>/core/utils` → "../../"),
+// nunca del nombre de una carpeta: mover o renombrar el repo no lo afecta.
 const MODULE_ENV = path.join(process.cwd(), '.env');
 const ROOT_ENV = path.resolve(__dirname, '..', '..', '.env');
 

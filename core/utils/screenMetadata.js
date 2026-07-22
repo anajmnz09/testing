@@ -19,6 +19,15 @@ const path = require('path');
  *     screenMetadata.guardar('requisiciones-detalle', data);
  *   }
  *   const meta = screenMetadata.leer('requisiciones-detalle');
+ *
+ * AUTOGESTIÓN: cada archivo lleva un SELLO del inspector que lo generó
+ * (`inspector: { version, firma }`). Si el inspector cambia, el sello deja de
+ * coincidir y la metadata se regenera sola en la próxima corrida que pase por
+ * esa pantalla — nunca hay que borrar JSONs a mano. Mientras el sello coincida
+ * NO se re-inspecciona nada (el objetivo de la caché se mantiene intacto).
+ *
+ * Este módulo NO conoce al inspector (sería una dependencia circular): recibe el
+ * sello como dato y solo lo compara.
  */
 
 const PROJECT_DIR = process.env.REPORTS_ROOT || process.cwd();
@@ -52,19 +61,59 @@ function leer(nombre) {
 
 /**
  * Guarda (o actualiza) la metadata de una pantalla. Agrega trazabilidad:
- * cuándo se capturó y contra qué ambiente.
+ * cuándo se capturó, contra qué ambiente y con qué versión del inspector.
+ *
+ * @param {object} [sello] `{ version, firma }` del inspector que generó `data`.
+ *        Se persiste para poder detectar después si quedó desactualizada.
  */
-function guardar(nombre, data) {
+function guardar(nombre, data, sello) {
   fs.mkdirSync(METADATA_DIR, { recursive: true });
   const doc = {
     pantalla: nombre,
     capturadoEn: new Date().toISOString(),
     baseUrl: process.env.BASE_URL || null,
+    ...(sello ? { inspector: { version: sello.version, firma: sello.firma } } : {}),
     ...data,
   };
   const file = rutaDe(nombre);
   fs.writeFileSync(file, JSON.stringify(doc, null, 2), 'utf8');
   return file;
+}
+
+/**
+ * ¿La metadata cacheada sigue siendo válida para el `sello` actual del inspector?
+ *
+ * Se considera DESACTUALIZADA cuando:
+ *  - no existe el archivo;
+ *  - está corrupto (JSON ilegible);
+ *  - no tiene sello (la generó una versión anterior del framework);
+ *  - la versión o la firma del inspector cambiaron.
+ *
+ * Devuelve también el `motivo`, que se loguea para que quede claro en el reporte
+ * por qué se volvió a inspeccionar una pantalla.
+ *
+ * @returns {{valida:boolean, motivo:string, sello:object|null}}
+ */
+function esValida(nombre, sello = {}) {
+  const file = rutaDe(nombre);
+  if (!fs.existsSync(file)) return { valida: false, motivo: 'no-existe', sello: null };
+
+  let doc;
+  try {
+    doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (err) {
+    return { valida: false, motivo: 'json-corrupto', sello: null };
+  }
+
+  const previo = doc.inspector || null;
+  if (!previo) return { valida: false, motivo: 'sin-sello-de-inspector', sello: null };
+  if (previo.version !== sello.version) {
+    return { valida: false, motivo: `version-distinta (${previo.version} -> ${sello.version})`, sello: previo };
+  }
+  if (previo.firma !== sello.firma) {
+    return { valida: false, motivo: 'firma-distinta (cambió el inspector)', sello: previo };
+  }
+  return { valida: true, motivo: 'vigente', sello: previo };
 }
 
 /** Lista las pantallas ya cacheadas. */
@@ -76,4 +125,4 @@ function listar() {
     .map((f) => f.replace(/\.json$/, ''));
 }
 
-module.exports = { METADATA_DIR, rutaDe, slug, existe, leer, guardar, listar };
+module.exports = { METADATA_DIR, rutaDe, slug, existe, esValida, leer, guardar, listar };

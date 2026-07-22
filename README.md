@@ -14,6 +14,7 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 - [Arquitectura de capas](#arquitectura-de-capas)
 - [Configuración (`.env` + framework)](#configuración)
 - [Reportes, evidencias y logging](#reportes-evidencias-y-logging)
+- [Metadata de pantallas (autogestionada)](#metadata-de-pantallas-autogestionada)
 - [Política de ejecución](#política-de-ejecución-aplica-a-todo-el-framework)
 - [Nomenclatura de casos de prueba](#nomenclatura-de-casos-de-prueba)
 - [Execution Context (datos de prueba)](#execution-context-datos-de-prueba)
@@ -28,6 +29,7 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
   - [Adjuntar evidencias / screenshots manuales](#receta-adjuntar-evidencias)
   - [Registrar un nuevo tipo de evidencia](#receta-registrar-un-nuevo-tipo-de-evidencia)
 - [Referencia rápida de `@triple/core`](#referencia-rápida-de-triplecore)
+- [Pruebas unitarias del core](#pruebas-unitarias-del-core)
 - [Convenciones](#convenciones)
 - [Notas y troubleshooting](#notas-y-troubleshooting)
 
@@ -36,8 +38,8 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 ## Estructura del monorepo
 
 ```
-Selenium/                          # raíz del monorepo (npm workspaces)
-├── package.json                   # define los workspaces: ["core", "Reclutamiento/Tests"]
+testing/                           # raíz del monorepo (npm workspaces)
+├── package.json                   # define los workspaces: ["core", "reclutamiento"]
 ├── .env                           # GLOBAL: BASE_URL, credenciales y config del framework (NO se versiona)
 ├── .gitignore
 ├── node_modules/                  # dependencias hoisteadas (compartidas por core y módulos)
@@ -45,6 +47,7 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 ├── core/                          # === @triple/core: todo lo reutilizable ===
 │   ├── package.json               # expone bins: triple-run-tests, triple-report-*
 │   ├── index.js                   # "barrel": punto de entrada -> require('@triple/core')
+│   ├── .mocharc.json              # configuración de las pruebas UNITARIAS del framework
 │   │
 │   ├── config/
 │   │   └── index.js               # config del framework (browser, timeouts, screenshotMode, keepReports…)
@@ -61,8 +64,8 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 │   │   ├── recovery.js            # recuperar el estado con los controles de la app (Descartar/Cancelar/…)
 │   │   ├── problemLog.js          # registro estructurado de bloqueos (reproducible)
 │   │   ├── retry.js               # ejecución con intentos ACOTADOS + recuperación entre intentos
-│   │   ├── screenMetadata.js      # caché persistente de metadata de pantallas
-│   │   ├── screenInspector.js     # inspector genérico de cualquier pantalla (controles, ids, validaciones…)
+│   │   ├── screenMetadata.js      # caché persistente de metadata + validez del sello del inspector
+│   │   ├── screenInspector.js     # inspector genérico de pantallas (versionado y autogestionado)
 │   │   ├── paths.js               # rutas de reports/ (historial por ejecución + retención + latest)
 │   │   └── mochaRootHooks.js      # Root Hooks: logging/screenshot/cierre + política ante fallos
 │   │
@@ -80,54 +83,66 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 │   │   └── DashboardPage.js
 │   │
 │   ├── components/                # widgets reutilizables (se repiten en muchas pantallas)
+│   │   ├── index.js               # REGISTRO de componentes (fuente de verdad del barrel)
+│   │   ├── README.md              # catálogo: implementados + previstos + contrato
 │   │   ├── BaseComponent.js       # base de los componentes (extiende UiContext)
 │   │   ├── NavBar.js              # barra superior: logout, volver al dashboard, sync, notif, usuario…
 │   │   ├── DataGrid.js            # grid DevExtreme: buscar, filtrar, crear, paginar, contar filas…
 │   │   ├── Form.js                # formularios DevExtreme POR LABEL (+ setValor con estrategias)
-│   │   └── Notify.js              # toast `notify_record` (éxito / inválido / error del sistema)
+│   │   ├── Notify.js              # toast `notify_record` (éxito / inválido / error del sistema)
+│   │   └── FormsHeader.js         # header `forms-header`: botones (con y sin texto) y switches
 │   │
 │   ├── flows/                     # flujos de negocio reutilizables (cruzan varias pantallas)
 │   │   ├── authFlow.js            # login / logout
 │   │   └── navigationFlow.js      # abrirModulo / volverAlDashboard
 │   │
-│   └── scripts/                   # orquestación y reportes (se invocan como bins triple-*)
-│       ├── run-tests.js           # corre Mocha, genera reporte, aplica retención
-│       ├── generate-report.js     # mergea JSON y genera el HTML
-│       ├── open-report.js         # abre reports/latest/html/index.html
-│       └── clean-reports.js       # borra el historial de reportes del módulo
+│   ├── scripts/                   # orquestación y reportes (se invocan como bins triple-*)
+│   │   ├── run-tests.js           # corre Mocha, genera reporte, aplica retención
+│   │   ├── generate-report.js     # mergea JSON y genera el HTML
+│   │   ├── open-report.js         # abre reports/latest/html/index.html
+│   │   └── clean-reports.js       # borra el historial de reportes del módulo
+│   │
+│   └── tests/                     # === PRUEBAS UNITARIAS del framework (sin Selenium) ===
+│       ├── contrato-suite-unitaria.spec.js  # impide que la suite abra un navegador
+│       ├── components/            # FormsHeader, Notify
+│       ├── context/               # Execution Context
+│       ├── strategies/            # Selection Strategies
+│       ├── utils/                 # screenMetadata, evidence, logger, paths
+│       └── support/               # driver simulado (jsdom), proyecto temporal, entorno
 │
-└── Reclutamiento/
-    └── Tests/                     # === proyecto del módulo Reclutamiento (consume @triple/core) ===
-        ├── package.json           # deps: @triple/core; scripts: test, report:*
-        ├── pages/                 # Page Objects PROPIOS del módulo
-        │   ├── RequisicionesPage.js       # listado (grid): buscar, abrir por estado, volver…
-        │   ├── RequisicionFormPage.js     # form de creación + mapa control→estrategia
-        │   └── RequisicionDetallePage.js  # detalle + switch "Publicada"
-        ├── flows/                 # flujos de negocio DEL MÓDULO (componen los flows del core)
-        │   └── requisicionesFlow.js
-        ├── data/                  # datos del módulo
-        │   ├── requisiciones.data.js      # textos y config de casos
-        │   └── execution-context.json     # EXECUTION CONTEXT (editable a mano)
-        ├── metadata/screens/      # caché de metadata de pantallas (se versiona)
-        │   ├── requisiciones-listado.json
-        │   └── requisiciones-detalle.json
-        ├── support/               # fixtures compartidos por los tests del módulo
-        │   └── fixtures.js
-        ├── tests/                 # specs de Mocha — UN CASO POR ARCHIVO
-        │   ├── login.test.js
-        │   ├── navegacion.test.js
-        │   ├── reclutamiento-requisiciones.test.js
-        │   ├── crear-req-campos-requeridos.test.js
-        │   ├── crear-req-sustitucion-requeridos.test.js
-        │   ├── crear-req-validacion-requeridos.test.js
-        │   ├── crear-req-persona-sustituir.test.js
-        │   ├── crear-req-pregunta-personalizada.test.js
-        │   ├── crear-req-comentarios.test.js
-        │   └── publicar-requisicion.test.js
-        └── reports/               # reportes generados de ESTE módulo (no se versiona)
+└── reclutamiento/                  # === proyecto del módulo Reclutamiento (consume @triple/core) ===
+    ├── package.json               # deps: @triple/core; scripts: test, report:*
+    ├── README.md
+    ├── pages/                     # Page Objects PROPIOS del módulo
+    │   ├── RequisicionesPage.js       # listado (grid): buscar, abrir por estado, leer estado, volver…
+    │   ├── RequisicionFormPage.js     # form de creación + mapa control→estrategia
+    │   └── RequisicionDetallePage.js  # detalle: switch "Publicada" y acciones del header
+    ├── flows/                     # flujos de negocio DEL MÓDULO (componen los flows del core)
+    │   └── requisicionesFlow.js
+    ├── data/                      # datos del módulo
+    │   ├── requisiciones.data.js      # textos y config de casos
+    │   └── execution-context.json     # EXECUTION CONTEXT (editable a mano)
+    ├── metadata/screens/          # caché de metadata de pantallas (se versiona, se autogestiona)
+    │   ├── requisiciones-listado.json
+    │   └── requisiciones-detalle.json
+    ├── support/                   # fixtures compartidos por los tests del módulo
+    │   └── fixtures.js
+    ├── tests/                     # specs de Mocha — UN CASO POR ARCHIVO
+    │   ├── login.test.js
+    │   ├── navegacion.test.js
+    │   ├── reclutamiento-requisiciones.test.js
+    │   ├── crear-req-campos-requeridos.test.js
+    │   ├── crear-req-sustitucion-requeridos.test.js
+    │   ├── crear-req-validacion-requeridos.test.js
+    │   ├── crear-req-persona-sustituir.test.js
+    │   ├── crear-req-pregunta-personalizada.test.js
+    │   ├── crear-req-comentarios.test.js
+    │   ├── publicar-requisicion.test.js
+    │   └── pausar-requisicion.test.js
+    └── reports/                   # reportes generados de ESTE módulo (no se versiona)
 ```
 
-> **Regla de oro para decidir dónde va algo:** ¿sirve a más de un módulo? → `core/`. ¿Es específico de un módulo? → dentro del módulo (`Reclutamiento/Tests/…`).
+> **Regla de oro para decidir dónde va algo:** ¿sirve a más de un módulo? → `core/`. ¿Es específico de un módulo? → dentro del módulo (`reclutamiento/…`).
 
 ---
 
@@ -136,7 +151,7 @@ Selenium/                          # raíz del monorepo (npm workspaces)
 - **Node.js** instalado.
 - **Google Chrome** instalado (Selenium Manager resuelve el driver automáticamente).
 
-Instalación (una sola vez, desde la **raíz** `Selenium/`):
+Instalación (una sola vez, desde la **raíz** del monorepo):
 
 ```bash
 npm install
@@ -148,10 +163,37 @@ Esto instala todas las dependencias de todos los workspaces y enlaza `@triple/co
 
 ## Cómo correr las pruebas
 
-Los tests se ejecutan **desde el proyecto del módulo**, no desde la raíz. Ubicate en la carpeta del módulo:
+El repositorio tiene **dos suites independientes**, con propósitos distintos:
+
+| | **Unitarias** (`core/tests/`) | **E2E** (`<módulo>/tests/`) |
+|---|---|---|
+| Qué prueban | El **framework**: componentes, utilidades, registros | El **sistema Triple**: flujos de negocio reales |
+| Con qué corren | Mocha + Chai + jsdom, todo **en memoria** | Mocha + Selenium + Chrome contra `BASE_URL` |
+| Necesitan `.env` / credenciales | **No** | Sí |
+| Cuánto tardan | Segundos | Minutos |
+| Qué generan | Nada (no tocan el repo) | Reporte HTML, screenshots, evidencias, logs |
+| Archivos | `*.spec.js` | `*.test.js` |
+
+Se ejecutan por separado o juntas, **desde la raíz**:
 
 ```bash
-cd Reclutamiento/Tests
+npm run test:unit     # solo el framework — no abre ningún navegador
+npm run test:e2e      # solo los casos de negocio (Selenium + Chrome)
+npm run test:all      # unitarias primero; si pasan, las E2E
+```
+
+`test:all` corre las unitarias **primero** a propósito: son las rápidas, y si el framework está roto no tiene sentido gastar minutos de navegador.
+
+### Pruebas unitarias del framework
+
+Ver [Pruebas unitarias del core](#pruebas-unitarias-del-core) para saber cuándo escribir una, cómo, y qué NO va ahí.
+
+### Pruebas E2E
+
+Se ejecutan **desde el proyecto del módulo**, no desde la raíz. Ubicate en la carpeta del módulo:
+
+```bash
+cd reclutamiento
 npm test
 ```
 
@@ -218,7 +260,7 @@ UiContext / utils "plumbing: click, type, wait, driver"
 
 Hay dos configuraciones **separadas a propósito**:
 
-### 1. `.env` global (`Selenium/.env`) — datos sensibles y de ambiente
+### 1. `.env` global (`<raíz>/.env`) — datos sensibles y de ambiente
 
 ```ini
 BASE_URL=https://test.triple.com.do/
@@ -270,6 +312,39 @@ Lee las variables de arriba y expone valores con defaults seguros:
 - **Logging**: `core/utils/logger.js` — cada línea con timestamp, en consola y en `reports/<RUN_ID>/logs/execution.log`.
 
 Todo esto es **automático** para cualquier test dentro de `tests/` gracias a `mochaRootHooks.js` (cargado con `--require`): no hay que escribir `afterEach`, ni cerrar el driver, ni capturar screenshots a mano.
+
+---
+
+## Metadata de pantallas (autogestionada)
+
+El framework toma una **radiografía** de cada pantalla que visita (controles, labels, requeridos, ids, botones —incluidos los solo-ícono con su nombre accesible—, grids, headers, switches y validaciones) y la persiste en `<módulo>/metadata/screens/<pantalla>.json`. Sirve para automatizar contra el DOM real **sin volver a explorar el sistema**: se puede validar un mapa de estrategias o buscar el label exacto de un control sin abrir el navegador.
+
+```js
+await screenInspector.inspeccionarYGuardar(driver, 'requisiciones-detalle');
+```
+
+**Se mantiene sola.** Cada JSON guarda el sello del inspector que lo generó:
+
+```json
+"inspector": { "version": 2, "firma": "f8f84161d5d0" }
+```
+
+- `version` — se sube a mano cuando cambia el *significado* de la metadata.
+- `firma` — hash del código que corre en el browser: **cualquier** cambio en el inspector la modifica, aunque nadie se acuerde de subir la versión.
+
+En cada corrida se compara el sello guardado con el actual:
+
+| Situación | Qué hace |
+|---|---|
+| Sello idéntico | **No re-inspecciona nada** (la caché cumple su función) |
+| Falta el archivo | Lo genera |
+| Sello distinto (versión o firma) | Lo regenera y loguea el motivo |
+| Sin sello (formato anterior) o JSON corrupto | Lo regenera |
+| `{ forzar: true }` | Lo regenera aunque esté vigente |
+
+Nunca hay que borrar JSONs a mano, y una metadata vigente no se vuelve a capturar. El motivo de cada regeneración queda en el log: `screenInspector: inspeccionando pantalla "requisiciones-detalle" (motivo: firma-distinta (cambió el inspector))`.
+
+> La metadata **se versiona en git** y vive fuera de `reports/` a propósito: esa carpeta se poda según `KEEP_REPORTS`.
 
 ---
 
@@ -329,6 +404,7 @@ Cada caso se identifica con un **nombre descriptivo y estable**, no con un códi
 | `crear-req-pregunta-personalizada.test.js` | `crear-req-pregunta-personalizada` |
 | `crear-req-comentarios.test.js` | `crear-req-comentarios` |
 | `publicar-requisicion.test.js` | `publicar-requisicion` |
+| `pausar-requisicion.test.js` | `pausar-requisicion` |
 
 ### Cómo nombrar un caso nuevo
 
@@ -462,7 +538,7 @@ Después basta con apuntar el control a `'miEstrategia'` en el mapa del Page Obj
 
 ### Receta: correr un solo test
 
-Desde `Reclutamiento/Tests`:
+Desde `reclutamiento/`:
 
 ```bash
 npm test -- tests/login.test.js
@@ -470,7 +546,7 @@ npm test -- tests/login.test.js
 
 El `--` es obligatorio: le dice a npm que pase el argumento al script. Sin argumento corre toda la carpeta `tests/`.
 
-**También podés correrlo estando dentro de `tests/`.** `npm` normaliza el directorio a la raíz del módulo, y el runner antepone `tests/` al nombre si hace falta, así que desde `Reclutamiento/Tests/tests` funciona el nombre pelado:
+**También podés correrlo estando dentro de `tests/`.** `npm` normaliza el directorio a la raíz del módulo, y el runner antepone `tests/` al nombre si hace falta, así que desde `reclutamiento/tests` funciona el nombre pelado:
 
 ```bash
 npm test -- login.test.js            # equivale a tests/login.test.js
@@ -486,7 +562,7 @@ El runner avisa cuando resolvió el path: `Target: tests/login.test.js (resuelto
 Creá un archivo `tests/<lo-que-sea>.test.js`. **No** necesitás manejar el driver, screenshots ni logging (lo hace el core). Componé flows y páginas:
 
 ```js
-// Reclutamiento/Tests/tests/mi-caso.test.js
+// reclutamiento/tests/mi-caso.test.js
 const assert = require('assert');
 const { createDriver, authFlow, navigationFlow } = require('@triple/core');
 const RequisicionesPage = require('../pages/RequisicionesPage');
@@ -515,7 +591,7 @@ Corré: `npm test -- tests/mi-caso.test.js`.
 Una página de módulo **extiende `BasePage` del core** y **compone** los componentes reutilizables (no reimplementa el grid). Expone métodos con lenguaje de negocio. Usá `RequisicionesPage.js` como plantilla:
 
 ```js
-// Reclutamiento/Tests/pages/CandidatosPage.js
+// empleados/pages/CandidatosPage.js
 const { BasePage, DataGrid } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 
@@ -584,13 +660,17 @@ class DropDown extends BaseComponent {
 module.exports = DropDown;
 ```
 
-Y agregalo al barrel `core/index.js`. Prioridad de selectores para esta app DevExtreme: `data-testid` → `id` → `name` → `aria-label` → **clase `dx-*` estable + texto/`title`** → XPath por texto (último recurso). Nunca clases hasheadas de CSS-modules.
+Y registralo en `core/components/index.js` (el barrel `core/index.js` lo re-exporta desde ahí, así que no hay dos listas que mantener). Prioridad de selectores para esta app DevExtreme: `data-testid` → `id` → `name` → `aria-label`/`title` → **clase `dx-*` estable + texto/`title`** → XPath por texto (último recurso). Nunca clases hasheadas de CSS-modules, **ni posición o índice dentro del DOM, ni contenido base64**.
+
+> Si el componente no puede identificar un elemento con certeza, **no debe adivinar**: devuelve el diagnóstico de lo que encontró y deja que el test falle con un mensaje accionable. Un click en el control equivocado produce falsos verdes, que es peor que un fallo.
+
+El catálogo de componentes —los implementados y los **previstos** (`Dialog`, `Popup`, `Toolbar`, `Switch`, `Tabs`, `Uploader`), con la señal que indica cuándo conviene crearlos— está en **[`core/components/README.md`](core/components/README.md)**. No se crean componentes vacíos: se implementan el día que un caso real los necesita.
 
 ### Receta: agregar un módulo nuevo
 
 Ejemplo: módulo **Empleados**. No se toca el core.
 
-1. Crear el proyecto `Selenium/Empleados/Tests/` con su `package.json`:
+1. Crear el proyecto `empleados/` en la raíz del monorepo con su `package.json`:
    ```json
    {
      "name": "empleados-tests",
@@ -604,13 +684,13 @@ Ejemplo: módulo **Empleados**. No se toca el core.
      "dependencies": { "@triple/core": "*", "selenium-webdriver": "^4.46.0" }
    }
    ```
-2. Registrar el workspace en `Selenium/package.json`:
+2. Registrar el workspace en el `package.json` de la raíz:
    ```json
-   "workspaces": ["core", "Reclutamiento/Tests", "Empleados/Tests"]
+   "workspaces": ["core", "reclutamiento", "empleados"]
    ```
 3. `npm install` en la raíz (enlaza el nuevo workspace).
-4. Crear `Empleados/Tests/pages/EmpleadosPage.js` (como la receta de Page Object) y `Empleados/Tests/tests/…test.js` (como la receta de test), reutilizando `authFlow`, `navigationFlow`, `DataGrid`, `NavBar` del core.
-5. Correr: `cd Empleados/Tests && npm test`.
+4. Crear `empleados/pages/EmpleadosPage.js` (como la receta de Page Object) y `empleados/tests/…test.js` (como la receta de test), reutilizando `authFlow`, `navigationFlow`, `DataGrid`, `NavBar` del core.
+5. Correr: `cd empleados && npm test`.
 
 ### Receta: adjuntar evidencias
 
@@ -668,8 +748,8 @@ const {
   UiContext, BasePage, BaseComponent,
   // páginas app-global
   LoginPage, DashboardPage,
-  // componentes reutilizables
-  NavBar, DataGrid, Form, Notify,
+  // componentes reutilizables (registro completo en `components`)
+  NavBar, DataGrid, Form, Notify, FormsHeader, components,
   // flows
   authFlow, navigationFlow,
 } = require('@triple/core');
@@ -717,6 +797,31 @@ await navbar.getCompania();            // texto de la compañía activa
 await navbar.getUsuario();             // texto del usuario logueado
 ```
 
+### API del componente `FormsHeader`
+
+Barra de acciones superior de las pantallas de detalle (`<div class="forms-header …">`). Muchos de sus botones son **solo ícono**: sin texto, sin `id`, sin `data-testid` y con la imagen embebida como `data:image/png;base64,…`. El componente los localiza por **nombre accesible** (`title` → `aria-label` → `data-testid` → `alt`/`title` del `<img>` → texto visible) y, si no, por el **ícono con nombre** (su `title`, `alt`, `aria-label` o clase). **Nunca** se usa el base64 como selector: es enorme, cambia con cualquier retoque del ícono y no describe la acción.
+
+```js
+const header = await new FormsHeader(driver).listo();
+
+// --- botones ---
+await header.esperarBoton('pausar|pausa');            // { encontrado, via, nombre, deshabilitado, botones }
+await header.accionar('pausar|pausa', { etiqueta: 'Pausar' });  // click + notify ya clasificado
+await header.acciones();                              // inventario del header (diagnóstico para evidencias)
+
+// --- switches del header (Publicada, Activo, …) ---
+await header.ubicarSwitch('publicada', { contenedor: '[class*="grupo-publicada"]' });
+await header.esperarSwitch('publicada', { obligatorio: true });  // lanza si no aparece
+await header.encenderSwitch('publicada', { etiqueta: 'Publicada' }); // { yaEstaba, …notify }
+await header.esperarEstadoSwitch('publicada', true);  // confirma el estado REAL tras operarlo
+```
+
+Un switch se ubica por su **contenedor propio** (la vía más estable, si el Page Object lo conoce) y, si no, por su **etiqueta**, subiendo hasta el `.dx-switch` más cercano: no depende del anidamiento interno del header.
+
+`esperarBoton` y `esperarSwitch` **no lanzan** por defecto: devuelven el diagnóstico (incluido el inventario de acciones del header) para que el test decida el assert y muestre un mensaje útil en el reporte. `esperarSwitch` acepta `obligatorio: true` cuando la ausencia del control es un fallo de la pantalla y no un dato.
+
+**Nunca adivina.** Si ninguna vía identifica el control, devuelve `encontrado: false` con el motivo — no usa la posición dentro del header, ni el índice del botón, ni "el único ícono que hay", ni el base64 de la imagen.
+
 ### Helpers de `UiContext` (heredados por toda página/componente)
 
 ```js
@@ -724,16 +829,87 @@ await this.waitVisible(locator);
 await this.click(locator);
 await this.type(locator, texto, { clear = true });
 await this.getText(locator);
+await this.esperarSinLoader();   // no hay overlay `loader-manager` visible
 ```
+
+---
+
+## Pruebas unitarias del core
+
+Las pruebas unitarias protegen el **framework mismo**. Viven en `core/tests/`, corren **en memoria** (Mocha + Chai + jsdom) y no abren Selenium, ni Chrome, ni tocan la aplicación. Toda la suite tarda **segundos**.
+
+```bash
+npm run test:unit                 # desde la raíz
+cd core && npm run test:unit      # equivalente, desde el core
+cd core && npx mocha tests/components/FormsHeader.spec.js   # un solo archivo
+cd core && npm run test:unit:watch                          # modo watch mientras desarrollás
+```
+
+### ¿Unitaria o E2E?
+
+| Escribí una **unitaria** cuando… | Escribí una **E2E** cuando… |
+|---|---|
+| Agregás o cambiás un componente del core | Agregás un caso de negocio |
+| Un helper decide algo (clasificar, sanear, validar, resolver) | Querés verificar que la app responde como se espera |
+| Querés fijar una regla de robustez ("no adivinar el selector") | El valor está en la integración real (login, grid, navegación) |
+| Corregís un bug del framework: la prueba lo reproduce primero | El comportamiento depende del DOM real de DevExtreme |
+
+Regla práctica: **si la prueba necesita un navegador, no es unitaria**. Y si podés expresarla con un DOM simulado, no la mandes a E2E: ahí tarda minutos y falla por motivos ajenos.
+
+### Qué se prueba: comportamiento, no implementación
+
+Las pruebas verifican lo que el componente **hace observable**, no cómo lo hace por dentro:
+
+```js
+// ✅ comportamiento: QUÉ botón quedó accionado
+await new FormsHeader(driver).accionar('pausar|pausa');
+expect(driver.traza.clicks[0].id).to.equal('objetivo');
+
+// ❌ implementación: qué método interno se llamó
+expect(header._ubicarBoton.called).to.equal(true);
+```
+
+Así la prueba sobrevive a una refactorización del componente y **falla solo cuando se rompe algo que le importa a alguien**.
+
+### Cómo se prueba un componente que habla con Selenium
+
+Los componentes del core no dependen de Selenium: dependen de una **interfaz muy chica del driver** (`executeScript`, `wait`, `findElement`). `tests/support/fakeDriver.js` implementa esa misma interfaz contra un DOM de jsdom, respetando el contrato real (`wait` rechaza al expirar, `executeScript` devuelve `null` cuando la función no retorna, los scripts como string funcionan igual). Por eso las pruebas ejercitan **el código real del componente**, el mismo que corre en producción.
+
+```js
+const driver = crearDriver('<div class="forms-header">…</div>');
+const resultado = await new FormsHeader(driver).accionar('pausar', { timeout: 60 });
+expect(driver.traza.clicks).to.be.empty;   // no adivinó: no clickeó nada
+```
+
+Si una prueba necesitara más superficie de Selenium que esa, es señal de que ese comportamiento pertenece a las E2E.
+
+Para los módulos que escriben en disco (metadata, Execution Context, evidencias, logs), `tests/support/proyectoTemporal.js` arma un proyecto descartable en el temp del sistema y reimporta el módulo en frío. Nada queda en el repositorio.
+
+### Agregar una prueba unitaria
+
+1. Ubicá el archivo espejando la estructura del core: `core/tests/<carpeta-del-módulo>/<Modulo>.spec.js`.
+2. Importá **el submódulo concreto** (`require('../../components/Notify')`), nunca el barrel `@triple/core`: arrastra `utils/driver.js` y la suite dejaría de ser unitaria.
+3. Usá `crearDriver()` si necesitás DOM, `crearProyecto()` si necesitás disco.
+4. Pasá **timeouts chicos** (decenas de ms) a lo que espere: las pruebas unitarias no esperan a nadie.
+5. Nombrá el `it()` describiendo la **conducta**, no el método: *"no clickea un botón deshabilitado, pero informa que existe"*.
+
+`core/tests/contrato-suite-unitaria.spec.js` vigila que la suite siga siendo unitaria: falla si algún spec importa el driver de Selenium, carga chromedriver, depende de credenciales o escribe dentro del repositorio.
+
+### Qué NO va acá
+
+- Nada que necesite un navegador o la app levantada.
+- Los Page Objects y flows de un módulo: son E2E por naturaleza (su valor está en el DOM real).
+- Componentes cuya lógica es "encontrar un selector y clickearlo" sin decisiones propias: una prueba unitaria ahí solo repetiría el selector y daría falsa sensación de cobertura.
 
 ---
 
 ## Convenciones
 
-- **Page Objects**: `PascalCase` + sufijo `Page` (`RequisicionesPage.js`). App-global → `core/pages/`; de módulo → `<Modulo>/Tests/pages/`.
+- **Page Objects**: `PascalCase` + sufijo `Page` (`RequisicionesPage.js`). App-global → `core/pages/`; de módulo → `<modulo>/pages/`.
 - **Componentes**: `PascalCase` (`DataGrid.js`) en `core/components/`, extienden `BaseComponent`.
 - **Flows**: `camelCase` + sufijo `Flow` (`authFlow.js`), sin locators.
-- **Tests**: `kebab-case` + `.test.js`.
+- **Tests E2E**: `kebab-case` + `.test.js`, en `<módulo>/tests/`.
+- **Pruebas unitarias del framework**: `.spec.js`, en `core/tests/`, espejando la estructura del core.
 - **Selectores** (en camelCase dentro de la clase): prioridad `data-testid` → `id` → `name` → `aria-label` → clase `dx-*` estable + texto/`title` → XPath por texto (último recurso). Nunca clases hasheadas de CSS-modules.
 - **Esperas**: siempre explícitas (`UiContext`/`wait.js`). Nunca `sleep`/timeouts fijos.
 - **Credenciales**: prefijo propio sin colisión con variables del SO (`APP_USERNAME`).
@@ -745,7 +921,7 @@ await this.getText(locator);
 - **La app es DevExtreme.** Casi no hay `data-testid`; los selectores realistas son `id` estables (navbar) y clases `dx-*` + texto/`title`. Los componentes del core ya encapsulan esos selectores en un solo lugar.
 - **`USERNAME` vs `APP_USERNAME`** (Windows): ver la sección de configuración. Nunca uses `USERNAME` para credenciales.
 - **Los reportes salen en el módulo, no en el core** (`paths.js` deriva la carpeta del `cwd` del módulo). Si ves reportes dentro de `core/`, algo corrió con el cwd equivocado.
-- **`npm test` desde la raíz** no corre un módulo puntual; ubicate en `Reclutamiento/Tests` (o el módulo que sea). Para correr todos, se puede `npm test --workspaces` desde la raíz.
+- **`npm test` desde la raíz** no corre un módulo puntual; ubicate en `reclutamiento/` (o el módulo que sea). Para correr todos, se puede `npm test --workspaces` desde la raíz.
 - **Correr desde `tests/`**: `npm test` funciona igual (npm normaliza el cwd a la raíz del módulo) y el runner antepone `tests/` al nombre si hace falta. Lo que NO funciona es invocar `mocha`/`npx mocha` a mano desde una subcarpeta: ahí el `cwd` queda mal y `data/`, `metadata/` y `reports/` se resuelven en el lugar equivocado, fallando en silencio.
 - **El logout dispara un diálogo de confirmación** ("¿Estás seguro?"); `NavBar.logout()` ya lo maneja (clic en "Aceptar").
 - **Screenshot de fallo automático**: con `SCREENSHOT_MODE=fail` (default) cada test que falla deja su captura embebida en el reporte — clave para diagnosticar sin reproducir.

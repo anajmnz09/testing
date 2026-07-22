@@ -1,72 +1,397 @@
 {
   "pantalla": "requisiciones-listado",
-  "capturadoEn": "2026-07-20T13:26:14.867Z",
+  "capturadoEn": "2026-07-21T18:53:51.087Z",
   "baseUrl": "https://test.triple.com.do/",
+  "inspector": {
+    "version": 2,
+    "firma": "f8f84161d5d0"
+  },
   "botones": [
     {
-      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
-      "dataTestId": null,
-      "deshabilitado": true,
-      "id": null,
-      "texto": "Solicitudes de Empleo"
-    },
-    {
-      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
-      "dataTestId": null,
-      "deshabilitado": true,
-      "id": null,
-      "texto": "Mi Trabajo"
-    },
-    {
-      "clase": "sync-nav-btn ",
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
       "dataTestId": null,
       "deshabilitado": false,
-      "id": "SyncCacheButton",
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
       "texto": ""
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "Solicitudes de Empleo",
+      "soloIcono": false,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Mi Trabajo",
+      "soloIcono": false,
+      "texto": "Mi Trabajo"
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": "SyncCacheButton",
+      "nombreAccesible": "Actualizar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Cia_0042025",
+      "soloIcono": false,
       "texto": "Cia_0042025"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "ANABEL   HINOJOSA JIMENEZ",
+      "soloIcono": false,
       "texto": "ANABEL   HINOJOSA JIMENEZ"
     },
     {
-      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn dx-state-disabled",
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn",
       "dataTestId": null,
-      "deshabilitado": true,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": null,
+      "soloIcono": false,
       "texto": "Crear"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "Filtros",
+      "soloIcono": false,
       "texto": "Filtro"
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal viewBtn dx-state-invisible",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Modo tarjeta",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal viewBtn dx-state-invisible",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Modo lista",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-icon ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "SRH-Buscar-Azul",
+      "soloIcono": true,
+      "texto": ""
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text dx-button-has-icon dx-datagrid-toolbar-",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Selector de Columnas | Selector de Columnas",
+      "soloIcono": false,
       "texto": "Selector de Columnas"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-icon dx-dropdownmenu dx-dropdownmenu-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "overflow",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-page-size dx-selection",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Display 20 items on page",
+      "soloIcono": false,
+      "texto": "20"
+    },
+    {
+      "clase": "dx-page-size",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Display 0 items on page",
+      "soloIcono": false,
+      "texto": "Todos"
+    },
+    {
+      "clase": "dx-button-disable dx-navigate-button dx-prev-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Previous page",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-page dx-selection",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 1",
+      "soloIcono": false,
+      "texto": "1"
+    },
+    {
+      "clase": "dx-page",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 2",
+      "soloIcono": false,
+      "texto": "2"
+    },
+    {
+      "clase": "dx-page",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 3",
+      "soloIcono": false,
+      "texto": "3"
+    },
+    {
+      "clase": "dx-page",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 4",
+      "soloIcono": false,
+      "texto": "4"
+    },
+    {
+      "clase": "dx-page",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 5",
+      "soloIcono": false,
+      "texto": "5"
+    },
+    {
+      "clase": "dx-navigate-button dx-next-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Next page",
+      "soloIcono": false,
+      "texto": ""
     }
   ],
   "controles": [],
   "grids": [
     {
+      "cantidadFilasVisibles": 20,
+      "columnas": [
+        "Código",
+        "Nombre",
+        "Departamento",
+        "Puesto",
+        "Descripción",
+        "Fecha de Creación",
+        "Reclutador",
+        "Requeridos",
+        "Solicitudes de Empleo",
+        "Contratados",
+        "Estado"
+      ],
+      "ejemploPrimeraFila": [
+        "",
+        "1127",
+        "QA-AUTO-TC006-1784568196817",
+        "ADMINISTRACION",
+        "ADMINISTRADOR DE REDES",
+        "Descripción QA - QA-AUTO-TC006-1784568196817",
+        "20/07/2026",
+        "Juan Cueli",
+        "1",
+        "0",
+        "0",
+        "Pausada"
+      ],
+      "info": "Página #1. Cantidad de páginas: 5 (83 Registros)"
+    },
+    {
       "cantidadFilasVisibles": 0,
       "columnas": [],
       "ejemploPrimeraFila": [],
-      "info": "Página #1. Cantidad de páginas: 1 (-1 Registros)"
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
     },
     {
       "cantidadFilasVisibles": 0,
@@ -180,19 +505,96 @@
       "id": "childrenOuterWrapper",
       "name": null,
       "tag": "div",
-      "texto": "Selector de ColumnasCargando datos...20TodosPágina #1. Canti"
+      "texto": "Selector de ColumnasCódigoNombreDepartamentoPuestoDescripció"
     },
     {
       "dataTestId": null,
       "id": "childrenInnerWrapper",
       "name": null,
       "tag": "div",
-      "texto": "Selector de ColumnasCargando datos...20TodosPágina #1. Canti"
+      "texto": "Selector de ColumnasCódigoNombreDepartamentoPuestoDescripció"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-12",
+      "name": null,
+      "tag": "td",
+      "texto": "Código"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-13",
+      "name": null,
+      "tag": "td",
+      "texto": "Nombre"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-14",
+      "name": null,
+      "tag": "td",
+      "texto": "Departamento"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-15",
+      "name": null,
+      "tag": "td",
+      "texto": "Puesto"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-16",
+      "name": null,
+      "tag": "td",
+      "texto": "Descripción"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-17",
+      "name": null,
+      "tag": "td",
+      "texto": "Fecha de Creación"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-18",
+      "name": null,
+      "tag": "td",
+      "texto": "Reclutador"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-19",
+      "name": null,
+      "tag": "td",
+      "texto": "Requeridos"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-20",
+      "name": null,
+      "tag": "td",
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-21",
+      "name": null,
+      "tag": "td",
+      "texto": "Contratados"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-col-22",
+      "name": null,
+      "tag": "td",
+      "texto": "Estado"
     }
   ],
   "navegacion": [
     {
-      "clase": "\n                  navItemLink \n                  undefined \n                  link-disable-2\n                ",
+      "clase": "\n                  navItemLink \n                  undefined \n                  false\n                ",
       "href": "/srhh/reclutamiento/requisicion",
       "id": null,
       "texto": "Requisiciones"
@@ -200,7 +602,7 @@
   ],
   "switchesSueltos": [],
   "titulo": "Triple",
-  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19hIb_qXNTTczSCocnm9TOVE2ccatq3OQs2C1MN4JwaFW-njnox9Bgz",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19wDcLPAjjRI-236c6fx6AeD1scmFv4aA1D-9jtWbe2gk_s-vA86yTk",
   "validaciones": {
     "camposInvalidos": [],
     "notifyVisible": ""

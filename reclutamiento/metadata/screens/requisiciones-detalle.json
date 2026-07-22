@@ -1,216 +1,510 @@
 {
   "pantalla": "requisiciones-detalle",
-  "capturadoEn": "2026-07-20T13:34:50.133Z",
+  "capturadoEn": "2026-07-21T18:55:43.949Z",
   "baseUrl": "https://test.triple.com.do/",
+  "inspector": {
+    "version": 2,
+    "firma": "f8f84161d5d0"
+  },
   "botones": [
     {
-      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
-      "texto": "Solicitudes de Empleo"
-    },
-    {
-      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
-      "dataTestId": null,
-      "deshabilitado": false,
-      "id": null,
-      "texto": "Mi Trabajo"
-    },
-    {
-      "clase": "sync-nav-btn ",
-      "dataTestId": null,
-      "deshabilitado": false,
-      "id": "SyncCacheButton",
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
       "texto": ""
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "Solicitudes de Empleo",
+      "soloIcono": false,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Mi Trabajo",
+      "soloIcono": false,
+      "texto": "Mi Trabajo"
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": "SyncCacheButton",
+      "nombreAccesible": "Actualizar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Cia_0042025",
+      "soloIcono": false,
       "texto": "Cia_0042025"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "ANABEL   HINOJOSA JIMENEZ",
+      "soloIcono": false,
       "texto": "ANABEL   HINOJOSA JIMENEZ"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text main-btn",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Crear | Crear",
+      "soloIcono": false,
       "texto": "Crear"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text main-btn",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "Editar | Editar",
+      "soloIcono": false,
       "texto": "Editar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal additional-btn gap-0",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Pausar",
+      "soloIcono": true,
+      "texto": ""
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Importar archivos",
+      "soloIcono": false,
       "texto": "Importar archivos"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Cerrar",
+      "soloIcono": false,
       "texto": "Cerrar"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn undefined",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "solicitudes de empleo | Solicitudes de Empleo",
+      "soloIcono": false,
       "texto": "Solicitudes de Empleo"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Agregar nuevo",
+      "soloIcono": false,
       "texto": "Agregar nuevo"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Cancelar",
+      "soloIcono": false,
       "texto": "Cancelar"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn undefined",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "B. Elegibles | B. Elegibles",
+      "soloIcono": false,
       "texto": "B. Elegibles"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn undefined",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": true,
       "id": null,
+      "nombreAccesible": "Cerrar | Cerrar",
+      "soloIcono": false,
       "texto": "Cerrar"
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-state-invisible dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-state-invisible dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-state-invisible dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-state-invisible dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-state-invisible dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-state-invisible dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtnreq rounded-12px dx-state-disabled",
       "dataTestId": null,
       "deshabilitado": true,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": null,
+      "soloIcono": false,
       "texto": "Pregunta(s) Personalizada(s)"
     },
     {
+      "clase": "dx-page-size dx-selection",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Display 20 items on page",
+      "soloIcono": false,
+      "texto": "20"
+    },
+    {
+      "clase": "dx-page-size",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Display 0 items on page",
+      "soloIcono": false,
+      "texto": "Todos"
+    },
+    {
+      "clase": "dx-button-disable dx-navigate-button dx-prev-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Previous page",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-page dx-selection",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 1",
+      "soloIcono": false,
+      "texto": "1"
+    },
+    {
+      "clase": "dx-button-disable dx-navigate-button dx-next-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Next page",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": true,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": true,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon dx-htmleditor-toolbar-for",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "TODO | TODO",
+      "soloIcono": false,
       "texto": "TODO"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Aceptar",
+      "soloIcono": false,
       "texto": "Aceptar"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Cancelar",
+      "soloIcono": false,
       "texto": "Cancelar"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Guardar comentario",
+      "soloIcono": false,
       "texto": "Guardar comentario"
     },
     {
       "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
       "dataTestId": null,
       "deshabilitado": false,
+      "iconoEmbebido": false,
       "id": null,
+      "nombreAccesible": "Descartar",
+      "soloIcono": false,
       "texto": "Descartar"
     }
   ],
@@ -283,7 +577,7 @@
       "placeholder": null,
       "requerido": true,
       "tipo": "textbox",
-      "valor": "QA-AUTO-TC005-1784401654721"
+      "valor": "QA-AUTO-TC005-1784568157812"
     },
     {
       "claseContenedor": "group-field-2",
@@ -381,7 +675,7 @@
       "placeholder": null,
       "requerido": false,
       "tipo": "datebox",
-      "valor": "2026-07-18"
+      "valor": "2026-07-20"
     },
     {
       "claseContenedor": "group-field-2",
@@ -493,7 +787,7 @@
       "placeholder": null,
       "requerido": true,
       "tipo": "textarea",
-      "valor": "Requisitos QA - QA-AUTO-TC005-1784401654721"
+      "valor": "Requisitos QA - QA-AUTO-TC005-1784568157812"
     },
     {
       "claseContenedor": "group-field-2",
@@ -507,7 +801,7 @@
       "placeholder": null,
       "requerido": true,
       "tipo": "textarea",
-      "valor": "Responsabilidades QA - QA-AUTO-TC005-1784401654721"
+      "valor": "Responsabilidades QA - QA-AUTO-TC005-1784568157812"
     },
     {
       "claseContenedor": "group-field-2",
@@ -521,7 +815,7 @@
       "placeholder": null,
       "requerido": true,
       "tipo": "textarea",
-      "valor": "Descripción QA - QA-AUTO-TC005-1784401654721"
+      "valor": "Descripción QA - QA-AUTO-TC005-1784568157812"
     },
     {
       "claseContenedor": "group-field-2",
@@ -566,6 +860,63 @@
   ],
   "headers": [
     {
+      "acciones": [
+        {
+          "deshabilitado": false,
+          "nombre": "Crear",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Editar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": null,
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Pausar",
+          "soloIcono": true
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Importar archivos",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Cerrar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Solicitudes de Empleo",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Agregar nuevo",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Cancelar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "B. Elegibles",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Cerrar",
+          "soloIcono": false
+        }
+      ],
       "botones": [
         "Crear",
         "Editar",
@@ -599,7 +950,7 @@
           "id": null
         }
       ],
-      "texto": "RequisicionesQA-AUTO-TC005-1784401654721CrearEditarPublicada:DocumentosDesliza hacia abajo para actualizar...Suelta para actualizar...Actualizando...Por el momento, no hay datos para mostrarCargando.."
+      "texto": "RequisicionesQA-AUTO-TC005-1784568157812CrearEditarPublicada:DocumentosDesliza hacia abajo para actualizar...Suelta para actualizar...Actualizando...Por el momento, no hay datos para mostrarCargando.."
     }
   ],
   "identificadores": [
@@ -739,7 +1090,7 @@
     }
   ],
   "titulo": "Triple",
-  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19gMi3SQN8kM2P41yGrCTp7X91fIXGkgTp__HudK1L8Eoh39SDOHnMXK5jgJTMhXsEZYVNQba9qMw",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19J1SoRGnQpef46WTcvL6kSx457nzdLyrsKZ9v_eZZu7FAYSUlZCcTas6PPs3uhNVYRRjN-AAGYyw",
   "validaciones": {
     "camposInvalidos": [],
     "notifyVisible": ""

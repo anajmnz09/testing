@@ -1,5 +1,13 @@
+const crypto = require('crypto');
 const logger = require('./logger');
 const screenMetadata = require('./screenMetadata');
+
+/**
+ * VERSIÓN del inspector. Se sube a mano cuando cambia el SIGNIFICADO de la
+ * metadata (campos nuevos que los tests van a consultar, criterios distintos…).
+ * Sirve como etiqueta legible en el JSON y para invalidar caches a propósito.
+ */
+const VERSION = 2;
 
 /**
  * Inspector GENÉRICO de pantallas. Toma una "radiografía" del DOM de cualquier
@@ -19,6 +27,19 @@ const screenMetadata = require('./screenMetadata');
 function _snapshotEnBrowser() {
   const txt = (el) => (el && (el.textContent || '').trim()) || '';
   const attr = (el, a) => (el && el.getAttribute ? el.getAttribute(a) : null) || null;
+
+  // Nombre ACCESIBLE de un control: lo que describe la acción cuando no hay
+  // texto visible (botones solo ícono). Nunca incluye el `src` base64.
+  const nombreAccesible = (b) => {
+    const img = b.querySelector ? b.querySelector('img') : null;
+    return (
+      [attr(b, 'title'), attr(b, 'aria-label'), attr(b, 'alt'),
+        img ? attr(img, 'title') : null, img ? attr(img, 'alt') : null,
+        img ? attr(img, 'aria-label') : null]
+        .filter(Boolean)
+        .join(' | ') || null
+    );
+  };
 
   // Tipos DevExtreme, del más específico al más genérico (un selectbox también
   // contiene un dx-textbox por dentro, por eso el orden importa).
@@ -101,6 +122,14 @@ function _snapshotEnBrowser() {
       labels: labels.slice(0, 25),
       switches,
       botones: Array.from(h.querySelectorAll('.dx-button')).map((b) => txt(b)).filter(Boolean),
+      // `botones` (arriba) solo lista los que tienen TEXTO — se mantiene tal cual
+      // por compatibilidad. `acciones` agrega los solo-ícono con su nombre
+      // accesible, que son los que hacen falta para automatizar el header.
+      acciones: Array.from(h.querySelectorAll('.dx-button, button, [role="button"]')).map((b) => ({
+        nombre: txt(b) || nombreAccesible(b),
+        soloIcono: !txt(b) && !!(b.querySelector && b.querySelector('img, svg, i')),
+        deshabilitado: (b.className || '').includes('dx-state-disabled') || !!b.disabled,
+      })),
     });
   });
 
@@ -123,13 +152,24 @@ function _snapshotEnBrowser() {
   });
 
   // --- Botones ---
-  const botones = Array.from(document.querySelectorAll('.dx-button, button')).map((b) => ({
-    texto: txt(b),
-    id: attr(b, 'id'),
-    dataTestId: attr(b, 'data-testid'),
-    deshabilitado: (b.className || '').includes('dx-state-disabled') || !!b.disabled,
-    clase: (b.className || '').slice(0, 120),
-  })).filter((b) => b.texto || b.id);
+  // Se capturan también los botones SOLO ÍCONO (sin texto ni id): son muy
+  // comunes en los headers de la app (Pausar, Editar…) y antes se descartaban,
+  // de modo que la metadata cacheada no servía para localizarlos. Se guarda su
+  // NOMBRE ACCESIBLE (title/aria-label/alt del ícono) — nunca el `src` base64,
+  // que es enorme y no describe la acción; de él solo se registra si existe.
+  const botones = Array.from(document.querySelectorAll('.dx-button, button, [role="button"]')).map((b) => {
+    const img = b.querySelector('img');
+    return {
+      texto: txt(b),
+      id: attr(b, 'id'),
+      dataTestId: attr(b, 'data-testid'),
+      nombreAccesible: nombreAccesible(b),
+      soloIcono: !txt(b) && !!b.querySelector('img, svg, i'),
+      iconoEmbebido: !!(img && /^data:image\//.test(img.getAttribute('src') || '')),
+      deshabilitado: (b.className || '').includes('dx-state-disabled') || !!b.disabled,
+      clase: (b.className || '').slice(0, 120),
+    };
+  }).filter((b) => b.texto || b.id || b.nombreAccesible || b.soloIcono);
 
   // --- Grids ---
   const grids = Array.from(document.querySelectorAll('.dx-datagrid')).map((g) => {
@@ -188,6 +228,28 @@ function _snapshotEnBrowser() {
 /* eslint-enable no-undef */
 
 /**
+ * FIRMA automática del inspector: hash del código que corre en el browser.
+ *
+ * Es el mecanismo que hace la metadata AUTOGESTIONADA: cualquier cambio en
+ * `_snapshotEnBrowser` (aunque sea un campo nuevo y nadie se acuerde de subir
+ * `VERSION`) produce una firma distinta, y la caché se regenera sola la próxima
+ * vez que un test pase por esa pantalla. Si nada cambió, la firma es idéntica y
+ * NO se re-inspecciona nada.
+ */
+function firma() {
+  return crypto
+    .createHash('sha1')
+    .update(_snapshotEnBrowser.toString())
+    .digest('hex')
+    .slice(0, 12);
+}
+
+/** Sello que identifica al inspector actual (se persiste en cada JSON). */
+function sello() {
+  return { version: VERSION, firma: firma() };
+}
+
+/**
  * Toma la radiografía de la pantalla actual.
  * @returns {Promise<object>} metadata serializable
  */
@@ -197,20 +259,38 @@ async function inspeccionar(driver) {
 
 /**
  * Inspecciona la pantalla actual y la persiste en la caché de metadata.
- * Si ya existe y no se fuerza, NO vuelve a inspeccionar (ese es el punto: no
- * re-explorar pantallas ya conocidas).
- * @returns {Promise<{nombre:string, ruta:string|null, data:object, desdeCache:boolean}>}
+ *
+ * METADATA AUTOGESTIONADA: si ya existe una caché GENERADA POR ESTE MISMO
+ * inspector (mismo sello), no se re-inspecciona nada. Si la caché quedó
+ * desactualizada respecto del inspector actual —o falta, o está corrupta— se
+ * regenera sola y se loguea el motivo. Nunca hace falta borrar JSONs a mano.
+ *
+ * @param {boolean} [opts.forzar] re-inspecciona aunque la caché esté vigente.
+ * @returns {Promise<{nombre:string, ruta:string|null, data:object, desdeCache:boolean, motivo:string}>}
  */
 async function inspeccionarYGuardar(driver, nombre, { forzar = false, extra = {} } = {}) {
-  if (!forzar && screenMetadata.existe(nombre)) {
-    logger.info(`screenInspector: "${nombre}" ya estaba en caché, no se re-inspecciona`);
-    return { nombre, ruta: screenMetadata.rutaDe(nombre), data: screenMetadata.leer(nombre), desdeCache: true };
+  const selloActual = sello();
+  const estado = screenMetadata.esValida(nombre, selloActual);
+
+  if (!forzar && estado.valida) {
+    logger.info(`screenInspector: "${nombre}" ya estaba en caché y sigue vigente, no se re-inspecciona`);
+    return {
+      nombre,
+      ruta: screenMetadata.rutaDe(nombre),
+      data: screenMetadata.leer(nombre),
+      desdeCache: true,
+      motivo: estado.motivo,
+    };
   }
-  logger.info(`screenInspector: inspeccionando pantalla "${nombre}"`);
+
+  const motivo = forzar ? 'forzado' : estado.motivo;
+  logger.info(`screenInspector: inspeccionando pantalla "${nombre}" (motivo: ${motivo})`);
   const data = await inspeccionar(driver);
-  const ruta = screenMetadata.guardar(nombre, { ...data, ...extra });
-  logger.info(`screenInspector: metadata de "${nombre}" guardada en ${ruta}`);
-  return { nombre, ruta, data, desdeCache: false };
+  const ruta = screenMetadata.guardar(nombre, { ...data, ...extra }, selloActual);
+  logger.info(
+    `screenInspector: metadata de "${nombre}" guardada en ${ruta} (inspector v${selloActual.version}/${selloActual.firma})`
+  );
+  return { nombre, ruta, data, desdeCache: false, motivo };
 }
 
-module.exports = { inspeccionar, inspeccionarYGuardar };
+module.exports = { VERSION, firma, sello, inspeccionar, inspeccionarYGuardar };

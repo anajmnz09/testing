@@ -28,44 +28,68 @@ async function abrirListado(driver) {
 }
 
 /**
- * Busca la primera requisición con `estado` cuyo switch "Publicada" esté
- * APAGADO, es decir, publicable.
+ * Vuelve al LISTADO de Requisiciones desde cualquier pantalla del módulo,
+ * usando el menú del módulo: es el flujo normal del usuario, sin re-login ni
+ * reingreso al módulo. Deja el listado con filas cargadas.
+ *
+ * Estaba embebido dentro del recorrido de `buscarRequisicionPublicable`; se
+ * extrajo para que cualquier caso pueda reutilizarlo (el original lo sigue
+ * usando a través de esta misma función).
+ */
+async function volverAlListado(driver) {
+  const listado = new RequisicionesPage(driver);
+  await listado.volverAlListado();
+  await listado.esperarFilas();
+  logger.info('requisicionesFlow: de vuelta en el listado de Requisiciones');
+  return listado;
+}
+
+/**
+ * RECORRIDO GENÉRICO del listado: abre requisiciones con un `estado` dado hasta
+ * encontrar una que cumpla el criterio `esApta`, y devuelve su detalle abierto.
+ *
+ * Es el motor que comparten todos los casos que necesitan "una requisición en
+ * tal estado" (publicar, pausar, y los que vengan). Lo que cambia entre casos es
+ * SOLO el criterio de aptitud, que se inyecta.
  *
  * Comportamiento según la política de ejecución del framework:
- *  - Si la requisición abierta ya está publicada, NO reinicia el flujo ni
- *    vuelve a loguearse: regresa al listado por el menú del módulo (flujo normal
- *    del usuario) y sigue con la siguiente.
+ *  - Si la requisición abierta no sirve, NO reinicia el flujo ni vuelve a
+ *    loguearse: regresa al listado por el menú del módulo y sigue con la
+ *    siguiente.
  *  - El recorrido es ACOTADO por `maxRevisadas` (sin ciclos infinitos).
+ *  - Si el Execution Context indicó una requisición concreta (`nombreRequisicion`,
+ *    que puede ser también un id/código), se va derecho a esa y NO se busca otra.
  *
- * @returns {Promise<{detalle:object|null, indice:number, revisadas:Array, total:number}>}
- *          `detalle` es la RequisicionDetallePage lista para publicar, o null si
- *          no se encontró ninguna publicable dentro del límite.
+ * @param {object}   opts.esApta  async (detalle) => boolean. Por defecto, la
+ *                                primera requisición del estado ya es apta.
+ * @returns {Promise<{detalle:object|null, dirigido:boolean, apta:boolean,
+ *                    indice:number, revisadas:Array, total:number}>}
  */
-async function buscarRequisicionPublicable(
+async function buscarRequisicionConEstado(
   driver,
-  { estado = 'Autorizada', maxRevisadas = 5, nombreRequisicion } = {}
+  { estado = 'Autorizada', maxRevisadas = 5, nombreRequisicion, esApta } = {}
 ) {
   const listado = new RequisicionesPage(driver);
+  const evaluar = typeof esApta === 'function' ? esApta : async () => true;
 
   // --- Modo DIRIGIDO: el Execution Context indicó una requisición concreta ---
-  // Se va derecho a esa y NO se busca ninguna otra: el usuario pidió ese dato.
   if (nombreRequisicion) {
     logger.info(`requisicionesFlow: modo dirigido por contexto -> "${nombreRequisicion}"`);
     const detalle = await listado.abrirDetalle(nombreRequisicion); // filtra + doble-click (ya existía)
     await screenInspector.inspeccionarYGuardar(driver, 'requisiciones-detalle');
-    const yaPublicada = await detalle.estaPublicada();
+    const apta = await evaluar(detalle);
     return {
       detalle,
       dirigido: true,
       nombreRequisicion,
-      yaPublicada,
+      apta,
       indice: 0,
-      revisadas: [{ indice: 0, datos: [nombreRequisicion], yaPublicada }],
+      revisadas: [{ indice: 0, datos: [nombreRequisicion], apta }],
       total: 1,
     };
   }
 
-  // --- Modo AUTOMÁTICO: comportamiento actual, sin cambios ---
+  // --- Modo AUTOMÁTICO ---
   const total = await listado.contarConEstado(estado);
   const revisadas = [];
   const limite = Math.min(maxRevisadas, total);
@@ -80,20 +104,74 @@ async function buscarRequisicionPublicable(
     // primera vez que se abre un detalle: cachear su metadata para futuras pruebas
     await screenInspector.inspeccionarYGuardar(driver, 'requisiciones-detalle');
 
-    const publicada = await detalle.estaPublicada();
-    revisadas.push({ indice: i, datos, yaPublicada: publicada });
+    const apta = await evaluar(detalle);
+    revisadas.push({ indice: i, datos, apta });
 
-    if (!publicada) {
-      logger.info(`requisicionesFlow: requisición publicable encontrada (índice ${i})`);
-      return { detalle, indice: i, revisadas, total };
+    if (apta) {
+      logger.info(`requisicionesFlow: requisición apta encontrada (índice ${i})`);
+      return { detalle, dirigido: false, apta: true, indice: i, datos, revisadas, total };
     }
 
-    logger.info(`requisicionesFlow: índice ${i} ya está publicada; volviendo al listado`);
-    await listado.volverAlListado(); // menú del módulo: flujo normal, sin re-login
-    await listado.esperarFilas();
+    logger.info(`requisicionesFlow: índice ${i} no cumple el criterio; volviendo al listado`);
+    await volverAlListado(driver); // menú del módulo: flujo normal, sin re-login
   }
 
-  return { detalle: null, dirigido: false, indice: -1, revisadas, total };
+  return { detalle: null, dirigido: false, apta: false, indice: -1, revisadas, total };
 }
 
-module.exports = { abrirListado, buscarRequisicionPublicable };
+/**
+ * Busca la primera requisición con `estado` cuyo switch "Publicada" esté
+ * APAGADO, es decir, publicable.
+ *
+ * Se mantiene con la MISMA firma y el MISMO objeto de retorno de siempre
+ * (`yaPublicada`, `revisadas[].yaPublicada`); por dentro delega el recorrido en
+ * `buscarRequisicionConEstado` para no duplicar la lógica de navegación.
+ *
+ * @returns {Promise<{detalle:object|null, yaPublicada:boolean, indice:number, revisadas:Array, total:number}>}
+ */
+async function buscarRequisicionPublicable(
+  driver,
+  { estado = 'Autorizada', maxRevisadas = 5, nombreRequisicion } = {}
+) {
+  const resultado = await buscarRequisicionConEstado(driver, {
+    estado,
+    maxRevisadas,
+    nombreRequisicion,
+    esApta: async (detalle) => !(await detalle.estaPublicada()),
+  });
+
+  return {
+    ...resultado,
+    yaPublicada: !resultado.apta,
+    revisadas: resultado.revisadas.map(({ indice, datos, apta }) => ({
+      indice,
+      datos,
+      yaPublicada: !apta,
+    })),
+  };
+}
+
+/**
+ * Abre la PRIMERA requisición con `estado` (por defecto "Autorizada") y espera a
+ * que su detalle termine de cargar. No filtra por ningún criterio adicional: si
+ * la primera no sirve para el caso, el test debe fallar con un mensaje claro en
+ * vez de disimularlo abriendo otra.
+ */
+async function abrirPrimeraRequisicionConEstado(driver, opciones = {}) {
+  return buscarRequisicionConEstado(driver, {
+    ...opciones,
+    maxRevisadas: 1,
+    esApta: async (detalle) => {
+      await detalle.esperarCargaCompleta();
+      return true;
+    },
+  });
+}
+
+module.exports = {
+  abrirListado,
+  volverAlListado,
+  buscarRequisicionConEstado,
+  buscarRequisicionPublicable,
+  abrirPrimeraRequisicionConEstado,
+};

@@ -1,0 +1,6 @@
+{
+  "spec": "tests/**/*.spec.js",
+  "require": "tests/support/entornoUnitario.js",
+  "timeout": 5000,
+  "reporter": "spec"
+}
