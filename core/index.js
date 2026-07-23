@@ -26,6 +26,8 @@ module.exports = {
   // Execution Context: DATOS de prueba desacoplados de la lógica del test.
   // (distinto de utils/executionContext.js, que es la metadata del REPORTE)
   testContext: require('./context/testContext'),
+  // resolución de archivos para cargas (Execution Context o fixture por defecto)
+  testFiles: require('./utils/testFiles'),
   // Selection Strategies: cómo se opera cada tipo de control
   strategies: require('./strategies'),
   // bases de capas
@@ -42,6 +44,9 @@ module.exports = {
   Notify: components.Notify,
   // barra de acciones superior de las pantallas de detalle (`forms-header`)
   FormsHeader: components.FormsHeader,
+  // diálogo/modal genérico y carga de archivos sin diálogo del SO
+  Popup: components.Popup,
+  FileUploader: components.FileUploader,
   // acceso al registro completo: const { components } = require('@triple/core')
   components,
   // flujos de negocio reutilizables

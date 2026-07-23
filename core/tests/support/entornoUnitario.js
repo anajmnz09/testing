@@ -19,9 +19,14 @@ const RAIZ_TEMPORAL = fs.mkdtempSync(path.join(os.tmpdir(), 'triple-core-unit-ru
 
 process.env.REPORTS_ROOT = RAIZ_TEMPORAL;
 process.env.RUN_ID = 'unit';
-// Las pruebas unitarias no hablan con ninguna aplicación: se deja explícito
-// para que un .env presente en la máquina no influya en los resultados.
-process.env.BASE_URL = process.env.BASE_URL || '';
+// Las pruebas unitarias no hablan con ninguna aplicación ni usan credenciales.
+// Se PRE-FIJAN vacías (BASE_URL, APP_USERNAME, PASSWORD) antes de que el core
+// cargue el .env: dotenv no sobreescribe una variable ya definida, así que un
+// .env presente en la máquina (necesario para los E2E) no filtra credenciales
+// a la suite unitaria. Es exactamente lo que verifica el contrato de la suite.
+process.env.BASE_URL = '';
+process.env.APP_USERNAME = '';
+process.env.PASSWORD = '';
 
 exports.mochaGlobalTeardown = function () {
   fs.rmSync(RAIZ_TEMPORAL, { recursive: true, force: true });

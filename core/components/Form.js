@@ -96,9 +96,29 @@ class Form extends BaseComponent {
    */
   async _abrirDropdown(label) {
     const campo = await this._elemCampo(label);
-    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', campo);
-    const boton = await campo.findElement(By.css('.dx-dropdowneditor-button, .dx-texteditor-input'));
-    await boton.click();
+    await this._abrirDropdownEn(campo);
+  }
+
+  /**
+   * Abre el dropdown de un selectbox/tagbox a partir de su ELEMENTO RAÍZ (no de
+   * un label). Es la misma mecánica que `_abrirDropdown`, extraída para poder
+   * operar dropdowns que NO viven en un `group-field` con label —por ejemplo, un
+   * `.dx-selectbox` dentro de un popup—. `_abrirDropdown` ahora la reutiliza, así
+   * que no hay lógica duplicada.
+   *
+   * `jsClick`: los selectbox dentro de un popup modal a veces no responden al
+   * click nativo de Selenium (el overlay intercepta el evento); ahí se abre con
+   * un click por JS —verificado en el popup "Importar Documentos"—. El camino por
+   * label mantiene el click nativo de siempre (comportamiento sin cambios).
+   */
+  async _abrirDropdownEn(rootEl, { jsClick = false } = {}) {
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', rootEl);
+    const boton = await rootEl.findElement(By.css('.dx-dropdowneditor-button, .dx-texteditor-input'));
+    if (jsClick) {
+      await this.driver.executeScript('arguments[0].click()', boton);
+    } else {
+      await boton.click();
+    }
     await this.driver.wait(() => this._hayItemVisible(), this._timeout());
   }
 
@@ -123,6 +143,43 @@ class Form extends BaseComponent {
     const item = await this._itemVisiblePorTexto(opcionTexto);
     await item.click();
     await this._esperarOverlayCerrado();
+  }
+
+  /**
+   * Selecciona una opción en un selectbox identificado por un LOCATOR (no por
+   * label). Sirve para los dropdowns que no están en un `group-field` — típico de
+   * popups/diálogos (ej. la clasificación en "Importar Documentos"). Reutiliza
+   * TODA la mecánica de overlay ya verificada (`_itemVisiblePorTexto`,
+   * `_primerItemVisible`, `_esperarOverlayCerrado`), así que no duplica nada.
+   *
+   * @param locator     By.* del `.dx-selectbox`/`.dx-dropdowneditor`
+   * @param valor       texto de la opción; si es vacío/undefined, toma la primera
+   * @returns {Promise<string>} el texto REAL de la opción elegida
+   */
+  async elegirEnSelectbox(locator, valor, intentos = 2) {
+    logger.info(`Form: seleccionar ${valor ? `"${valor}"` : 'primera opción'} en selectbox por locator`);
+    let ultimoError;
+    for (let i = 0; i < intentos; i++) {
+      try {
+        // Se re-localiza el root en CADA intento: en un popup recién montado el
+        // elemento puede quedar stale mientras el modal termina de renderizar.
+        const root = await this.waitVisible(locator);
+        await this._abrirDropdownEn(root, { jsClick: true });
+        const item =
+          valor === undefined || valor === null || valor === ''
+            ? await this._primerItemVisible()
+            : await this._itemVisiblePorTexto(valor);
+        const texto = (await item.getText()).trim();
+        await item.click();
+        await this._esperarOverlayCerrado();
+        return texto;
+      } catch (err) {
+        ultimoError = err;
+        if (!/stale element/i.test(err.message) || i === intentos - 1) throw err;
+        logger.info(`Form: reintentando elegirEnSelectbox tras stale (intento ${i + 1}/${intentos})`);
+      }
+    }
+    throw ultimoError;
   }
 
   /**

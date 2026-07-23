@@ -93,6 +93,48 @@ describe('FormsHeader (unitario)', function () {
       expect(resultado.encontrado).to.equal(false);
       expect(driver.traza.clicks).to.be.empty;
     });
+
+    // La app tiene botones de acción propios que NO son .dx-button, sino
+    // <div class="xxxButton" title="…"> (ej. documentoButton -> "Documentos").
+    // Verificado en el DOM real de la pantalla de requisición.
+    it('encuentra un botón de acción propio de la app (div.xxxButton) por su title', async function () {
+      const driver = crearDriver(
+        header(`
+          <div class="${BOTON}" title="Pausar"><img src="${PNG}"></div>
+          <div class="documentoRequisicion">
+            <div class="documentoButton false" title="Documentos" id="objetivo"><img class="icon" src="${PNG}"></div>
+          </div>`)
+      );
+      const resultado = await new FormsHeader(driver).accionar('documentos', { timeout: TIMEOUT });
+
+      expect(resultado.encontrado).to.equal(true);
+      expect(resultado.via).to.equal('nombre-accesible');
+      expect(driver.traza.clicks[0].id).to.equal('objetivo');
+    });
+
+    it('el div.xxxButton no rompe la búsqueda de otros botones del header', async function () {
+      // pedir "Pausar" con un documentoButton presente sigue resolviendo a Pausar
+      const driver = crearDriver(
+        header(`
+          <div class="${BOTON}" title="Pausar" id="pausar"><img src="${PNG}"></div>
+          <div class="documentoButton" title="Documentos" id="doc"><img src="${PNG}"></div>`)
+      );
+      const resultado = await new FormsHeader(driver).accionar('pausar|pausa', { timeout: TIMEOUT });
+
+      expect(resultado.encontrado).to.equal(true);
+      expect(driver.traza.clicks[0].id).to.equal('pausar');
+    });
+
+    it('la convención *Button (mayúscula) no matchea los internos dx-button-* de DevExtreme', async function () {
+      // dx-button-content / dx-button-has-text (minúscula) NO deben tomarse como
+      // acciones propias: solo el patrón real del control (title) decide.
+      const driver = crearDriver(
+        header(`<div class="${BOTON}"><div class="dx-button-content"><span>Editar</span></div></div>`)
+      );
+      const resultado = await new FormsHeader(driver).esperarBoton('documentos', { timeout: TIMEOUT });
+
+      expect(resultado.encontrado).to.equal(false);
+    });
   });
 
   describe('nunca adivina', function () {

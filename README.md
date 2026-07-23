@@ -66,6 +66,7 @@ testing/                           # raíz del monorepo (npm workspaces)
 │   │   ├── retry.js               # ejecución con intentos ACOTADOS + recuperación entre intentos
 │   │   ├── screenMetadata.js      # caché persistente de metadata + validez del sello del inspector
 │   │   ├── screenInspector.js     # inspector genérico de pantallas (versionado y autogestionado)
+│   │   ├── testFiles.js           # resuelve el archivo a subir (Execution Context o fixture por defecto)
 │   │   ├── paths.js               # rutas de reports/ (historial por ejecución + retención + latest)
 │   │   └── mochaRootHooks.js      # Root Hooks: logging/screenshot/cierre + política ante fallos
 │   │
@@ -88,9 +89,11 @@ testing/                           # raíz del monorepo (npm workspaces)
 │   │   ├── BaseComponent.js       # base de los componentes (extiende UiContext)
 │   │   ├── NavBar.js              # barra superior: logout, volver al dashboard, sync, notif, usuario…
 │   │   ├── DataGrid.js            # grid DevExtreme: buscar, filtrar, crear, paginar, contar filas…
-│   │   ├── Form.js                # formularios DevExtreme POR LABEL (+ setValor con estrategias)
+│   │   ├── Form.js                # formularios DevExtreme POR LABEL (+ setValor, elegirEnSelectbox)
 │   │   ├── Notify.js              # toast `notify_record` (éxito / inválido / error del sistema)
-│   │   └── FormsHeader.js         # header `forms-header`: botones (con y sin texto) y switches
+│   │   ├── FormsHeader.js         # header `forms-header`: botones (dx + `div.xxxButton`) y switches
+│   │   ├── Popup.js               # modal genérico dx-popup (esperar/accionar/cerrar)
+│   │   └── FileUploader.js        # carga de archivos sin diálogo del SO (sendKeys al input oculto)
 │   │
 │   ├── flows/                     # flujos de negocio reutilizables (cruzan varias pantallas)
 │   │   ├── authFlow.js            # login / logout
@@ -104,10 +107,10 @@ testing/                           # raíz del monorepo (npm workspaces)
 │   │
 │   └── tests/                     # === PRUEBAS UNITARIAS del framework (sin Selenium) ===
 │       ├── contrato-suite-unitaria.spec.js  # impide que la suite abra un navegador
-│       ├── components/            # FormsHeader, Notify
+│       ├── components/            # FormsHeader, Notify, Popup, FileUploader
 │       ├── context/               # Execution Context
 │       ├── strategies/            # Selection Strategies
-│       ├── utils/                 # screenMetadata, evidence, logger, paths
+│       ├── utils/                 # screenMetadata, evidence, logger, paths, testFiles
 │       └── support/               # driver simulado (jsdom), proyecto temporal, entorno
 │
 └── reclutamiento/                  # === proyecto del módulo Reclutamiento (consume @triple/core) ===
@@ -116,11 +119,13 @@ testing/                           # raíz del monorepo (npm workspaces)
     ├── pages/                     # Page Objects PROPIOS del módulo
     │   ├── RequisicionesPage.js       # listado (grid): buscar, abrir por estado, leer estado, volver…
     │   ├── RequisicionFormPage.js     # form de creación + mapa control→estrategia
-    │   └── RequisicionDetallePage.js  # detalle: switch "Publicada" y acciones del header
+    │   ├── RequisicionDetallePage.js  # detalle: switch "Publicada" y acciones del header
+    │   └── DocumentosRequisicionPage.js # panel "Documentos" + popup "Importar Documentos"
     ├── flows/                     # flujos de negocio DEL MÓDULO (componen los flows del core)
     │   └── requisicionesFlow.js
     ├── data/                      # datos del módulo
     │   ├── requisiciones.data.js      # textos y config de casos
+    │   ├── documentos.data.js         # clasificaciones y selectores de la carga de documentos
     │   └── execution-context.json     # EXECUTION CONTEXT (editable a mano)
     ├── metadata/screens/          # caché de metadata de pantallas (se versiona, se autogestiona)
     │   ├── requisiciones-listado.json
@@ -138,7 +143,8 @@ testing/                           # raíz del monorepo (npm workspaces)
     │   ├── crear-req-pregunta-personalizada.test.js
     │   ├── crear-req-comentarios.test.js
     │   ├── publicar-requisicion.test.js
-    │   └── pausar-requisicion.test.js
+    │   ├── pausar-requisicion.test.js
+    │   └── importar-archivos-requisicion.test.js
     └── reports/                   # reportes generados de ESTE módulo (no se versiona)
 ```
 
@@ -405,6 +411,7 @@ Cada caso se identifica con un **nombre descriptivo y estable**, no con un códi
 | `crear-req-comentarios.test.js` | `crear-req-comentarios` |
 | `publicar-requisicion.test.js` | `publicar-requisicion` |
 | `pausar-requisicion.test.js` | `pausar-requisicion` |
+| `importar-archivos-requisicion.test.js` | `importar-archivos-requisicion` |
 
 ### Cómo nombrar un caso nuevo
 
@@ -744,12 +751,14 @@ const {
   screenMetadata, screenInspector,
   // Execution Context (DATOS de prueba) + Selection Strategies
   testContext, strategies,
+  // resolución de archivos para cargas (Execution Context o fixture por defecto)
+  testFiles,
   // bases de capas
   UiContext, BasePage, BaseComponent,
   // páginas app-global
   LoginPage, DashboardPage,
   // componentes reutilizables (registro completo en `components`)
-  NavBar, DataGrid, Form, Notify, FormsHeader, components,
+  NavBar, DataGrid, Form, Notify, FormsHeader, Popup, FileUploader, components,
   // flows
   authFlow, navigationFlow,
 } = require('@triple/core');
@@ -801,12 +810,15 @@ await navbar.getUsuario();             // texto del usuario logueado
 
 Barra de acciones superior de las pantallas de detalle (`<div class="forms-header …">`). Muchos de sus botones son **solo ícono**: sin texto, sin `id`, sin `data-testid` y con la imagen embebida como `data:image/png;base64,…`. El componente los localiza por **nombre accesible** (`title` → `aria-label` → `data-testid` → `alt`/`title` del `<img>` → texto visible) y, si no, por el **ícono con nombre** (su `title`, `alt`, `aria-label` o clase). **Nunca** se usa el base64 como selector: es enorme, cambia con cualquier retoque del ícono y no describe la acción.
 
+El conjunto de "clickeables" incluye tanto los `.dx-button` como los **botones de acción propios de la app**, que no son `.dx-button` sino `<div class="xxxButton" title="…">` (ej. `documentoButton` → "Documentos", `seguimientoButton` → "Seguimiento"). Se reconocen por la convención de clase `*Button` (con B mayúscula, que no colisiona con los internos `dx-button-*`). Como la coincidencia es siempre por nombre accesible, ampliar el conjunto nunca clickea de más.
+
 ```js
 const header = await new FormsHeader(driver).listo();
 
 // --- botones ---
 await header.esperarBoton('pausar|pausa');            // { encontrado, via, nombre, deshabilitado, botones }
 await header.accionar('pausar|pausa', { etiqueta: 'Pausar' });  // click + notify ya clasificado
+await header.clickBoton('documentos', { etiqueta: 'Documentos' }); // click SIN esperar notify (abrir panel/menú)
 await header.acciones();                              // inventario del header (diagnóstico para evidencias)
 
 // --- switches del header (Publicada, Activo, …) ---
@@ -821,6 +833,29 @@ Un switch se ubica por su **contenedor propio** (la vía más estable, si el Pag
 `esperarBoton` y `esperarSwitch` **no lanzan** por defecto: devuelven el diagnóstico (incluido el inventario de acciones del header) para que el test decida el assert y muestre un mensaje útil en el reporte. `esperarSwitch` acepta `obligatorio: true` cuando la ausencia del control es un fallo de la pantalla y no un dato.
 
 **Nunca adivina.** Si ninguna vía identifica el control, devuelve `encontrado: false` con el motivo — no usa la posición dentro del header, ni el índice del botón, ni "el único ícono que hay", ni el base64 de la imagen.
+
+### API del componente `Popup`
+
+Modal/diálogo genérico de DevExtreme (`.dx-popup-wrapper` / `.dx-overlay-wrapper`). El popup correcto se identifica por un `contiene` (un selector propio de ESE popup) en vez del texto del título, que rara vez está en un elemento estable. Los botones se accionan por **nombre accesible**, salteando los deshabilitados — mismo criterio de "no adivinar" que `FormsHeader`.
+
+```js
+const popup = new Popup(driver, { contiene: '.clasificacionSelecBox' });
+await popup.esperarVisible();                 // lanza si no aparece
+await popup.accionar('guardar', { etiqueta: 'Guardar' }); // click por nombre; no clickea deshabilitados
+await popup.esperarCerrado();                 // espera a que el modal cierre
+await popup.botones();                        // inventario para diagnóstico
+```
+
+### API del componente `FileUploader`
+
+Carga de archivos **sin abrir el diálogo del sistema operativo**: envía la ruta absoluta directamente al `<input type="file">` oculto (Selenium no puede operar el selector nativo del SO). Elige el input que declara `accept` cuando hay varios, y **falla explícito** si el archivo no existe.
+
+```js
+const uploader = new FileUploader(driver, { selector: '.dx-popup-wrapper input[type="file"]' });
+await uploader.subir('/ruta/absoluta/al/archivo.pdf');   // { ruta, nombre, bytes }
+```
+
+El **qué archivo** subir se resuelve con `testFiles.resolver({ ruta, base })`: usa el archivo indicado en el Execution Context si existe, o genera uno por defecto (fixture en el temp del SO, nunca una ruta hardcodeada). Ver [Execution Context](#execution-context-datos-de-prueba).
 
 ### Helpers de `UiContext` (heredados por toda página/componente)
 

@@ -42,6 +42,24 @@ function crearDom(html = '') {
   // clickear (el header es sticky). Se stubea acá, en la infraestructura de
   // prueba, para no tocar el framework.
   dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
+
+  // jsdom no calcula layout: `offsetWidth`/`offsetHeight` siempre dan 0, así que
+  // los componentes que filtran por VISIBILIDAD (ej. Popup) no podrían probarse.
+  // Se define una visibilidad razonable para la infra de prueba: un elemento es
+  // "visible" salvo que esté explícitamente oculto (display:none, visibility,
+  // atributo hidden, o las clases utilitarias `d-none`/`h-0px` que usa la app).
+  const oculto = (el) => {
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      const st = n.style || {};
+      const cls = n.className && n.className.toString ? n.className.toString() : '';
+      if (st.display === 'none' || st.visibility === 'hidden' || n.hasAttribute('hidden')) return true;
+      if (/\bd-none\b|\bh-0px\b/.test(cls)) return true;
+    }
+    return false;
+  };
+  const dim = { get() { return oculto(this) ? 0 : 10; }, configurable: true };
+  Object.defineProperty(dom.window.HTMLElement.prototype, 'offsetWidth', dim);
+  Object.defineProperty(dom.window.HTMLElement.prototype, 'offsetHeight', dim);
   return dom;
 }
 

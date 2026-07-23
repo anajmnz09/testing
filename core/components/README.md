@@ -17,10 +17,12 @@ Catálogo de los widgets de la app encapsulados una sola vez para todos los mód
 |---|---|
 | `BaseComponent` | Base común: helpers de interacción + `root` opcional |
 | `DataGrid` | Grid DevExtreme: buscar, filtrar, paginar, contar, crear, abrir fila |
-| `Form` | Formularios `group-field` **por label** + Selection Strategies |
-| `FormsHeader` | Barra de acciones superior: botones (con y sin texto) y switches del header |
+| `FileUploader` | Carga de archivos **sin diálogo del SO** (`sendKeys` al `input[type=file]` oculto) |
+| `Form` | Formularios `group-field` **por label** + Selection Strategies; y selectbox por locator (`elegirEnSelectbox`) |
+| `FormsHeader` | Barra de acciones superior: botones `.dx-button` y de acción propios (`div.xxxButton`), y switches del header |
 | `NavBar` | Barra superior de la app: logout, dashboard, sync, notificaciones, usuario |
 | `Notify` | Toast `notify_record` y su clasificación (éxito / inválido / error) |
+| `Popup` | Modal/diálogo genérico (`dx-popup`): esperar visible, accionar botón por nombre, esperar cerrado |
 
 ## Previstos (todavía **no** implementados)
 
@@ -28,11 +30,9 @@ No existen como archivo: se crean el día que un caso real los necesite, siguien
 
 | Componente | Alcance previsto | Señal de que llegó el momento |
 |---|---|---|
-| `Dialog` | Diálogos de confirmación (`¿Estás seguro?`, `¿descartar cambios?`): aceptar / cancelar / leer mensaje | Hoy esa mecánica está repartida entre `NavBar.logout()` y `utils/recovery.js`; al tercer caso conviene unificarla |
-| `Popup` | Modales de contenido (`dx-popup`): abrir, leer, cerrar por X / Esc | Un caso que opere un modal que no sea de confirmación |
+| `Dialog` | Diálogos de confirmación (`¿Estás seguro?`, `¿descartar cambios?`): aceptar / cancelar / leer mensaje | Hoy esa mecánica está repartida entre `NavBar.logout()` y `utils/recovery.js`; al tercer caso conviene unificarla (podría componer `Popup`) |
 | `Toolbar` | Barra de acciones del grid (Crear, Filtro, Exportar…) | Hoy vive dentro de `DataGrid`; se extrae cuando aparezca una toolbar fuera de un grid |
 | `Switch` | Switch DevExtreme genérico **fuera** del header | Hoy lo cubre `FormsHeader` para switches del header y `Form` vía la estrategia `switch` |
 | `Tabs` | Pestañas de una pantalla de detalle: cambiar de pestaña y esperar su carga | Un caso que valide contenido en más de una pestaña |
-| `Uploader` | Carga de archivos (`Importar archivos`) y verificación del adjunto | Un caso que suba documentos a una requisición |
 
 > Antes de crear uno nuevo: revisá si la mecánica ya existe en otro componente. La regla del framework sigue siendo *¿sirve a más de un módulo? → core; ¿es de un módulo? → dentro del módulo*.

@@ -19,6 +19,16 @@ const config = require('../config');
  *   2. **Ícono con nombre**: `img`/`svg`/`i` cuyo `title`, `alt`, `aria-label` o
  *      clase describe la acción → se acciona su contenedor clickeable.
  *
+ * Qué se considera "clickeable" (ver CLICKEABLE): además de `.dx-button`,
+ * `button`, `[role="button"]` y `a`, se incluyen los **botones de acción propios
+ * de la app**, que NO son `.dx-button` sino `<div class="xxxButton" title="…">`
+ * (ej. `documentoButton` → "Documentos", `seguimientoButton` → "Seguimiento").
+ * Se detectan por la convención de clase `*Button` (con B mayúscula), que no
+ * colisiona con los internos de DevExtreme (`dx-button-content`, en minúscula).
+ * La coincidencia SIEMPRE es por nombre accesible, así que ampliar el conjunto
+ * de candidatos no puede seleccionar un botón equivocado: solo permite encontrar
+ * más acciones reales.
+ *
  * Si ninguna vía identifica el botón, **NO se adivina**: no se usa la posición
  * dentro del header, ni el índice del botón, ni "el único ícono que hay". Se
  * devuelve `encontrado: false` junto con el inventario de acciones del header
@@ -49,7 +59,9 @@ function _ubicarEnBrowser(selectorHeader, fuenteRegex, marca) {
   const txt = (el) => ((el && el.textContent) || '').replace(/\s+/g, ' ').trim();
   const at = (el, a) => (el && el.getAttribute ? el.getAttribute(a) : null) || '';
 
-  const CLICKEABLE = '.dx-button, button, [role="button"], a';
+  // `.dx-button` + botones de acción propios de la app (`<div class="xxxButton">`,
+  // B mayúscula, que no matchea los internos `dx-button-*` en minúscula).
+  const CLICKEABLE = '.dx-button, button, [role="button"], a, [class*="Button"]';
 
   // Nombre accesible: todo lo que describa la acción SIN depender del base64.
   const nombreDe = (el) => {
@@ -226,15 +238,17 @@ class FormsHeader extends BaseComponent {
   }
 
   /**
-   * Acciona un botón del header y devuelve el resultado del notify de la app.
+   * Clickea un botón del header por su nombre accesible SIN esperar un notify.
+   * Es para acciones que NO producen un toast (abrir un panel, un menú, navegar):
+   * esperar el notify ahí solo agregaría un timeout muerto.
    *
-   * El click es por JS: el header es sticky y el navbar puede interceptar el
-   * click nativo (mismo criterio ya usado para el switch "Publicada").
+   * No adivina: si no lo identifica o está deshabilitado, NO clickea y devuelve
+   * el diagnóstico para que el test decida.
    *
    * @returns {Promise<{encontrado:boolean, via?:string, nombre?:string, deshabilitado?:boolean,
-   *                    notify:string, exito:boolean, invalido:boolean, errorSistema:boolean, botones:Array}>}
+   *                    accionado:boolean, motivo?:string, botones:Array}>}
    */
-  async accionar(patron, { etiqueta, timeout = config.timeouts.explicitWaitMs, dataQa = DATA_QA } = {}) {
+  async clickBoton(patron, { etiqueta, timeout = config.timeouts.explicitWaitMs, dataQa = DATA_QA } = {}) {
     const nombreAccion = etiqueta || String(patron);
     const info = await this.esperarBoton(patron, { timeout, dataQa });
 
@@ -243,18 +257,32 @@ class FormsHeader extends BaseComponent {
         `FormsHeader: no se encontró el botón "${nombreAccion}" (${info.motivo}). ` +
           `Acciones visibles: ${JSON.stringify(info.botones)}`
       );
-      return { ...info, ...Notify.clasificar('') };
+      return { ...info, accionado: false };
     }
     if (info.deshabilitado) {
       logger.error(`FormsHeader: el botón "${nombreAccion}" está deshabilitado`);
-      return { ...info, ...Notify.clasificar('') };
+      return { ...info, accionado: false };
     }
 
-    logger.info(`FormsHeader: accionando "${nombreAccion}" (vía ${info.via}, nombre "${info.nombre}")`);
+    logger.info(`FormsHeader: click "${nombreAccion}" (vía ${info.via}, nombre "${info.nombre}")`);
     const btn = await this.driver.findElement(By.css(`[data-qa="${dataQa}"]`));
     await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', btn);
     await this.driver.executeScript('arguments[0].click()', btn);
+    return { ...info, accionado: true };
+  }
 
+  /**
+   * Acciona un botón del header y devuelve el resultado del notify de la app.
+   * Compone `clickBoton` (localizar + click) y luego espera el notify.
+   *
+   * @returns {Promise<{encontrado:boolean, via?:string, nombre?:string, deshabilitado?:boolean,
+   *                    notify:string, exito:boolean, invalido:boolean, errorSistema:boolean, botones:Array}>}
+   */
+  async accionar(patron, { etiqueta, timeout = config.timeouts.explicitWaitMs, dataQa = DATA_QA } = {}) {
+    const info = await this.clickBoton(patron, { etiqueta, timeout, dataQa });
+    if (!info.accionado) {
+      return { ...info, ...Notify.clasificar('') };
+    }
     return { ...info, ...(await this.notify.esperarResultado(timeout)) };
   }
 

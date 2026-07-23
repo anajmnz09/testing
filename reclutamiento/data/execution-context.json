@@ -27,8 +27,7 @@
     "nombreRequisicion": "Requisición de prueba con Pregunta Personalizada",
     "pregunta": "",
     "nombreCampo": "",
-        "maxEmpleados": "3"
-
+    "maxEmpleados": "3"
   },
   "crear-req-comentarios": {
     "nombreRequisicion": "",
@@ -42,6 +41,12 @@
     "nombreRequisicion": "",
     "idRequisicion": "1078",
     "estado": ""
-    
+  },
+  "importar-archivos-requisicion": {
+    "nombreRequisicion": "",
+    "idRequisicion": "",
+    "estado": "",
+    "archivo": "",
+    "clasificaciones": ""
   }
 }

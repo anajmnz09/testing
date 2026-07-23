@@ -24,8 +24,10 @@
 module.exports = {
   BaseComponent: require('./BaseComponent'),
   DataGrid: require('./DataGrid'),
+  FileUploader: require('./FileUploader'),
   Form: require('./Form'),
   FormsHeader: require('./FormsHeader'),
   NavBar: require('./NavBar'),
   Notify: require('./Notify'),
+  Popup: require('./Popup'),
 };
