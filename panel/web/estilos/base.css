@@ -1,0 +1,49 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  font-family: var(--fuente);
+  font-size: var(--t-base);
+  color: var(--text);
+  background: var(--canvas);
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "sidebar main"
+    "consola consola";
+  grid-template-rows: 44px 1fr auto;
+  grid-template-columns: 280px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+p {
+  margin: 0 0 var(--s2);
+}
+pre {
+  font-family: var(--mono);
+  font-size: 12px;
+  margin: 0;
+}
+a {
+  color: var(--magenta-600);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+button {
+  font-family: var(--fuente);
+}
+.oculto {
+  display: none !important;
+}

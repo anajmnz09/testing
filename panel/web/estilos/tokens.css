@@ -1,0 +1,60 @@
+/* Tokens: ÚNICA fuente de verdad del sistema visual. Todo deriva de la identidad
+   de marca (#211D34 / #600132 / #DE1579 / #B02D6E). Ver docs/panel-de-control-web-ui-diseno.md */
+:root {
+  /* --- Marca: indigo (cromo oscuro) --- */
+  --indigo-950: #191527;
+  --indigo-900: #211d34;
+  --indigo-800: #2c2740;
+  --indigo-700: #39334f;
+  --indigo-600: #4b4568;
+  --indigo-500: #746c90;
+
+  /* --- Marca: wine (énfasis secundario) --- */
+  --wine-800: #600132;
+  --wine-700: #7a0842;
+
+  /* --- Marca: magenta (acción — ÚNICA alta atención) --- */
+  --magenta-600: #de1579;
+  --magenta-700: #b02d6e;
+  --magenta-800: #93245c;
+  --magenta-tint: #fce9f2;
+
+  /* --- Neutros claros (blanco cálido, sin blanco puro dominante) --- */
+  --canvas: #faf8f6;
+  --surface: #ffffff;
+  --g-50: #f3f0ec;
+  --g-100: #e7e2dc;
+  --g-200: #d6cfc7;
+  --g-300: #bbb4ab;
+  --g-400: #9a938a;
+  --g-500: #6e675f;
+  --g-700: #38332e;
+  --text: #211d34;
+
+  /* --- Estado (apagados, armonizados; error != magenta) --- */
+  --exito: #2e8b62;
+  --exito-bg: #e6f2eb;
+  --exito-bd: #c2e0ce;
+  --warn: #b57a20;
+  --warn-bg: #f6ecd8;
+  --error: #c43c3c;
+  --error-bg: #f7e5e4;
+  --error-bd: #eac3c1;
+  --info: #3e6ea6;
+  --info-bg: #e7eef6;
+
+  /* --- Espaciado (base 4px) --- */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s6: 24px;
+  --s8: 32px;
+  --r-s: 6px;
+  --r-m: 8px;
+
+  /* --- Tipografía --- */
+  --fuente: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --t-base: 13px;
+}

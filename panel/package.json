@@ -1,0 +1,11 @@
+{
+  "name": "panel-de-control",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Panel de control web del framework de automatización (interfaz gráfica aditiva; consume lo que el framework ya genera)",
+  "scripts": {
+    "start": "node anfitrion/servidor.js"
+  },
+  "license": "ISC"
+}

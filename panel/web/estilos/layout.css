@@ -1,0 +1,104 @@
+/* Shell tipo editor de código: cromo oscuro (header/sidebar) + trabajo claro (main) + consola inferior. */
+.app-header {
+  grid-area: header;
+  background: var(--indigo-950);
+  color: var(--canvas);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--s4);
+}
+.marca {
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+.header-der {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+.ind-corrida {
+  background: transparent;
+  border: none;
+  color: var(--info);
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.ind-corrida.activo {
+  opacity: 1;
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+  background: var(--indigo-900);
+  color: var(--canvas);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--indigo-700);
+}
+.seg {
+  display: flex;
+  margin: var(--s3) var(--s3) var(--s2);
+}
+.seg-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--indigo-500);
+  padding: var(--s2);
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.seg-btn.activo {
+  color: var(--canvas);
+  border-bottom-color: var(--magenta-600);
+}
+.buscar {
+  margin: 0 var(--s3) var(--s2);
+  background: var(--indigo-800);
+  border: 1px solid var(--indigo-700);
+  color: var(--canvas);
+  border-radius: var(--r-s);
+  padding: var(--s2);
+  font-family: var(--fuente);
+  font-size: 12px;
+}
+.buscar::placeholder {
+  color: var(--indigo-500);
+}
+.buscar:focus-visible {
+  outline: 2px solid var(--magenta-600);
+  outline-offset: 1px;
+}
+.tree {
+  overflow: auto;
+  flex: 1;
+  padding-bottom: var(--s4);
+}
+
+.app-main {
+  grid-area: main;
+  background: var(--canvas);
+  overflow: auto;
+  padding: var(--s6);
+}
+
+.app-consola {
+  grid-area: consola;
+  background: var(--indigo-950);
+  color: #e9e6ef;
+  max-height: 38vh;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--indigo-700);
+}
+
+@media (max-width: 1024px) {
+  body {
+    grid-template-columns: 220px 1fr;
+  }
+}

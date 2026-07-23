@@ -1,0 +1,446 @@
+/* --- Árbol --- */
+.tree-nodo.colapsado > .tree-hijos {
+  display: none;
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  height: 28px;
+  cursor: pointer;
+  color: var(--canvas);
+  position: relative;
+}
+.tree-row:hover {
+  background: var(--indigo-800);
+}
+.tree-row.sel {
+  background: var(--indigo-700);
+}
+.tree-row.sel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--magenta-600);
+}
+.tree-lbl {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+.tree-modulo > .tree-row .tree-lbl {
+  color: #fff;
+  font-weight: 500;
+}
+.tree-caso .tree-lbl {
+  color: #d7d3e2;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.chev {
+  width: 14px;
+  color: var(--indigo-500);
+  font-size: 10px;
+  text-align: center;
+}
+.chev.vacio {
+  visibility: hidden;
+}
+.tree-der {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding-right: var(--s2);
+}
+.glifo {
+  font-size: 11px;
+}
+.g-passed {
+  color: var(--exito);
+}
+.g-failed {
+  color: var(--error);
+}
+.g-sin-ejecutar {
+  color: var(--indigo-500);
+}
+.tree-run {
+  opacity: 0;
+  color: var(--canvas);
+}
+.tree-row:hover .tree-run {
+  opacity: 0.85;
+}
+
+/* --- Botones --- */
+.btn {
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: var(--r-s);
+  padding: 0 var(--s3);
+  height: 32px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn--primario {
+  background: var(--magenta-600);
+  color: #fff;
+  border-color: var(--magenta-600);
+}
+.btn--primario:hover {
+  background: var(--magenta-700);
+  border-color: var(--magenta-700);
+}
+.btn--primario:active {
+  background: var(--magenta-800);
+}
+.btn--secundario {
+  background: var(--canvas);
+  border-color: var(--g-200);
+  color: var(--g-700);
+}
+.btn--secundario:hover {
+  background: var(--g-50);
+}
+.btn--ghost {
+  background: transparent;
+  border: none;
+  color: var(--g-500);
+  height: 28px;
+}
+.btn--ghost:hover {
+  background: var(--g-50);
+}
+.btn--icono {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-s);
+}
+.btn--icono:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--magenta-600);
+  outline-offset: 2px;
+}
+
+/* --- Chips de estado --- */
+.chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--r-s);
+  border: 1px solid transparent;
+}
+.chip--exito {
+  color: var(--exito);
+  background: var(--exito-bg);
+  border-color: var(--exito-bd);
+}
+.chip--error {
+  color: var(--error);
+  background: var(--error-bg);
+  border-color: var(--error-bd);
+}
+.chip--info {
+  color: var(--info);
+  background: var(--info-bg);
+}
+.chip--warn {
+  color: var(--warn);
+  background: var(--warn-bg);
+}
+.chip--neutro {
+  color: var(--g-500);
+  background: var(--g-50);
+  border-color: var(--g-100);
+}
+
+/* --- Tarjeta del caso --- */
+.caso-head {
+  border-bottom: 1px solid var(--g-100);
+  padding-bottom: var(--s3);
+}
+.caso-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+.caso-titulo h1 {
+  font-family: var(--mono);
+}
+.caso-meta {
+  color: var(--g-500);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.caso-acciones {
+  display: flex;
+  gap: var(--s2);
+  margin: var(--s4) 0;
+  flex-wrap: wrap;
+}
+
+/* --- Colapsables --- */
+.colap {
+  border-bottom: 1px solid var(--g-100);
+}
+.colap-cab {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s3) 0;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.colap-cab .chev {
+  transition: transform 0.15s;
+}
+.colap.abierto > .colap-cab .chev {
+  transform: rotate(90deg);
+}
+.colap-num {
+  color: var(--g-400);
+  font-weight: 400;
+  font-size: 12px;
+}
+.colap-cuerpo {
+  display: none;
+  padding: 0 0 var(--s4);
+}
+.colap.abierto > .colap-cuerpo {
+  display: block;
+}
+
+/* --- Formulario (Execution Context) --- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  max-width: 540px;
+}
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.campo-lbl {
+  font-size: 12px;
+  color: var(--g-500);
+  font-family: var(--mono);
+}
+.campo input[type="text"] {
+  height: 32px;
+  border: 1px solid var(--g-200);
+  border-radius: var(--r-s);
+  padding: 0 var(--s3);
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface);
+}
+.campo input:focus-visible {
+  outline: 2px solid var(--magenta-600);
+  outline-offset: 1px;
+}
+.form-acc {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s3);
+}
+.form-estado {
+  color: var(--exito);
+  font-size: 12px;
+}
+
+/* --- Galería / screenshots --- */
+.err-headline {
+  background: var(--error-bg);
+  border: 1px solid var(--error-bd);
+  color: var(--error);
+  padding: var(--s3);
+  border-radius: var(--r-s);
+  margin-bottom: var(--s3);
+}
+.galeria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+.galeria figure {
+  margin: 0;
+  width: 180px;
+}
+.thumb {
+  width: 180px;
+  height: 110px;
+  object-fit: cover;
+  border: 1px solid var(--g-200);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  background: var(--surface);
+}
+.thumb--fallo {
+  border-color: var(--error);
+}
+.galeria figcaption {
+  font-size: 11px;
+  color: var(--g-500);
+  margin-top: 4px;
+}
+.shot-destacada {
+  max-width: 100%;
+  border: 1px solid var(--g-200);
+  border-radius: var(--r-m);
+  margin-top: var(--s3);
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(25, 21, 39, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 92vw;
+  max-height: 92vh;
+  border-radius: var(--r-m);
+}
+
+/* --- Evidencias / log / código / reporte --- */
+.evrow {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--g-100);
+}
+.evtipo {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--g-500);
+  background: var(--g-50);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.evnom {
+  flex: 1;
+  font-size: 12px;
+}
+.logbox {
+  background: var(--indigo-950);
+  color: #e9e6ef;
+  padding: var(--s3);
+  border-radius: var(--r-s);
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+.codigo {
+  background: var(--g-50);
+  border: 1px solid var(--g-100);
+  border-radius: var(--r-s);
+  padding: var(--s3);
+  max-height: 440px;
+  overflow: auto;
+}
+.rep-bar {
+  margin-bottom: var(--s2);
+}
+.rep-frame {
+  width: 100%;
+  height: 62vh;
+  border: 1px solid var(--g-200);
+  border-radius: var(--r-s);
+  background: var(--surface);
+}
+
+/* --- Consola en vivo --- */
+.con-cab {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--indigo-700);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.con-tit {
+  color: #e9e6ef;
+}
+.con-estado {
+  flex: 1;
+  color: var(--indigo-500);
+}
+.con-cuerpo {
+  overflow: auto;
+  padding: var(--s2) var(--s4);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.con-linea {
+  white-space: pre-wrap;
+}
+
+/* --- Historial (en el sidebar) --- */
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--canvas);
+  padding: var(--s2) var(--s3);
+  cursor: pointer;
+  font-size: 12px;
+}
+.hist-row:hover {
+  background: var(--indigo-800);
+}
+.hist-fecha {
+  flex: 1;
+}
+.hist-nums {
+  font-family: var(--mono);
+  color: var(--indigo-500);
+}
+
+/* --- Estados vacíos / carga --- */
+.vacio {
+  text-align: center;
+  color: var(--g-500);
+  padding: var(--s8);
+}
+.vacio-ico {
+  font-size: 28px;
+  color: var(--g-300);
+  margin-bottom: var(--s2);
+}
+.vacio-min {
+  color: var(--g-500);
+  font-size: 12px;
+}
+.cargando {
+  color: var(--g-500);
+}

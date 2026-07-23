@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Panel de Automatización</title>
+    <link rel="stylesheet" href="/estilos/tokens.css" />
+    <link rel="stylesheet" href="/estilos/base.css" />
+    <link rel="stylesheet" href="/estilos/layout.css" />
+    <link rel="stylesheet" href="/estilos/componentes.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="marca">◆ <span>Panel de Automatización</span></div>
+      <div class="header-der">
+        <span class="chip chip--neutro" id="ambiente">local</span>
+        <button class="btn--icono" id="refrescar" title="Refrescar">⟳</button>
+        <button class="ind-corrida" id="ind-corrida" title="Ver corrida">● corrida activa</button>
+      </div>
+    </header>
+
+    <aside class="app-sidebar">
+      <div class="seg">
+        <button id="tg-tests" class="seg-btn activo">Tests</button>
+        <button id="tg-hist" class="seg-btn">Historial</button>
+      </div>
+      <input class="buscar" id="search" placeholder="buscar test…" />
+      <div class="tree" id="tree"></div>
+    </aside>
+
+    <main class="app-main" id="detalle"></main>
+
+    <section class="app-consola oculto" id="consola"></section>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
