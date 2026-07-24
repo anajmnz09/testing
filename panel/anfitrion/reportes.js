@@ -104,7 +104,6 @@ function detalleTest(modulo, runId, caso, t) {
     estado: estadoDe(t),
     duracion: t.duration || 0,
     error: t.err && t.err.message ? { mensaje: t.err.message, stack: t.err.estack || '' } : null,
-    reporte: urlArtefacto(modulo, runId, `${D.html}/index.html`),
     screenshots: artefactosCaso(modulo, runId, caso, D.screenshots, ['.png', '.jpg', '.jpeg']),
     evidencias: evidenciasCaso(modulo, runId, caso),
     log: fs.existsSync(path.join(repDir(modulo), runId, D.logs, D.log))
@@ -177,10 +176,7 @@ function resumen(modulo, runId) {
 
 function historial(modulo) {
   return {
-    corridas: corridas(modulo).map((r) => ({
-      ...resumen(modulo, r),
-      reporte: urlArtefacto(modulo, r, `${D.html}/index.html`),
-    })),
+    corridas: corridas(modulo).map((r) => resumen(modulo, r)),
   };
 }
 
@@ -194,7 +190,6 @@ function detalleCorrida(modulo, runId) {
   }));
   return {
     ...resumen(modulo, runId),
-    reporte: urlArtefacto(modulo, runId, `${D.html}/index.html`),
     log: fs.existsSync(path.join(repDir(modulo), runId, D.logs, D.log))
       ? { url: urlArtefacto(modulo, runId, `${D.logs}/${D.log}`) }
       : null,

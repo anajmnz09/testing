@@ -48,7 +48,11 @@ const CURRENT = getRunPaths(RUN_ID);
 
 function ensureRunDirs(runId = RUN_ID) {
   const p = getRunPaths(runId);
-  [p.runDir, p.htmlDir, p.jsonDir, p.screenshotsDir, p.logsDir, p.evidenceDir].forEach((dir) => {
+  // Nota: `htmlDir` ya NO se crea acá — el reporte HTML de Mochawesome se
+  // descontinuó como salida automática (el Panel de Control es el visor oficial).
+  // La ruta `p.htmlDir` sigue definida por si el bin manual report:generate se
+  // invoca explícitamente (marge crea la carpeta él mismo).
+  [p.runDir, p.jsonDir, p.screenshotsDir, p.logsDir, p.evidenceDir].forEach((dir) => {
     fs.mkdirSync(dir, { recursive: true });
   });
   return p;

@@ -69,7 +69,8 @@ export async function abrir(cont, nodo, onRun) {
     cont.append(colapsable("Screenshots", ult.screenshots.length, (c) => reporte.screenshots(c, ult.screenshots)));
     cont.append(colapsable("Evidencias", ult.evidencias.length, (c) => reporte.evidencias(c, ult.evidencias)));
     if (ult.log) cont.append(colapsable("Logs", null, (c) => reporte.log(c, ult.log)));
-    cont.append(colapsable("Reporte HTML", null, (c) => reporte.reporteHtml(c, ult.reporte)));
+    // (Sección "Reporte HTML" removida: el Panel es el visor oficial y el HTML de
+    //  Mochawesome ya no se genera. Screenshots/evidencias/logs siguen igual.)
   } else {
     cont.append(vacio("Sin ejecuciones todavía."));
   }

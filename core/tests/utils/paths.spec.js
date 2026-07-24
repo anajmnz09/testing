@@ -103,12 +103,17 @@ describe('utilidades de archivos y reportes (unitario)', function () {
       expect(fs.readFileSync(copiado, 'utf8')).to.equal('<h1>reporte</h1>');
     });
 
-    it('crea todas las carpetas que la corrida necesita', function () {
+    it('crea todas las carpetas que la corrida necesita (JSON, screenshots, logs, evidencias)', function () {
       const p = paths.ensureRunDirs('2026-07-21');
 
-      [p.htmlDir, p.jsonDir, p.screenshotsDir, p.logsDir, p.evidenceDir].forEach((dir) =>
+      [p.jsonDir, p.screenshotsDir, p.logsDir, p.evidenceDir].forEach((dir) =>
         expect(fs.existsSync(dir), dir).to.equal(true)
       );
+    });
+
+    it('NO crea la carpeta html (el reporte HTML de Mochawesome se descontinuó)', function () {
+      const p = paths.ensureRunDirs('2026-07-21');
+      expect(fs.existsSync(p.htmlDir)).to.equal(false);
     });
 
     it('los reportes cuelgan del proyecto que corre los tests, no del core', function () {

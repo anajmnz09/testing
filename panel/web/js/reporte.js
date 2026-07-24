@@ -66,22 +66,5 @@ export function evidencias(c, evs) {
   c.append(l);
 }
 
-/** El reporte pesa: se carga bajo demanda o se abre en pestaña. */
-export function reporteHtml(c, urlReporte) {
-  c.append(
-    el(
-      "button",
-      {
-        class: "btn btn--secundario",
-        onclick: () => {
-          c.innerHTML = "";
-          c.append(
-            el("div", { class: "rep-bar" }, el("a", { class: "btn btn--ghost", href: urlReporte, target: "_blank" }, "Abrir ↗")),
-            el("iframe", { class: "rep-frame", src: urlReporte })
-          );
-        },
-      },
-      "Cargar reporte"
-    )
-  );
-}
+// (Se removió `reporteHtml`: el reporte HTML de Mochawesome ya no se genera y el
+//  Panel es el visor oficial. Screenshots, evidencias y logs se muestran arriba.)

@@ -4,7 +4,10 @@ const path = require('path');
 const { spawn } = require('child_process');
 const config = require('../config');
 const paths = require('../utils/paths');
-const { generateHtmlReport } = require('./generate-report');
+// El reporte HTML de Mochawesome se descontinuó como salida automática: el Panel
+// de Control es el visor oficial y consume directamente el JSON + artefactos de
+// reports/<RUN_ID>/. El generador (scripts/generate-report.js) sigue disponible
+// como bin manual opcional (npm run report:generate), pero ya NO se invoca acá.
 
 function toGlobPath(p) {
   return p.split(path.sep).join('/');
@@ -97,9 +100,9 @@ async function main() {
 
   const { exitCode, logPath } = await runMocha(target);
 
-  console.log('\nGenerando reporte HTML...');
-  await generateHtmlReport(paths.RUN_ID);
-
+  // (Se removió la generación automática del reporte HTML; todo el resto de la
+  //  ejecución —JSON de resultados, screenshots, evidencias, logs, metadata,
+  //  historial y retención— continúa exactamente igual.)
   paths.updateLatest(paths.RUN_ID);
 
   const deleted = paths.pruneOldRuns(config.reports.keep);
@@ -107,8 +110,7 @@ async function main() {
     console.log(`Retención (KEEP_REPORTS=${config.reports.keep}): se eliminaron ${deleted.length} ejecución(es) antigua(s): ${deleted.join(', ')}`);
   }
 
-  console.log(`Reporte HTML: ${path.relative(paths.ROOT_DIR, path.join(paths.LATEST_DIR, 'html', 'index.html'))}`);
-  console.log(`Reporte de esta ejecución: reports/${paths.RUN_ID}/html/index.html`);
+  console.log(`Resultados en reports/${paths.RUN_ID}/ (JSON + screenshots + evidencias + logs) — visibles en el Panel de Control.`);
   console.log(`Log de ejecución: ${path.relative(paths.ROOT_DIR, logPath)}`);
 
   process.exitCode = exitCode;

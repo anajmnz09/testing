@@ -1,6 +1,5 @@
 import { el, chipEstado } from "./componentes.js";
 import * as api from "./api.js";
-import * as reporte from "./reporte.js";
 
 // Historial = las corridas que el framework ya conserva (reports/<RUN_ID>/).
 // Sin base de datos, sin métricas: una lista.
@@ -24,7 +23,7 @@ export async function render(cont, modulo, onCorrida) {
   }
 }
 
-/** Detalle de una corrida en el panel principal (reutiliza los visores). */
+/** Detalle (resumen) de una corrida en el panel principal. */
 export async function abrirCorrida(cont, modulo, runId) {
   cont.innerHTML = "";
   cont.append(el("div", { class: "cargando" }, "Cargando…"));
@@ -34,7 +33,6 @@ export async function abrirCorrida(cont, modulo, runId) {
     el("div", { class: "caso-head" }, el("div", { class: "caso-titulo" }, el("h1", {}, `Corrida ${d.fecha}`), chipEstado(d.estado))),
     el("p", { class: "caso-meta", style: "margin-top:8px" }, `${d.pasaron}/${d.total} aprobados`)
   );
-  const frame = el("div", {});
-  reporte.reporteHtml(frame, d.reporte);
-  cont.append(frame);
+  // (Se removió el visor del reporte HTML; el detalle de cada caso —con sus
+  //  screenshots, evidencias y logs— sigue accesible desde el árbol de tests.)
 }
