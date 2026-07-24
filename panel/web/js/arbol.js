@@ -4,6 +4,11 @@ import { el, chevron, capitalizar } from "./componentes.js";
 // play aparece al hover para ejecutar sin abrir el detalle.
 const GLIFO = { passed: "✓", failed: "✕", "sin-ejecutar": "○", running: "◍", pending: "○" };
 
+// Indicador de estado por test (círculo ○ / ✓ / ✕) junto al nombre en el árbol.
+// DESACTIVADO temporalmente a pedido (solo visual; el estado se sigue calculando
+// y usándose en el detalle). Para REACTIVARLO: poner en true.
+const MOSTRAR_GLIFO_ESTADO = false;
+
 export function render(cont, datos, onSelect, onRun) {
   cont.innerHTML = "";
   if (!datos.modulos.length) {
@@ -29,7 +34,7 @@ function nodo(n, onSelect, onRun, nivel) {
   // los casos conservan su nombre descriptivo real (kebab).
   const lbl = el("span", { class: "tree-lbl" }, esGrupo ? capitalizar(n.nombre) : n.nombre);
   const der = el("span", { class: "tree-der" });
-  if (n.tipo === "caso" && n.estado) {
+  if (MOSTRAR_GLIFO_ESTADO && n.tipo === "caso" && n.estado) {
     der.append(el("span", { class: `glifo g-${n.estado}` }, GLIFO[n.estado] || "○"));
   }
   der.append(
