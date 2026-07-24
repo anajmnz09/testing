@@ -20,6 +20,21 @@ const OPCIONES_SWITCH_PUBLICADA = {
   dataQa: 'switch-publicada',
 };
 
+// Compartir (botón `CompartirButton_*` del header). Se localiza por su CLASE
+// estable y distintiva —no por nombre accesible—: el tooltip del botón cambia
+// según el estado (publicada: "Copiar enlace…"; no publicada: "Habilite la
+// opción 'Publicada'…"), así que un match por nombre sería frágil. Todos los
+// selectores están verificados contra el DOM real de la app.
+const SEL_COMPARTIR = {
+  boton: '[class*="CompartirButton"]',
+  clickable: '[class*="documentoButton"]',
+  tooltip: '[class*="compartir_btn_tooltip_text"]',
+  popup: '[class*="compartir_modal"]',
+  titulo: 'Compartir enlace público de la vacante',
+  enlace: '[class*="link_input_field"]',
+  copiar: '[class*="copy_badge_btn"]',
+};
+
 /**
  * Vista de detalle de una requisición (se abre con doble-click en la fila del
  * grid). Usa la misma estructura group-field que el formulario de creación, así
@@ -183,6 +198,90 @@ class RequisicionDetallePage extends BasePage {
   /** Acciones que ofrece el header (para adjuntar como evidencia si algo falla). */
   async accionesDelHeader() {
     return this.acciones.acciones();
+  }
+
+  // -------------------------------------------------------------------------
+  // Compartir — enlace público de la vacante (botón `CompartirButton_*`)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Estado del botón "Compartir". El tooltip refleja el estado REAL de la app:
+   *  - publicada    -> "Copiar enlace al formulario de solicitud externa."
+   *  - no publicada -> "Habilite la opción 'Publicada' para poder compartir…"
+   * No lanza: devuelve diagnóstico { encontrado, habilitado, tooltip }.
+   */
+  async estadoCompartir() {
+    return this.driver.executeScript((sel) => {
+      const txt = (e) => ((e && e.textContent) || '').replace(/\s+/g, ' ').trim();
+      const cont = document.querySelector(sel.boton);
+      if (!cont) return { encontrado: false, habilitado: false, tooltip: null };
+      const btn = cont.querySelector(sel.clickable) || cont;
+      const cls = `${cont.className || ''} ${btn.className || ''}`;
+      const tip = document.querySelector(sel.tooltip);
+      return {
+        encontrado: true,
+        habilitado: !/disabled|state-disabled/i.test(cls),
+        tooltip: tip ? txt(tip) : null,
+      };
+    }, SEL_COMPARTIR);
+  }
+
+  /** True si el popup "Compartir enlace público de la vacante" está visible. */
+  async popupCompartirVisible() {
+    return this.driver.executeScript((sel) => {
+      const vis = (e) => e && e.offsetWidth > 0 && e.offsetHeight > 0;
+      const modal = document.querySelector(sel.popup);
+      if (modal && vis(modal)) return true;
+      return Array.from(document.querySelectorAll('*')).some(
+        (e) => vis(e) && new RegExp(sel.titulo, 'i').test((e.textContent || '').trim())
+      );
+    }, SEL_COMPARTIR);
+  }
+
+  /**
+   * Clickea "Compartir" y espera (acotado) a que aparezca el popup. NO lanza:
+   * devuelve si el popup se abrió. Un botón deshabilitado (requisición no
+   * publicada) no lo abre — ese es el bloqueo esperado.
+   */
+  async abrirCompartir(timeout = config.timeouts.explicitWaitMs) {
+    logger.info('RequisicionDetallePage: intentando abrir Compartir');
+    await this.driver.executeScript((sel) => {
+      const cont = document.querySelector(sel.boton);
+      if (!cont) return;
+      const btn = cont.querySelector(sel.clickable) || cont;
+      btn.scrollIntoView({ block: 'center' });
+      btn.click();
+    }, SEL_COMPARTIR);
+
+    let abierto = false;
+    await this.driver
+      .wait(async () => {
+        abierto = await this.popupCompartirVisible();
+        return abierto;
+      }, timeout)
+      .catch(() => {});
+    return abierto;
+  }
+
+  /** Enlace público mostrado en el popup de Compartir (texto del campo). */
+  async getEnlaceCompartido() {
+    return this.driver.executeScript((sel) => {
+      const f = document.querySelector(sel.enlace);
+      return f ? (f.textContent || f.value || '').trim() : null;
+    }, SEL_COMPARTIR);
+  }
+
+  /**
+   * Clickea "Copiar" en el popup y devuelve el resultado del notify de la app.
+   * El texto de éxito real es "Enlace copiado al portapapeles".
+   */
+  async copiarEnlace(timeout = config.timeouts.explicitWaitMs) {
+    logger.info('RequisicionDetallePage: copiar enlace público');
+    await this.driver.executeScript((sel) => {
+      const b = document.querySelector(sel.copiar);
+      if (b) b.click();
+    }, SEL_COMPARTIR);
+    return this.notify.esperarResultado(timeout);
   }
 
   /**

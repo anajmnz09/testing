@@ -48,5 +48,13 @@
     "estado": "",
     "archivo": "",
     "clasificaciones": ""
+  },
+  "compartir-requisicion-no-publicada": {
+    "estado": ""
+  },
+  "compartir-requisicion-publicada": {
+    "nombreRequisicion": "",
+    "idRequisicion": "",
+    "estado": ""
   }
 }
