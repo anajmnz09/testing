@@ -9,13 +9,20 @@
   padding: 0 var(--s4);
 }
 .marca {
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 600;
   letter-spacing: 0.2px;
 }
 .header-der {
   display: flex;
   align-items: center;
   gap: var(--s3);
+}
+.menu-toggle {
+  display: none; /* solo visible en pantallas chicas (ver responsive) */
+  color: var(--canvas);
+  margin-right: var(--s2);
+  font-size: 18px;
 }
 .ind-corrida {
   background: transparent;
@@ -96,9 +103,55 @@
   flex-direction: column;
   border-top: 1px solid var(--indigo-700);
 }
+/* Consola contraída: se oculta el cuerpo pero queda la barra (con su chevron)
+   para volver a abrirla. */
+.app-consola.contraida .con-cuerpo {
+  display: none;
+}
 
+/* --- Responsive: adaptar el diseño existente (no rediseñar) --- */
 @media (max-width: 1024px) {
   body {
     grid-template-columns: 220px 1fr;
+  }
+}
+/* Tablets angostas / móviles: el sidebar pasa a cajón superpuesto (drawer). */
+@media (max-width: 760px) {
+  body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main"
+      "consola";
+  }
+  .menu-toggle {
+    display: inline-flex;
+  }
+  .app-sidebar {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 2px 0 14px rgba(0, 0, 0, 0.35);
+  }
+  .app-sidebar.abierto {
+    transform: translateX(0);
+  }
+  .app-main {
+    padding: var(--s4);
+  }
+  .caso-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .caso-acciones .btn {
+    justify-content: center;
+  }
+  .marca {
+    font-size: 15px;
   }
 }

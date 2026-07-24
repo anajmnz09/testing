@@ -1,4 +1,4 @@
-import { el, chipEstado, boton, colapsable, vacio, confirmar } from "./componentes.js";
+import { el, chipEstado, boton, colapsable, vacio, capitalizar } from "./componentes.js";
 import * as api from "./api.js";
 import * as reporte from "./reporte.js";
 import * as ctx from "./contexto.js";
@@ -12,38 +12,54 @@ export async function abrir(cont, nodo, onRun) {
 
   const ult = data.ultima;
 
-  // Identidad + veredicto
+  // Identidad + veredicto. El módulo se muestra capitalizado y en burgundy
+  // (solo presentación; el nombre interno no cambia; aplica a módulos futuros).
   cont.append(
     el(
       "div",
       { class: "caso-head" },
       el("div", { class: "caso-titulo" }, el("h1", {}, nodo.nombre), chipEstado(ult ? ult.estado : "sin-ejecutar")),
-      el("div", { class: "caso-meta" }, `módulo: ${nodo.modulo} · ${nodo.ruta}`)
+      el(
+        "div",
+        { class: "caso-meta" },
+        "Módulo: ",
+        el("span", { class: "mod-nombre" }, capitalizar(nodo.modulo)),
+        " · ",
+        nodo.ruta
+      )
     )
   );
 
-  // Acciones: Ejecutar (ÚNICO primario) + secundarias neutras
+  // Parámetros: se construyen ya (para poder persistirlos al ejecutar).
+  const ctxHandle = ctx.crear(nodo, data.contexto);
+
+  // Acciones. Ejecutar es el ÚNICO primario (magenta). Al ejecutar: primero
+  // persiste automáticamente los valores del Execution Context, luego corre.
   const seg = nodo.id.split("-")[0];
-  cont.append(
-    el(
-      "div",
-      { class: "caso-acciones" },
-      boton("Ejecutar", { variante: "primario", icono: "▷", onClick: () => onRun(nodo.run, nodo.nombre) }),
-      boton("Ejecutar carpeta", {
-        onClick: () => onRun({ tipo: "carpeta", modulo: nodo.modulo, target: `tests/${seg}-*.test.js` }, seg),
-      }),
-      boton("Ejecutar módulo", {
-        onClick: () =>
-          confirmar(`Vas a correr TODO el módulo "${nodo.modulo}" (puede tardar). ¿Continuar?`, () =>
-            onRun({ tipo: "modulo", modulo: nodo.modulo }, nodo.modulo)
-          ),
-      })
-    )
+  const ejecutar = boton("Ejecutar", {
+    variante: "primario",
+    icono: "▷",
+    onClick: async () => {
+      const valores = ctxHandle.valores();
+      if (Object.keys(valores).length) await api.guardarContexto(nodo.modulo, nodo.id, valores);
+      onRun(nodo.run, nodo.nombre);
+    },
+  });
+  const ejecutarCarpeta = boton("Ejecutar carpeta", {
+    onClick: () => onRun({ tipo: "carpeta", modulo: nodo.modulo, target: `tests/${seg}-*.test.js` }, capitalizar(seg)),
+  });
+  // Ejecutar módulo: deshabilitado por ahora, reservado para una próxima fase.
+  // (La lógica de ejecución del módulo sigue existiendo en el backend/comando.)
+  const ejecutarModulo = el(
+    "button",
+    { class: "btn btn--secundario", disabled: "", title: "Disponible en una próxima fase" },
+    "Ejecutar módulo"
   );
+  cont.append(el("div", { class: "caso-acciones" }, ejecutar, ejecutarCarpeta, ejecutarModulo));
 
   // Parámetros (abierto por defecto)
   cont.append(
-    colapsable("Parámetros (Execution Context)", (data.contexto.claves || []).length, (c) => ctx.render(c, nodo, data.contexto), true)
+    colapsable("Parámetros (Execution Context)", (data.contexto.claves || []).length, (c) => c.append(ctxHandle.nodo), true)
   );
 
   if (ult) {

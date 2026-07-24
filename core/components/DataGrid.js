@@ -90,6 +90,74 @@ class DataGrid extends BaseComponent {
     await this.click(this.filterButton);
   }
 
+  /**
+   * Filtra el grid por el VALOR de una columna usando el dropdown de la FILA DE
+   * FILTROS de DevExtreme (la que aparece bajo los encabezados). Es genérico:
+   * sirve para `Estado` = `Autorizada` | `Cerrada` | `Pausada`… o cualquier
+   * columna cuyo filtro sea un selectbox.
+   *
+   * Verificado en el grid real de Requisiciones: la celda de filtro de la
+   * columna es un `.dx-selectbox` que, al abrirse, lista todos los valores; al
+   * elegir uno, el grid filtra en vivo. Se localiza por el TEXTO del encabezado
+   * (no por índice fijo), así no se acopla al orden de columnas —configurable por
+   * el usuario— ni a clases específicas de una pantalla.
+   */
+  async filtrarPorColumna(nombreColumna, valor, timeout = config.timeouts.explicitWaitMs) {
+    logger.info(`DataGrid: filtrar por columna "${nombreColumna}" = "${valor}"`);
+
+    // 1) Marcar el selectbox de filtro de esa columna (por índice del encabezado).
+    const encontrada = await this.driver.executeScript((col) => {
+      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      const grid = document.querySelector('.dx-datagrid');
+      if (!grid) return false;
+      const headers = Array.from(grid.querySelectorAll('.dx-header-row > td'));
+      const idx = headers.findIndex((td) => norm(td.textContent) === norm(col));
+      if (idx < 0) return false;
+      const filterRow = grid.querySelector('.dx-datagrid-filter-row');
+      if (!filterRow) return false;
+      const cell = filterRow.querySelectorAll('td')[idx];
+      const sb = cell && cell.querySelector('.dx-selectbox, .dx-dropdowneditor');
+      if (!sb) return false;
+      const prev = document.querySelector('[data-qa="filtro-col"]');
+      if (prev) prev.removeAttribute('data-qa');
+      sb.setAttribute('data-qa', 'filtro-col');
+      return true;
+    }, nombreColumna);
+
+    if (!encontrada) {
+      throw new Error(`DataGrid: no se encontró el filtro de la columna "${nombreColumna}"`);
+    }
+
+    // 2) Abrir el dropdown (click por JS: la fila de filtros es sticky en el header).
+    const sb = await this.driver.findElement(By.css('[data-qa="filtro-col"]'));
+    const boton = await sb.findElement(By.css('.dx-dropdowneditor-button, .dx-texteditor-input'));
+    await this.driver.executeScript('arguments[0].click()', boton);
+
+    // 3) Esperar la lista y clickear el item cuyo texto es EXACTAMENTE `valor`
+    //    (exacto para no confundir estados que se contienen entre sí).
+    //    Se usa la API de ACCIONES (mover + click) y no un click nativo/JS:
+    //    verificado en el grid real, el selectbox de la fila de filtros solo
+    //    commitea el valor —y dispara el filtrado del grid— ante eventos de
+    //    puntero reales; un element.click()/JS click deja el dropdown abierto.
+    const item = await this.driver.wait(async () => {
+      const items = await this.driver.findElements(By.css('.dx-list-item, .dx-overlay-content .dx-item'));
+      for (const it of items) {
+        try {
+          if ((await it.isDisplayed()) && (await it.getText()).trim() === valor) return it;
+        } catch (e) {
+          /* stale */
+        }
+      }
+      return false;
+    }, timeout);
+    await this.driver.actions({ bridge: true }).move({ origin: item }).click().perform();
+
+    // 4) Esperar a que el grid re-filtre (overlay de carga fuera).
+    await this.esperarSinLoader(timeout);
+    logger.info(`DataGrid: filtro aplicado "${nombreColumna}" = "${valor}"`);
+    return this;
+  }
+
   /** Va a la página N (paginación numerada). */
   async irAPagina(n) {
     logger.info(`DataGrid: ir a página ${n}`);

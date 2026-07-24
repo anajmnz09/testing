@@ -9,9 +9,10 @@
   --indigo-600: #4b4568;
   --indigo-500: #746c90;
 
-  /* --- Marca: wine (énfasis secundario) --- */
+  /* --- Marca: wine / burgundy (énfasis secundario, con protagonismo) --- */
   --wine-800: #600132;
   --wine-700: #7a0842;
+  --wine-tint: #f4e9ee;
 
   /* --- Marca: magenta (acción — ÚNICA alta atención) --- */
   --magenta-600: #de1579;

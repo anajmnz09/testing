@@ -36,6 +36,18 @@ class RequisicionesPage extends BasePage {
     await this.grid.buscar(texto);
   }
 
+  /**
+   * Filtra el listado por ESTADO usando el dropdown de la columna "Estado"
+   * (fila de filtros del grid). Tras aplicarlo, todas las filas visibles son del
+   * estado pedido, así que la selección deja de depender de coincidencias de
+   * texto en toda la fila. Genérico: 'Autorizada', 'Cerrada', 'Pausada', etc.
+   */
+  async filtrarPorEstado(estado) {
+    await this.grid.filtrarPorColumna('Estado', estado);
+    await this.esperarFilas().catch(() => {}); // puede quedar sin filas si no hay de ese estado
+    return this;
+  }
+
   /** True si existe una requisición que contenga `texto` en el listado. */
   async existeRequisicion(texto) {
     return this.grid.existeFila(texto);

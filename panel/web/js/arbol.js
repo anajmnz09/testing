@@ -1,4 +1,4 @@
-import { el } from "./componentes.js";
+import { el, chevron, capitalizar } from "./componentes.js";
 
 // Árbol Módulo → (Suite) → Caso. El estado se muestra con un glifo mínimo; el
 // play aparece al hover para ejecutar sin abrir el detalle.
@@ -16,13 +16,18 @@ export function render(cont, datos, onSelect, onRun) {
 function nodo(n, onSelect, onRun, nivel) {
   const esGrupo = n.tipo !== "caso";
   const hijosBox = el("div", { class: "tree-hijos" });
+  // Indentación compacta: separación horizontal chica entre niveles para
+  // aprovechar el ancho (sin ensanchar el menú).
   const fila = el("div", {
     class: `tree-row tree-${n.tipo}`,
-    style: `padding-left:${8 + nivel * 14}px`,
+    style: `padding-left:${4 + nivel * 10}px`,
   });
 
-  const chev = el("span", { class: "chev" + (esGrupo ? "" : " vacio") }, esGrupo ? "▾" : "");
-  const lbl = el("span", { class: "tree-lbl" }, n.nombre);
+  // Chevron único (grupos) o espaciador (casos, que no despliegan).
+  const izq = esGrupo ? chevron() : el("span", { class: "chev-spacer" });
+  // Carpetas/categorías y módulos se muestran capitalizados (solo visual);
+  // los casos conservan su nombre descriptivo real (kebab).
+  const lbl = el("span", { class: "tree-lbl" }, esGrupo ? capitalizar(n.nombre) : n.nombre);
   const der = el("span", { class: "tree-der" });
   if (n.tipo === "caso" && n.estado) {
     der.append(el("span", { class: `glifo g-${n.estado}` }, GLIFO[n.estado] || "○"));
@@ -41,7 +46,7 @@ function nodo(n, onSelect, onRun, nivel) {
       "▷"
     )
   );
-  fila.append(chev, lbl, der);
+  fila.append(izq, lbl, der);
 
   const wrap = el("div", { class: `tree-nodo tree-${n.tipo}` }, fila, hijosBox);
   fila.addEventListener("click", () => {

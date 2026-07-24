@@ -18,6 +18,34 @@ export function el(tag, attrs = {}, ...hijos) {
   return n;
 }
 
+/**
+ * Chevron (∨) — ÚNICO componente de "desplegar" de toda la app: menú lateral,
+ * árbol, colapsables y consola lo reutilizan. Trazo grueso y abierto. La
+ * rotación (apunta abajo = abierto; a la derecha = colapsado) la maneja el CSS
+ * según el estado del contenedor.
+ */
+export function chevron() {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 16 16");
+  svg.setAttribute("class", "chevron");
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute("d", "M3.5 6 L8 10.5 L12.5 6");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "2.2");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(path);
+  return svg;
+}
+
+/** Capitalización SOLO visual (inicial mayúscula). Los nombres internos no cambian. */
+export function capitalizar(s) {
+  s = String(s || "");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 const ESTADOS = {
   passed: ["Aprobado", "chip--exito"],
   failed: ["Falló", "chip--error"],
@@ -54,7 +82,7 @@ export function colapsable(titulo, contador, contenidoFn, abierto = false) {
         if (wrap.classList.contains("abierto")) construir();
       },
     },
-    el("span", { class: "chev" }, "▸"),
+    chevron(),
     el("span", { class: "colap-tit" }, titulo),
     contador != null ? el("span", { class: "colap-num" }, String(contador)) : null
   );

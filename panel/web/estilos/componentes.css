@@ -42,14 +42,20 @@
   font-family: var(--mono);
   font-size: 12px;
 }
-.chev {
-  width: 14px;
+/* Chevron único (desplegar/contraer) usado en árbol, colapsables y consola. */
+.chevron {
+  width: 13px;
+  height: 13px;
+  flex: none;
   color: var(--indigo-500);
-  font-size: 10px;
-  text-align: center;
+  transition: transform 0.15s ease;
 }
-.chev.vacio {
-  visibility: hidden;
+.chev-spacer {
+  width: 13px;
+  flex: none;
+}
+.tree-nodo.colapsado > .tree-row .chevron {
+  transform: rotate(-90deg);
 }
 .tree-der {
   display: flex;
@@ -104,11 +110,29 @@
 }
 .btn--secundario {
   background: var(--canvas);
-  border-color: var(--g-200);
-  color: var(--g-700);
+  border-color: var(--magenta-600);
+  color: var(--magenta-600);
 }
 .btn--secundario:hover {
-  background: var(--g-50);
+  background: var(--magenta-tint);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--secundario:disabled {
+  border-color: var(--g-200);
+  color: var(--g-400);
+  background: var(--canvas);
+}
+/* Detener (consola, sobre fondo oscuro): accent con protagonismo. */
+.btn--detener {
+  background: transparent;
+  color: var(--magenta-600);
+  border-color: var(--magenta-600);
+}
+.btn--detener:hover {
+  background: rgba(222, 21, 121, 0.15);
 }
 .btn--ghost {
   background: transparent;
@@ -118,6 +142,7 @@
 }
 .btn--ghost:hover {
   background: var(--g-50);
+  color: var(--magenta-600);
 }
 .btn--icono {
   background: transparent;
@@ -187,6 +212,10 @@
   font-size: 12px;
   margin-top: 4px;
 }
+.mod-nombre {
+  color: var(--magenta-600);
+  font-weight: 500;
+}
 .caso-acciones {
   display: flex;
   gap: var(--s2);
@@ -208,15 +237,16 @@
   gap: var(--s2);
   padding: var(--s3) 0;
   cursor: pointer;
-  color: var(--text);
+  color: var(--wine-800);
   font-size: 14px;
   font-weight: 600;
 }
-.colap-cab .chev {
-  transition: transform 0.15s;
+.colap-cab .chevron {
+  color: var(--wine-800);
+  transform: rotate(-90deg);
 }
-.colap.abierto > .colap-cab .chev {
-  transform: rotate(90deg);
+.colap.abierto > .colap-cab .chevron {
+  transform: rotate(0);
 }
 .colap-num {
   color: var(--g-400);
@@ -381,11 +411,24 @@
 .con-cab {
   display: flex;
   align-items: center;
-  gap: var(--s3);
+  gap: var(--s2);
   padding: var(--s2) var(--s4);
   border-bottom: 1px solid var(--indigo-700);
   font-family: var(--mono);
   font-size: 12px;
+  cursor: pointer;
+}
+.con-chev {
+  color: #cfc9dd;
+}
+.con-cab .chevron {
+  color: #cfc9dd;
+}
+.app-consola.contraida .con-cab {
+  border-bottom: none;
+}
+.app-consola.contraida .con-cab .chevron {
+  transform: rotate(-90deg);
 }
 .con-tit {
   color: #e9e6ef;

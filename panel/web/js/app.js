@@ -30,6 +30,7 @@ async function cargarArbol() {
       nodoSel = n;
       moduloActivo = n.modulo;
       detalle.abrir(detCont, n, onRun);
+      document.querySelector(".app-sidebar").classList.remove("abierto"); // cierra el drawer en móvil
     },
     onRun
   );
@@ -60,9 +61,15 @@ function aplicarFiltro() {
 // --- Wiring ---
 document.getElementById("tg-tests").addEventListener("click", () => setModo(false));
 document.getElementById("tg-hist").addEventListener("click", () => setModo(true));
-document.getElementById("refrescar").addEventListener("click", () => (modoHistorial ? setModo(true) : cargarArbol()));
 document.getElementById("search").addEventListener("input", aplicarFiltro);
-document.getElementById("ind-corrida").addEventListener("click", () => document.getElementById("consola").scrollIntoView());
+document.getElementById("menu-toggle").addEventListener("click", () =>
+  document.querySelector(".app-sidebar").classList.toggle("abierto")
+);
+document.getElementById("ind-corrida").addEventListener("click", () => {
+  const c = document.getElementById("consola");
+  c.classList.remove("contraida"); // reabre la consola si estaba contraída
+  c.scrollIntoView();
+});
 
 detCont.append(vacio("Elegí un test del árbol para empezar."));
 cargarArbol();

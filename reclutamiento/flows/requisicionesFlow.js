@@ -90,6 +90,10 @@ async function buscarRequisicionConEstado(
   }
 
   // --- Modo AUTOMÁTICO ---
+  // Se filtra el grid por el estado usando el dropdown de la columna "Estado".
+  // Así todas las filas visibles son del estado pedido y la selección es
+  // determinista (sin coincidencias de texto en toda la fila).
+  await listado.filtrarPorEstado(estado);
   const total = await listado.contarConEstado(estado);
   const revisadas = [];
   const limite = Math.min(maxRevisadas, total);
@@ -114,6 +118,7 @@ async function buscarRequisicionConEstado(
 
     logger.info(`requisicionesFlow: índice ${i} no cumple el criterio; volviendo al listado`);
     await volverAlListado(driver); // menú del módulo: flujo normal, sin re-login
+    await listado.filtrarPorEstado(estado); // re-aplicar el filtro tras recargar el listado
   }
 
   return { detalle: null, dirigido: false, apta: false, indice: -1, revisadas, total };

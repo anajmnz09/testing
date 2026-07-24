@@ -35,10 +35,11 @@ pre {
   margin: 0;
 }
 a {
-  color: var(--magenta-600);
+  color: var(--g-700);
   text-decoration: none;
 }
 a:hover {
+  color: var(--magenta-600);
   text-decoration: underline;
 }
 button {
