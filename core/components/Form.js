@@ -295,6 +295,110 @@ class Form extends BaseComponent {
   }
 
   /**
+   * Completa un formulario a partir de su mapa `control -> estrategia` y un objeto
+   * de VALORES indexado por label. Genérico: sirve para cualquier formulario.
+   *
+   * Prioridad de llenado (la regla del framework):
+   *   - `valores[label]` con valor NO vacío  → se usa ese valor con su estrategia.
+   *   - `valores[label]` vacío y `autofill:true`  → se aplica la estrategia SIN
+   *     valor (su comportamiento por defecto: firstOption elige la primera, text
+   *     no toca el campo, etc.).
+   *   - `valores[label]` vacío y `autofill:false` (default) → NO se toca el control.
+   *
+   * Con `autofill:false` esta rutina es NEUTRA para los campos que el usuario no
+   * completó: sólo INYECTA los valores provistos. Por eso no reemplaza la
+   * automatización curada de un formulario (dependencias entre campos, textos por
+   * defecto): se compone con ella. `solo`/`excepto` acotan qué controles considerar.
+   *
+   * @param controles mapa `label -> 'estrategia' | { estrategia, ...opciones }`
+   * @param valores   objeto `{ [label]: valor }` (típicamente del Execution Context)
+   * @param opciones  { autofill=false, solo=[labels], excepto=[labels] }
+   * @returns {Promise<Object>} `{ [label]: valorEfectivo }` de los controles operados
+   */
+  async completarDesde(controles, valores = {}, opciones = {}) {
+    const formInputModel = require('../context/formInputModel');
+    const { autofill = false, solo = null, excepto = null } = opciones;
+    const modelo = formInputModel.desdeControles(controles);
+    const usados = {};
+
+    for (const { label, estrategia, opciones: extra } of modelo) {
+      if (solo && !solo.includes(label)) continue;
+      if (excepto && excepto.includes(label)) continue;
+
+      const valor = (valores || {})[label];
+      if (!formInputModel.esVacio(valor)) {
+        logger.info(`Form: completar "${label}" con valor provisto`);
+        usados[label] = await this.setValor(label, valor, { estrategia, ...extra });
+      } else if (autofill) {
+        logger.info(`Form: completar "${label}" automáticamente (sin valor)`);
+        usados[label] = await this.setValor(label, undefined, { estrategia, ...extra });
+      }
+    }
+    return usados;
+  }
+
+  /**
+   * Labels de los controles VISIBLES del formulario en pantalla (contenedores
+   * `.group-field*` con `<label>`). Normaliza el texto (sin asterisco de requerido
+   * ni ':' final) y descarta duplicados/ocultos. Sólo LEE el DOM: no modifica nada.
+   */
+  async controlesVisibles() {
+    return this.driver.executeScript(() => {
+      const vistos = new Set();
+      const out = [];
+      document.querySelectorAll('.group-field, .group-field-2').forEach((g) => {
+        if (g.offsetParent === null) return; // no visible
+        const label = g.querySelector('label');
+        if (!label) return;
+        const t = (label.textContent || '').replace(/\*/g, '').replace(/:\s*$/, '').trim();
+        if (t && !vistos.has(t)) {
+          vistos.add(t);
+          out.push(t);
+        }
+      });
+      return out;
+    });
+  }
+
+  /**
+   * Mecanismo PREVENTIVO de desincronización. Compara los controles realmente
+   * visibles del formulario contra el mapa `control -> estrategia` declarado por el
+   * Page Object y, si hay controles en pantalla que el mapa no declara, registra
+   * una ADVERTENCIA clara en el log.
+   *
+   * Es puramente informativo y ADITIVO: NO rellena los controles no declarados, NO
+   * interrumpe la ejecución y NO agrega comportamiento implícito. ESTRATEGIAS sigue
+   * siendo la única fuente de verdad; esto sólo avisa cuando la UI cambió.
+   *
+   * @returns el diagnóstico de `formInputModel.comparar` (para inspección/evidencia).
+   */
+  async validarControlesDeclarados(controles, opciones = {}) {
+    const formInputModel = require('../context/formInputModel');
+    const etiqueta = opciones.etiqueta || 'formulario';
+    const enPantalla = await this.controlesVisibles();
+    const diag = formInputModel.comparar(formInputModel.labels(controles), enPantalla);
+
+    logger.info(
+      `Form[${etiqueta}]: sincronización — declarados=${diag.declarados.length}, en pantalla=${diag.enPantalla.length}`
+    );
+    if (diag.faltantesEnEstrategias.length) {
+      logger.warn(
+        `Form[${etiqueta}]: controles VISIBLES no declarados en ESTRATEGIAS: ` +
+          `[${diag.faltantesEnEstrategias.join(', ')}]. No se rellenan (ESTRATEGIAS es la ` +
+          `única fuente de verdad); revisar si el formulario cambió. ` +
+          `En pantalla: [${diag.enPantalla.join(', ')}].`
+      );
+    }
+    if (diag.declaradosNoVistos.length) {
+      logger.info(
+        `Form[${etiqueta}]: declarados no visibles ahora (normal si dependen del contexto): ` +
+          `[${diag.declaradosNoVistos.join(', ')}].`
+      );
+    }
+    return diag;
+  }
+
+  /**
    * Textos de los tags SELECCIONADOS en un tagbox (multi-select). El valor de un
    * tagbox no vive en un input, sino en chips `.dx-tag-content`, así que
    * getValor() no sirve para verificarlo.

@@ -5,7 +5,10 @@ const fixtures = require('../support/fixtures');
 const datos = require('../data/requisiciones.data');
 
 const CASO = 'crear-req-pregunta-personalizada';
-testContext.registrarCaso(CASO, ['nombreRequisicion', 'pregunta', 'nombreCampo']);
+// Input Model: todos los campos del formulario (labels reales) + las claves EXTRA
+// del modal de Pregunta Personalizada ("pregunta" y "nombreCampo"), que NO son
+// controles del formulario principal sino del diálogo.
+testContext.registrarCasoDesdeFormulario(CASO, RequisicionFormPage.ESTRATEGIAS, ['pregunta', 'nombreCampo']);
 
 const { RAZON } = RequisicionFormPage;
 
@@ -18,7 +21,6 @@ describe('Reclutamiento - Crear Requisición', function () {
   const ctx = fixtures.usarListadoRequisiciones();
 
   it(`${CASO}: la pregunta queda almacenada y se ve al reabrir`, async function () {
-    const nombre = testContext.get(CASO, 'nombreRequisicion') || datos.nombreQA(CASO);
     const pregunta = {
       pregunta: testContext.get(CASO, 'pregunta') || datos.preguntaPersonalizada.pregunta,
       nombreCampo: testContext.get(CASO, 'nombreCampo') || datos.preguntaPersonalizada.nombreCampo,
@@ -27,7 +29,7 @@ describe('Reclutamiento - Crear Requisición', function () {
     await ctx.lista.abrirFormularioCrear();
     const form = await new RequisicionFormPage(ctx.driver).estaCargado();
     await form.seleccionarRazon(RAZON.CREACION);
-    await form.completarRequeridos(nombre);
+    const d = await form.completarRequeridosConContexto(CASO);
     await form.agregarPreguntaPersonalizada(pregunta);
     await form.guardar();
 
@@ -35,7 +37,7 @@ describe('Reclutamiento - Crear Requisición', function () {
     assert.ok(res.exito, `Se esperaba creación exitosa. Notify: "${res.notify}"`);
 
     await ctx.lista.volverAlListado();
-    const detalle = await ctx.lista.abrirDetalle(nombre);
+    const detalle = await ctx.lista.abrirDetalle(d.nombre);
     // La pregunta puede mostrarse por su "Nombre del campo" o por el texto de la pregunta.
     const porNombre = await detalle.tienePreguntaPersonalizada(pregunta.nombreCampo);
     const porTexto = await detalle.tienePreguntaPersonalizada('disponibilidad inmediata');

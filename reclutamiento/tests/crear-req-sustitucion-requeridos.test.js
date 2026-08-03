@@ -2,10 +2,12 @@ const assert = require('assert');
 const { testContext } = require('@triple/core');
 const RequisicionFormPage = require('../pages/RequisicionFormPage');
 const fixtures = require('../support/fixtures');
-const datos = require('../data/requisiciones.data');
 
 const CASO = 'crear-req-sustitucion-requeridos';
-testContext.registrarCaso(CASO, ['nombreRequisicion', 'empleado', 'horario', 'tipoContrato']);
+// Input Model: siembra TODOS los campos del formulario (labels reales). La persona
+// a sustituir es el control real "Persona(s) a sustituir"; se opera con su flujo
+// especial (tagbox) y por eso completarRequeridosConContexto la excluye del llenado.
+testContext.registrarCasoDesdeFormulario(CASO, RequisicionFormPage.ESTRATEGIAS);
 
 const { RAZON } = RequisicionFormPage;
 
@@ -18,21 +20,20 @@ describe('Reclutamiento - Crear Requisición', function () {
   const ctx = fixtures.usarListadoRequisiciones();
 
   it(`${CASO}: crea con solo los campos obligatorios`, async function () {
-    const nombre = testContext.get(CASO, 'nombreRequisicion') || datos.nombreQA(CASO);
-    const empleado = testContext.get(CASO, 'empleado');
+    const empleado = testContext.get(CASO, 'Persona(s) a sustituir');
 
     await ctx.lista.abrirFormularioCrear();
     const form = await new RequisicionFormPage(ctx.driver).estaCargado();
     await form.seleccionarRazon(RAZON.SUSTITUCION);
 
     // La persona se elige PRIMERO: auto-rellena Sucursal/Departamento/Puesto y
-    // limpia Horario/Modalidad, por eso completarRequeridos va después (llena lo vacío).
+    // limpia Horario/Modalidad, por eso el llenado va después (completa lo vacío).
     if (empleado) {
       await form.seleccionarPersonaASustituir(empleado);
     } else {
       await form.seleccionarPrimeraPersonaASustituir();
     }
-    await form.completarRequeridos(nombre);
+    await form.completarRequeridosConContexto(CASO);
 
     await form.guardar();
     const res = await form.resultadoGuardado();

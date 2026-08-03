@@ -882,6 +882,44 @@ La UI pide `GET /testcases/:id/inputmodel` (nueva consulta, aditiva a la superfi
 
 Todo lo anterior es **aditivo y opt-in**: un caso que no declare fuentes se comporta **igual que hoy** (`registrarCaso` con claves literales = `DeclaredParamsProvider`), y el core y los casos existentes **no se tocan**.
 
+### 18.11. Estado de implementación (lo construido y validado)
+
+Las secciones 18.1–18.10 son el **diseño**. Esta subsección registra qué se
+**implementó realmente** y una **divergencia deliberada** respecto del diseño, para que
+la documentación no prometa más de lo que el código hace.
+
+**Implementado y validado (E2E + unitario):**
+
+| Pieza del diseño | Implementación real | Archivo |
+|---|---|---|
+| Input Model canónico (18.5) | `formInputModel` — `desdeControles`/`labels`/`esVacio`/`comparar`. Puro. | `core/context/formInputModel.js` |
+| Materialización en `execution-context.json` (18.7) | `testContext.registrarCasoDesdeFormulario(caso, controles[, extra])` — reutiliza `registrarCaso`. | `core/context/testContext.js` |
+| Llenado con prioridad valor-provisto (18.8) | `Form.completarDesde(controles, valores, {autofill, solo, excepto})` + método curado por Page Object (`completarRequeridosConContexto`). | `core/components/Form.js`, `reclutamiento/pages/RequisicionFormPage.js` |
+| Sincronización (18.7) | `Form.validarControlesDeclarados` + `formInputModel.comparar` + `logger.warn` — solo advierte, no rellena, no rompe. | `core/components/Form.js` |
+| Caso migrado de referencia | `crear-req-campos-requeridos` (los otros 5 `crear-req-*` siguen sin migrar, intactos). | `reclutamiento/tests/…` |
+
+**Divergencia deliberada — fuente del Input Model de formulario.** El diseño (18.4)
+preveía un `FormMetadataProvider` que leyera `metadata/screens/<pantalla>.json`. La
+implementación usa como **fuente de verdad el mapa `control→estrategia` declarado por el
+Page Object (`ESTRATEGIAS`)**, no la metadata inspeccionada. Motivos:
+
+- `ESTRATEGIAS` es lo que el framework realmente usa para **operar** cada control, así que
+  el Input Model **siempre coincide** con lo que se sabe llenar (labels limpios, sin `:` ni
+  `deshabilitado` del detalle read-only).
+- Evita depender de que la pantalla de creación esté cacheada (el riesgo 10 de 18.9).
+
+La metadata inspeccionada queda como **fuente de enriquecimiento/validación futura**, no
+de definición. El puente de vuelta al diseño es la **sincronización 18.11/`validarControlesDeclarados`**:
+compara `ESTRATEGIAS` contra los controles reales de la UI y advierte si divergen, de modo
+que el mapa declarado se mantiene como única fuente de verdad **pero validado contra la
+pantalla**. Un `FormMetadataProvider` basado en metadata puede sumarse después sin romper
+esto (mismo `formInputModel` como destino canónico).
+
+**Prioridad y compatibilidad:** valor del usuario → se usa; vacío → comportamiento
+automático idéntico al previo. Los casos no-formulario siguen con `registrarCaso`. Nada
+eliminado, ninguna firma pública cambiada. Ver [`GUIDELINES.md`](../GUIDELINES.md) §3 y
+README §Selection Strategies / §Execution Context.
+
 ---
 
 ### Cierre

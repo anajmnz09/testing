@@ -6,17 +6,48 @@
     "departamento": ""
   },
   "crear-req-campos-requeridos": {
-    "nombreRequisicion": "",
-    "puesto": "",
-    "sucursal": "",
-    "departamento": "",
-    "reclutador": ""
+    "Razón de solicitud": "",
+    "Persona(s) a sustituir": "",
+    "Documentos Requeridos": "",
+    "Supervisor": "",
+    "Ubicación": "",
+    "Fecha de Creación": "",
+    "Puesto": "ANALISTA DE CONTABILIDAD",
+    "Sucursal": "",
+    "Departamento": "ALMACEN - DESPACHO (STGO)",
+    "Reclutador": "Juan Cueli",
+    "Horario": "Primer Turno 1",
+    "Tipo de contrato": "Temporal",
+    "Modalidad": "",
+    "Nombre de requisición": "",
+    "Requisitos": "Requisitos personalizados desde Execution Context",
+    "Responsabilidades": "Responsabilidades personalizadas desde Execution Context",
+    "Descripción": "Descripción personalizada desde Execution Context",
+    "Comentario": "Comentario personalizado desde Execution Context",
+    "Cantidad de empleado": "7",
+    "Rotativo": ""
   },
   "crear-req-sustitucion-requeridos": {
-    "nombreRequisicion": "",
-    "empleado": "",
-    "horario": "",
-    "tipoContrato": ""
+    "Razón de solicitud": "",
+    "Persona(s) a sustituir": "",
+    "Documentos Requeridos": "",
+    "Supervisor": "",
+    "Ubicación": "",
+    "Fecha de Creación": "",
+    "Puesto": "",
+    "Sucursal": "",
+    "Departamento": "",
+    "Reclutador": "",
+    "Horario": "",
+    "Tipo de contrato": "",
+    "Modalidad": "",
+    "Nombre de requisición": "",
+    "Requisitos": "",
+    "Responsabilidades": "",
+    "Descripción": "",
+    "Comentario": "",
+    "Cantidad de empleado": "",
+    "Rotativo": ""
   },
   "crear-req-validacion-requeridos": {},
   "crear-req-persona-sustituir": {
@@ -24,21 +55,57 @@
     "maxEmpleados": ""
   },
   "crear-req-pregunta-personalizada": {
-    "nombreRequisicion": "Requisición de prueba con Pregunta Personalizada",
+    "Razón de solicitud": "",
+    "Persona(s) a sustituir": "",
+    "Documentos Requeridos": "",
+    "Supervisor": "",
+    "Ubicación": "",
+    "Fecha de Creación": "",
+    "Puesto": "",
+    "Sucursal": "",
+    "Departamento": "",
+    "Reclutador": "",
+    "Horario": "",
+    "Tipo de contrato": "",
+    "Modalidad": "",
+    "Nombre de requisición": "",
+    "Requisitos": "",
+    "Responsabilidades": "",
+    "Descripción": "",
+    "Comentario": "",
+    "Cantidad de empleado": "",
+    "Rotativo": "",
     "pregunta": "",
-    "nombreCampo": "",
-    "maxEmpleados": "3"
+    "nombreCampo": ""
   },
   "crear-req-comentarios": {
-    "nombreRequisicion": "",
-    "comentario": ""
+    "Razón de solicitud": "",
+    "Persona(s) a sustituir": "",
+    "Documentos Requeridos": "",
+    "Supervisor": "",
+    "Ubicación": "",
+    "Fecha de Creación": "",
+    "Puesto": "",
+    "Sucursal": "",
+    "Departamento": "",
+    "Reclutador": "",
+    "Horario": "",
+    "Tipo de contrato": "",
+    "Modalidad": "",
+    "Nombre de requisición": "",
+    "Requisitos": "",
+    "Responsabilidades": "",
+    "Descripción": "",
+    "Comentario": "",
+    "Cantidad de empleado": "",
+    "Rotativo": ""
   },
   "publicar-requisicion": {
-    "nombreRequisicion": "QA-AUTO-TC005-1784401654721",
+    "nombreRequisicion": "QA-crear-req-pregunta-personalizada-1785368652224",
     "estado": ""
   },
   "pausar-requisicion": {
-    "nombreRequisicion": "QA-AUTO-TC001-1784568026526",
+    "nombreRequisicion": "QA-crear-req-sustitucion-requeridos-1785368792392",
     "idRequisicion": "",
     "estado": ""
   },
@@ -53,7 +120,7 @@
     "estado": ""
   },
   "compartir-requisicion-publicada": {
-    "nombreRequisicion": "",
+    "nombreRequisicion": "QA-crear-req-sustitucion-requeridos-1785368792392",
     "idRequisicion": "",
     "estado": ""
   }

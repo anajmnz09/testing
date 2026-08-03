@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
+const formInputModel = require('./formInputModel');
 
 /**
  * EXECUTION CONTEXT (datos de prueba).
@@ -151,6 +152,27 @@ function registrarCaso(caso, claves = []) {
   return cambio;
 }
 
+/**
+ * Como `registrarCaso`, pero deriva las claves del FORMULARIO: siembra todos los
+ * controles editables (labels REALES) del mapa `control -> estrategia` que declara
+ * el Page Object, más las `clavesExtra` que el caso necesite (parámetros que no
+ * son campos del formulario, p. ej. un contador o el nombre de una pregunta).
+ *
+ * Así el usuario ve en el Execution Context TODOS los campos del formulario con
+ * su nombre real y sólo tiene que completar los que quiera dirigir; nunca inventa
+ * ni crea claves. Es puramente ADITIVO: `registrarCaso` queda intacto y los casos
+ * que no usan formularios siguen registrando sólo sus parámetros.
+ *
+ * @param caso        nombre descriptivo del caso
+ * @param controles   mapa `label -> 'estrategia' | { estrategia, ... }` (ESTRATEGIAS del Page Object)
+ * @param clavesExtra claves adicionales no derivadas del formulario
+ * @returns {boolean} true si el archivo cambió
+ */
+function registrarCasoDesdeFormulario(caso, controles = {}, clavesExtra = []) {
+  const claves = [...formInputModel.labels(controles), ...clavesExtra];
+  return registrarCaso(caso, claves);
+}
+
 module.exports = {
   CONTEXT_FILE,
   SECCION_GLOBAL,
@@ -159,6 +181,7 @@ module.exports = {
   getCaso,
   getODescubrir,
   registrarCaso,
+  registrarCasoDesdeFormulario,
   todo,
   recargar,
 };

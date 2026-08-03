@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const config = require('../config');
 const paths = require('../utils/paths');
+const chromeProfiles = require('../utils/chromeProfiles');
 // El reporte HTML de Mochawesome se descontinuó como salida automática: el Panel
 // de Control es el visor oficial y consume directamente el JSON + artefactos de
 // reports/<RUN_ID>/. El generador (scripts/generate-report.js) sigue disponible
@@ -86,6 +87,50 @@ async function runMocha(target) {
   return { exitCode, logPath };
 }
 
+/**
+ * Cuenta procesos ChromeDriver huérfanos (best-effort, solo Windows). NO los mata:
+ * matar procesos como efecto colateral de `npm test` sería sorpresivo y podría
+ * interferir con otra corrida; se REPORTA para que el usuario/agente decida.
+ * En un flujo normal (serial) `quitDriver` ya cierra cada ChromeDriver, así que lo
+ * esperado es 0.
+ */
+function contarChromedriverHuerfano() {
+  if (process.platform !== 'win32') return null; // solo se verifica en Windows
+  try {
+    const out = execSync('tasklist /FI "IMAGENAME eq chromedriver.exe" /NH', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return (out.match(/chromedriver\.exe/gi) || []).length;
+  } catch (e) {
+    return null; // no verificable: no interrumpe
+  }
+}
+
+/**
+ * Limpieza automática al terminar la corrida: elimina los perfiles temporales de
+ * Chrome que el framework creó (los de cada sesión ya los borró `quitDriver`; esto
+ * es la red de seguridad) y muestra un resumen. NUNCA toca reports, screenshots,
+ * evidencias, metadata, execution-context ni nada del proyecto. Best-effort: una
+ * falla se reporta como advertencia y no interrumpe.
+ */
+function limpiezaPostEjecucion() {
+  try {
+    const r = chromeProfiles.limpiarPerfiles();
+    const residuales = chromeProfiles.contarPerfiles();
+    const drivers = contarChromedriverHuerfano();
+    console.log('Limpieza automática post-ejecución:');
+    console.log(`  • Perfiles Chrome del framework eliminados: ${r.eliminados} (~${r.mbRecuperados} MB)`);
+    console.log(`  • Perfiles residuales: ${residuales} ${residuales === 0 ? '(OK)' : '(⚠ revisar)'}`);
+    console.log(
+      `  • ChromeDriver huérfanos: ${drivers === null ? 'no verificado' : drivers}${drivers ? ' (⚠ cerrar manualmente)' : ''}`
+    );
+    r.advertencias.forEach((a) => console.log(`  ⚠ ${a}`));
+  } catch (err) {
+    console.log(`Limpieza automática post-ejecución: ADVERTENCIA — no completó (${err.message})`);
+  }
+}
+
 async function main() {
   const targetSolicitado = process.argv[2] || 'tests';
   const target = resolverTarget(targetSolicitado);
@@ -99,6 +144,9 @@ async function main() {
   );
 
   const { exitCode, logPath } = await runMocha(target);
+
+  // Limpieza automática post-ejecución (siempre, sin que el usuario la pida).
+  limpiezaPostEjecucion();
 
   // (Se removió la generación automática del reporte HTML; todo el resto de la
   //  ejecución —JSON de resultados, screenshots, evidencias, logs, metadata,

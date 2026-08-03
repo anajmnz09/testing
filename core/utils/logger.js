@@ -27,6 +27,11 @@ function error(message, err) {
   writeLine(`${timestamp()} - ERROR: ${message}${detail}`);
 }
 
+/** Advertencia: algo que el mantenedor debería revisar, sin interrumpir la corrida. */
+function warn(message) {
+  writeLine(`${timestamp()} - ADVERTENCIA: ${message}`);
+}
+
 function testStart(title) {
   info(`Iniciando: ${title}`);
 }
@@ -49,4 +54,4 @@ function stepDone(message, startedAt) {
   info(`${message}${durationLabel}`);
 }
 
-module.exports = { info, error, testStart, testEnd, step, stepDone };
+module.exports = { info, warn, error, testStart, testEnd, step, stepDone };

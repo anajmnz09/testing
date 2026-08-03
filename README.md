@@ -4,6 +4,8 @@ Monorepo de automatización de pruebas **end-to-end** para el sistema **Triple**
 
 La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo transversal (login, navegación, navbar, grid, reportes, infra), y **un proyecto por módulo** (Reclutamiento hoy; Nómina, Empleados, Vacantes… mañana) que solo escribe sus pruebas y sus páginas propias. Agregar un módulo **no requiere tocar el core**.
 
+> Antes de contribuir o escribir pruebas, leé las **[reglas de contribución](GUIDELINES.md)**: aditividad, reuse-first, Open/Closed, Input Model para formularios, selectores robustos y el checklist de "terminado".
+
 ---
 
 ## Índice
@@ -209,6 +211,7 @@ npm test
 2. Loguea cada paso, adjunta el contexto de ejecución y captura screenshots según `SCREENSHOT_MODE`.
 3. Genera el reporte HTML de esa ejecución en `reports/<RUN_ID>/html/index.html` y actualiza `reports/latest/`.
 4. Aplica la retención (`KEEP_REPORTS`) borrando ejecuciones viejas.
+5. **Limpieza automática post-ejecución**: barre los perfiles temporales de Chrome que el framework creó y muestra un resumen (perfiles eliminados, espacio recuperado, ChromeDriver huérfanos, advertencias). Es automática —no hay que pedirla— y **nunca** toca reports, screenshots, evidencias, metadata ni execution-context. Detalle en [GUIDELINES §11](GUIDELINES.md) y en `core/utils/chromeProfiles.js`.
 
 Termina con código ≠ 0 si algún test falló (útil para CI), pero **el reporte se genera siempre**.
 
@@ -484,6 +487,28 @@ testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
 
 `registrarCaso` **no pisa** valores ya cargados ni borra claves que hayas agregado: solo crea lo que falta.
 
+### Casos de formulario: sembrar desde el Input Model
+
+Un caso que llena un **formulario** no escribe su lista de claves a mano: la deriva del
+formulario con **`registrarCasoDesdeFormulario`**, que siembra **todos** los controles
+editables con sus **labels reales** (la fuente de verdad es el mapa `control→estrategia`
+del Page Object, ver [Selection Strategies](#selection-strategies)):
+
+```js
+const RequisicionFormPage = require('../pages/RequisicionFormPage');
+
+const CASO = 'crear-req-campos-requeridos';
+// Siembra en el Execution Context TODOS los campos del formulario (labels reales).
+testContext.registrarCasoDesdeFormulario(CASO, RequisicionFormPage.ESTRATEGIAS);
+// Opcional: claves extra que NO son del formulario (un contador, etc.)
+// testContext.registrarCasoDesdeFormulario(CASO, ESTRATEGIAS, ['maxEmpleados']);
+```
+
+Así el usuario ve en el Execution Context (y en el Panel) **todos** los campos con su
+nombre de pantalla y solo completa los que quiera dirigir; **nunca inventa ni crea claves**.
+Reutiliza `registrarCaso` por debajo (misma garantía: no pisa lo cargado). Los casos que
+**no** son de formulario siguen usando `registrarCaso` con sus parámetros mínimos.
+
 ---
 
 ## Selection Strategies
@@ -538,6 +563,34 @@ strategies.registrar('miEstrategia', new MiEstrategia());
 ```
 
 Después basta con apuntar el control a `'miEstrategia'` en el mapa del Page Object. Las estrategias **componen** las primitivas ya verificadas de `Form` (`_abrirDropdown`, `_itemVisiblePorTexto`, `_esperarOverlayCerrado`), así que si cambia el DOM se arregla en un solo lugar.
+
+### Llenar un formulario desde el Execution Context (Input Model)
+
+El mapa `control→estrategia` (`ESTRATEGIAS`) no solo dice **cómo** operar cada control:
+es también la **fuente de verdad del Input Model** del formulario (qué campos tiene, con
+sus labels reales). Sobre él, `Form.completarDesde` llena el formulario dando **prioridad
+al valor que el usuario cargó** en el Execution Context y cayendo al comportamiento
+automático cuando está vacío:
+
+```js
+// Genérico del core. Recorre los controles y, por cada label:
+//   valor no vacío  → lo usa con su estrategia (prioridad del usuario)
+//   valor vacío + autofill:true  → aplica la estrategia sin valor (primera opción, etc.)
+//   valor vacío + autofill:false → NO toca el control (neutro)
+await form.completarDesde(ESTRATEGIAS, valores, { autofill: false, solo, excepto });
+```
+
+Un Page Object compone esto con su automatización curada (dependencias entre campos,
+textos por defecto) en un método propio — ej. `RequisicionFormPage.completarRequeridosConContexto(caso)`,
+que lee cada control por su label del `testContext` y usa el valor provisto o el automático.
+Es el **patrón de referencia** para migrar cualquier formulario.
+
+**Sincronización mapa↔UI (preventiva).** Para que `ESTRATEGIAS` no se desincronice si el
+formulario cambia, `Form.validarControlesDeclarados(ESTRATEGIAS)` compara los controles
+**visibles** contra los declarados y, si hay controles en pantalla que el mapa no declara,
+registra una **advertencia** (`logger.warn`) con la lista. Es solo informativo: **no
+rellena, no interrumpe, no agrega comportamiento**. `ESTRATEGIAS` sigue siendo la única
+fuente de verdad, ahora validada contra la UI en cada llenado.
 
 ---
 

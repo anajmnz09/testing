@@ -158,6 +158,47 @@ describe('testContext / Execution Context (unitario)', function () {
     });
   });
 
+  describe('registrarCasoDesdeFormulario', function () {
+    // Mapa control->estrategia como el que declara un Page Object.
+    const CONTROLES = {
+      'Nombre de requisición': 'text',
+      Puesto: 'searchAndSelect',
+      Rotativo: 'switch',
+    };
+
+    it('siembra las claves con los LABELS REALES del formulario', function () {
+      const ctx = conContexto({});
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
+
+      expect(ctx.getCaso('crear-req')).to.deep.equal({
+        'Nombre de requisición': '',
+        Puesto: '',
+        Rotativo: '',
+      });
+    });
+
+    it('agrega las claves extra que no son del formulario', function () {
+      const ctx = conContexto({});
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES, ['maxEmpleados']);
+
+      expect(Object.keys(ctx.getCaso('crear-req'))).to.include('maxEmpleados');
+    });
+
+    it('NO pisa los valores que el usuario ya cargó (misma garantía que registrarCaso)', function () {
+      const ctx = conContexto({ 'crear-req': { Puesto: 'ANALISTA DE MERCADO' } });
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
+
+      expect(ctx.get('crear-req', 'Puesto')).to.equal('ANALISTA DE MERCADO');
+      expect(ctx.getCaso('crear-req')['Nombre de requisición']).to.equal('');
+    });
+
+    it('es idempotente: no reescribe si ya están todas las claves', function () {
+      const ctx = conContexto({ 'crear-req': { 'Nombre de requisición': '', Puesto: '', Rotativo: '' } });
+
+      expect(ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES)).to.equal(false);
+    });
+  });
+
   describe('aislamiento', function () {
     it('`todo()` devuelve una copia: mutarla no altera el contexto', function () {
       const ctx = conContexto({ caso: { clave: 'valor' } });

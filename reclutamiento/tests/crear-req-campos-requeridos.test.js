@@ -2,28 +2,35 @@ const assert = require('assert');
 const { testContext } = require('@triple/core');
 const RequisicionFormPage = require('../pages/RequisicionFormPage');
 const fixtures = require('../support/fixtures');
-const datos = require('../data/requisiciones.data');
 
 const CASO = 'crear-req-campos-requeridos';
-testContext.registrarCaso(CASO, ['nombreRequisicion', 'puesto', 'sucursal', 'departamento', 'reclutador']);
+
+// Input Model del formulario: se siembran en el Execution Context TODOS los
+// controles editables del form de creación, con sus LABELS REALES, derivados de
+// la única fuente de verdad (el mapa de estrategias del Page Object). El usuario
+// sólo completa los valores que quiera dirigir; nunca inventa ni crea claves.
+testContext.registrarCasoDesdeFormulario(CASO, RequisicionFormPage.ESTRATEGIAS);
 
 const { RAZON } = RequisicionFormPage;
 
 /**
  * Crea una requisición de tipo "Creación" completando todos los campos
  * requeridos, la guarda y valida la información al reabrirla.
+ *
+ * Los valores salen del Execution Context: lo que el usuario cargó se usa; lo que
+ * dejó vacío se descubre automáticamente igual que siempre (primera opción /
+ * textos QA). Ver `completarRequeridosConContexto`.
  */
 describe('Reclutamiento - Crear Requisición', function () {
   this.timeout(300000);
   const ctx = fixtures.usarListadoRequisiciones();
 
   it(`${CASO}: completa los requeridos, guarda y valida al reabrir`, async function () {
-    const nombre = testContext.get(CASO, 'nombreRequisicion') || datos.nombreQA(CASO);
-
     await ctx.lista.abrirFormularioCrear();
     const form = await new RequisicionFormPage(ctx.driver).estaCargado();
     await form.seleccionarRazon(RAZON.CREACION);
-    const d = await form.completarRequeridos(nombre);
+    const d = await form.completarRequeridosConContexto(CASO);
+    const nombre = d.nombre;
     await form.guardar();
 
     const res = await form.resultadoGuardado();

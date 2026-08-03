@@ -4,6 +4,8 @@ const Form = require('@triple/core/components/Form');
 const Notify = require('@triple/core/components/Notify');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
+const testContext = require('@triple/core/context/testContext');
+const datos = require('../data/requisiciones.data');
 
 const RAZON = { CREACION: 'Creacion', SUSTITUCION: 'Sustitucion' };
 
@@ -141,6 +143,75 @@ class RequisicionFormPage extends BasePage {
     // Asegurar Cantidad de empleado >= 1 (precargado, pero puede quedar en 0).
     await this.form.escribir('Cantidad de empleado', '1');
     return datos;
+  }
+
+  /**
+   * Igual que `completarRequeridos`, pero DIRIGIDO por el Execution Context: para
+   * cada control, si el usuario cargó un valor en la sección `caso`, se usa ese
+   * valor con su estrategia; si lo dejó vacío, se hace EXACTAMENTE lo de hoy
+   * (primera opción para los selects vacíos, textos QA para los textareas). Además
+   * aplica cualquier otro control del formulario que el usuario haya completado
+   * (Supervisor, Comentario, Ubicación, Rotativo, Fecha, Documentos…): provisto se
+   * aplica, vacío no se toca. Devuelve, como `completarRequeridos`, los valores
+   * usados (incluye `nombre`, `requisitos`, `responsabilidades`, `descripcion`).
+   *
+   * El método original `completarRequeridos(nombre)` NO se modifica: sigue
+   * disponible para cualquier caso que aún no migre.
+   */
+  async completarRequeridosConContexto(caso) {
+    logger.info(`RequisicionForm: completar requeridos desde Execution Context (caso="${caso}")`);
+    // Chequeo preventivo de desincronización: avisa (solo log) si el formulario
+    // muestra controles que ESTRATEGIAS no declara. No rellena ni interrumpe.
+    await this.form.validarControlesDeclarados(ESTRATEGIAS, { etiqueta: 'crear-requisicion' });
+    const val = (label) => testContext.get(caso, label); // undefined si está vacío
+
+    const nombre = val('Nombre de requisición') || datos.nombreQA(caso);
+    const resultado = { nombre };
+
+    // Selects requeridos, en orden de dependencia (Sucursal → Departamento →
+    // Puesto). Provisto → se usa (searchAndSelect); vacío → como hoy: primera
+    // opción, y sólo si el control quedó vacío en pantalla (respeta Sustitución,
+    // donde algunos vienen auto-rellenados).
+    const selects = ['Sucursal', 'Departamento', 'Puesto', 'Reclutador', 'Horario', 'Tipo de contrato', 'Modalidad'];
+    for (const label of selects) {
+      const provisto = val(label);
+      if (provisto !== undefined) {
+        resultado[label] = await this.setCampo(label, provisto);
+      } else if (await this.form.estaVacio(label)) {
+        resultado[label] = await this.form.seleccionarPrimera(label);
+      }
+    }
+
+    // Nombre + textos requeridos. Provisto → se usa; vacío → el texto QA de hoy.
+    await this.form.escribir('Nombre de requisición', nombre);
+    resultado.requisitos = val('Requisitos') || `Requisitos QA - ${nombre}`;
+    resultado.responsabilidades = val('Responsabilidades') || `Responsabilidades QA - ${nombre}`;
+    resultado.descripcion = val('Descripción') || `Descripción QA - ${nombre}`;
+    await this.form.escribir('Requisitos', resultado.requisitos);
+    await this.form.escribir('Responsabilidades', resultado.responsabilidades);
+    await this.form.escribir('Descripción', resultado.descripcion);
+    // Cantidad de empleado (precargada, pero puede quedar en 0): provisto o "1".
+    await this.form.escribir('Cantidad de empleado', val('Cantidad de empleado') || '1');
+
+    // Cualquier OTRO control del formulario que el usuario haya completado:
+    // provisto → se aplica con su estrategia; vacío → NO se toca (neutro, igual
+    // que hoy). No se autorrellenan campos opcionales que hoy nadie llena.
+    const yaTratados = [
+      'Razón de solicitud', 'Persona(s) a sustituir', ...selects,
+      'Nombre de requisición', 'Requisitos', 'Responsabilidades', 'Descripción', 'Cantidad de empleado',
+    ];
+    const otros = {};
+    for (const label of Object.keys(ESTRATEGIAS)) {
+      if (yaTratados.includes(label)) continue;
+      const v = val(label);
+      if (v !== undefined) otros[label] = v;
+    }
+    Object.assign(
+      resultado,
+      await this.form.completarDesde(ESTRATEGIAS, otros, { autofill: false, excepto: yaTratados })
+    );
+
+    return resultado;
   }
 
   /**
