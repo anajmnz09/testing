@@ -30,7 +30,7 @@ const ESTRATEGIAS = {
   'Persona(s) a sustituir': { estrategia: 'searchAndSelect', multiple: true },
   'Documentos Requeridos': { estrategia: 'searchAndSelect', multiple: true },
   Supervisor: 'searchAndSelect',
-  Ubicación: 'searchAndSelect',
+  Ubicación: 'text',
   'Fecha de Creación': 'datePicker',
   Puesto: 'searchAndSelect',
   Sucursal: 'searchAndSelect',
@@ -157,9 +157,20 @@ class RequisicionFormPage extends BasePage {
    *
    * El método original `completarRequeridos(nombre)` NO se modifica: sigue
    * disponible para cualquier caso que aún no migre.
+   *
+   * @param {string} caso  nombre del caso (sección del Execution Context)
+   * @param {object} [opts]
+   * @param {boolean} [opts.incluirOpcionales=false]  si es true, además de los
+   *   requeridos autorrellena TODOS los controles opcionales que queden vacíos
+   *   (Supervisor, Ubicación, Documentos Requeridos, Fecha, Rotativo, Comentario…)
+   *   usando la estrategia por defecto de cada uno (primera opción / texto QA / etc.).
+   *   Por defecto es false: comportamiento neutro de siempre (solo requeridos +
+   *   opcionales que el usuario haya provisto explícitamente).
    */
-  async completarRequeridosConContexto(caso) {
-    logger.info(`RequisicionForm: completar requeridos desde Execution Context (caso="${caso}")`);
+  async completarRequeridosConContexto(caso, { incluirOpcionales = false } = {}) {
+    logger.info(
+      `RequisicionForm: completar ${incluirOpcionales ? 'TODOS los campos' : 'requeridos'} desde Execution Context (caso="${caso}")`
+    );
     // Chequeo preventivo de desincronización: avisa (solo log) si el formulario
     // muestra controles que ESTRATEGIAS no declara. No rellena ni interrumpe.
     await this.form.validarControlesDeclarados(ESTRATEGIAS, { etiqueta: 'crear-requisicion' });
@@ -193,9 +204,11 @@ class RequisicionFormPage extends BasePage {
     // Cantidad de empleado (precargada, pero puede quedar en 0): provisto o "1".
     await this.form.escribir('Cantidad de empleado', val('Cantidad de empleado') || '1');
 
-    // Cualquier OTRO control del formulario que el usuario haya completado:
-    // provisto → se aplica con su estrategia; vacío → NO se toca (neutro, igual
-    // que hoy). No se autorrellenan campos opcionales que hoy nadie llena.
+    // Cualquier OTRO control del formulario. Provisto → se aplica con su
+    // estrategia. Vacío → depende de `incluirOpcionales`: con false NO se toca
+    // (neutro, igual que hoy); con true se autorrellena con la estrategia por
+    // defecto (primera opción / texto QA / etc.). "Persona(s) a sustituir" queda
+    // siempre excluida (va en `yaTratados`): su flujo especial lo maneja el test.
     const yaTratados = [
       'Razón de solicitud', 'Persona(s) a sustituir', ...selects,
       'Nombre de requisición', 'Requisitos', 'Responsabilidades', 'Descripción', 'Cantidad de empleado',
@@ -206,10 +219,49 @@ class RequisicionFormPage extends BasePage {
       const v = val(label);
       if (v !== undefined) otros[label] = v;
     }
+
+    // Primero se aplican los opcionales que el usuario SÍ proveyó (deben aplicarse).
     Object.assign(
       resultado,
       await this.form.completarDesde(ESTRATEGIAS, otros, { autofill: false, excepto: yaTratados })
     );
+
+    // Con `incluirOpcionales`, se autorrellenan los DEMÁS controles opcionales.
+    // Es BEST-EFFORT: "todos los campos DISPONIBLES". Los catálogos de la app no
+    // siempre tienen opción seleccionable (vacíos, dependientes) y los multi-select
+    // (tagbox) no cierran solos; por eso cada opcional se intenta de forma aislada,
+    // con su vía adecuada, y si no se puede se OMITE (recuperando el overlay con
+    // ESCAPE) sin abortar el test. Se registra en el log cuáles se omiten.
+    if (incluirOpcionales) {
+      const omitidos = [];
+      // Opcionales con default fijo "QA" cuando el contexto no los provee. El
+      // contexto sigue teniendo prioridad absoluta: `otros[label]` ya captura el
+      // valor provisto y este branch solo corre cuando NO vino del contexto.
+      const DEFAULT_QA = ['Ubicación', 'Comentario'];
+      for (const label of Object.keys(ESTRATEGIAS)) {
+        if (yaTratados.includes(label) || otros[label] !== undefined) continue;
+        const decl = ESTRATEGIAS[label];
+        const esMulti = typeof decl === 'object' && decl.multiple === true;
+        try {
+          resultado[label] = esMulti
+            ? await this.form.seleccionarPrimerTag(label) // tagbox: elige primero y cierra con ESCAPE
+            : DEFAULT_QA.includes(label)
+              ? await this.setCampo(label, 'QA')
+              : await this.setCampo(label); // resto: estrategia por defecto (primera opción / etc.)
+        } catch (e) {
+          omitidos.push(label);
+          logger.info(
+            `RequisicionForm: opcional "${label}" no disponible para autocompletar, se omite (${e.message.split('\n')[0]})`
+          );
+          // Recuperar el estado: cerrar cualquier overlay abierto para no arrastrar el fallo.
+          try { await this.driver.actions().sendKeys(Key.ESCAPE).perform(); } catch (_) { /* nada abierto */ }
+          try { await this.form._esperarOverlayCerrado(); } catch (_) { /* ya cerrado */ }
+        }
+      }
+      if (omitidos.length) {
+        logger.info(`RequisicionForm: opcionales omitidos (sin opción disponible): [${omitidos.join(', ')}]`);
+      }
+    }
 
     return resultado;
   }

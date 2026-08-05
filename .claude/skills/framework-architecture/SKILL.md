@@ -122,6 +122,275 @@ política del skill; simplemente fortalecen el proceso de validación y reporte 
 
 ---
 
+# Política de uso eficiente del contexto
+
+El objetivo es minimizar el consumo de contexto y tokens sin perder calidad técnica.
+La prioridad es: **leer menos, razonar más, reutilizar el conocimiento ya obtenido.**
+Estas reglas son obligatorias en toda tarea.
+
+- **No releer para recordar.** Si ya analizaste un archivo en la sesión (README,
+  GUIDELINES, SKILL.md, docs de arquitectura, execution-context, logs, reportes,
+  screenshots), asúmelo válido y reutiliza lo aprendido. Solo se relee si: el usuario
+  dice que cambió, lo modificaste tú, necesitas verificar una línea específica, o hay
+  evidencia de que quedó desactualizado.
+- **Nunca leer logs/reportes completos.** Prohibido `cat`, `sed`/`tail` amplios o
+  volcados enteros. Usar búsqueda acotada (`grep`, `rg`, `Select-String`, `findstr`) y
+  recuperar solo las líneas necesarias para la pregunta actual.
+- **No listar directorios completos** (`ls -R`, `tree`, `find .`, `Get-ChildItem`
+  recursivo) salvo que el usuario lo pida. Reutiliza la estructura ya conocida.
+- **No abrir archivos ajenos al cambio.** Si se modifica un helper, no abras README,
+  SKILL, GUIDELINES ni otros módulos "por contexto". Lee solo lo necesario.
+- **Preguntas de estado/seguimiento** ("¿qué hicimos?", "¿qué falta?", "¿cuál fue el
+  último cambio?", "¿qué sigue?") se responden **con la memoria de la conversación**,
+  sin inspeccionar archivos.
+- **Reportes ya procesados no se reabren**; se consulta la información ya extraída.
+- **Mantén un resumen interno** de pocas líneas al terminar una tarea importante, y úsalo
+  en tareas futuras antes de reinspeccionar.
+- **Al ejecutar tests:** no leas logs antiguos; primero ejecuta el test, y solo si falla
+  analiza exclusivamente el reporte de ESA corrida. Nunca reportes históricos salvo que
+  el usuario lo pida.
+- **Antes de cualquier lectura grande** pregúntate: "¿puedo responder con lo que ya
+  tengo?". Si sí, no leas nada. Más contexto no significa mejor respuesta.
+
+Estas reglas complementan (no reemplazan) las demás políticas del skill.
+
+---
+
+# Política permanente de eficiencia de contexto
+
+Estas reglas son obligatorias para todas las tareas.
+
+## Lectura de archivos
+
+Antes de leer cualquier archivo determina si realmente es necesario. Orden obligatorio:
+
+1. Buscar primero el símbolo, método o clase mediante grep/find.
+2. Leer únicamente el rango mínimo necesario alrededor del resultado.
+3. Leer el archivo completo solamente cuando sea estrictamente indispensable.
+
+Está prohibido leer Page Objects completos para modificar un único método. Está
+prohibido reconstruir el proyecto completo cuando la tarea afecta únicamente unos
+pocos archivos.
+
+## Reconstrucción del contexto
+
+No reconstruyas el framework completo. Trabaja únicamente con los archivos
+involucrados en la tarea actual. Si la tarea afecta menos de tres archivos, trabaja
+únicamente sobre esos archivos. No releas archivos que ya fueron analizados durante
+la misma sesión salvo que hayan cambiado.
+
+## Logs
+
+Nunca leas logs completos. Utiliza búsquedas específicas. Extrae únicamente: el
+test, la excepción, el stack relevante. Está prohibido mantener en contexto dumps
+enormes, JSON extensos o información repetida una vez identificada la causa.
+
+## Selenium
+
+Mientras el cambio aún esté en desarrollo: NO ejecutar Selenium. Solo verificar
+sintaxis cuando sea necesario. La ejecución E2E deberá realizarse únicamente cuando
+el cambio esté terminado o cuando el usuario la solicite explícitamente. Evita
+múltiples corridas de validación cuando una sola sea suficiente.
+
+## Informes
+
+Los informes deberán ser breves. Informar únicamente: archivos modificados,
+resultado, bloqueos, siguiente paso. No repetir contexto ya informado anteriormente.
+No generar narrativas largas salvo que el usuario las solicite.
+
+## Diagnóstico
+
+Cuando sea necesario investigar un problema: primero recopilar evidencia mínima,
+después formular la hipótesis, después validar únicamente esa hipótesis. Evitar
+abrir archivos adicionales que no aporten evidencia.
+
+## Optimización continua
+
+Si detectas que una acción consumiría una cantidad importante de contexto:
+detente, explica por qué, y propone una alternativa más eficiente antes de
+continuar.
+
+## Modelo recomendado
+
+Sonnet 5 es el modelo recomendado para desarrollo cotidiano (refactors, Page
+Objects, Selenium, helpers, tests). Opus se reserva para arquitectura compleja,
+investigaciones profundas o decisiones difíciles.
+
+## 1. Lectura mínima obligatoria
+
+Antes de abrir cualquier archivo debes decidir si realmente es necesario. Está
+prohibido leer archivos completos por defecto. Orden obligatorio:
+
+1. Buscar el símbolo, método o clase mediante grep/find.
+2. Leer únicamente el rango mínimo necesario alrededor del resultado.
+3. Leer el archivo completo solamente cuando exista una necesidad demostrable de
+   comprender la estructura global del archivo.
+
+Si el cambio afecta únicamente un método, queda prohibido leer el archivo completo.
+
+## 2. Prohibición de reconstrucción innecesaria
+
+No reconstruyas mentalmente el framework completo para tareas locales. Si la tarea
+afecta únicamente unos pocos archivos, trabaja exclusivamente sobre esos archivos.
+Nunca releas archivos ya analizados durante la misma sesión salvo que hayan cambiado.
+
+## 3. Política estricta para comandos de consola
+
+Está prohibido ejecutar comandos cuya salida sea mayor de la necesaria. Priorizar
+siempre grep/rg/findstr. Evitar `cat` de archivos completos, `sed` sobre cientos de
+líneas, `tail` extensos y dumps completos. Solo podrán utilizarse cuando exista una
+justificación técnica clara.
+
+## 4. Política para logs
+
+Nunca leer logs completos. Extraer únicamente: nombre del test, excepción, stack
+relevante, líneas necesarias para identificar la causa. Una vez identificada la
+causa raíz queda prohibido volver a leer el mismo bloque del log. No mantener dumps
+grandes dentro del contexto.
+
+## 5. Política para Selenium
+
+Durante el desarrollo: no ejecutar Selenium después de cada modificación. Agrupar
+todos los cambios compatibles y realizar una única validación E2E al finalizar.
+Solo ejecutar Selenium antes si el usuario lo solicita expresamente, o si un
+bloqueo impide continuar sin evidencia E2E.
+
+## 6. Política para investigaciones
+
+Antes de abrir archivos adicionales: 1) formular una hipótesis, 2) identificar la
+evidencia mínima necesaria, 3) obtener únicamente esa evidencia, 4) confirmar o
+descartar la hipótesis. Está prohibido explorar archivos "por si acaso".
+
+## 7. Política para informes
+
+Los informes deben contener únicamente: archivos modificados, resultado, bloqueos,
+próximo paso. No repetir contexto previamente informado. No generar narrativas
+largas salvo que el usuario las solicite.
+
+## 8. Autoevaluación de costo
+
+Antes de una acción que pueda consumir mucho contexto (lecturas masivas, múltiples
+comandos, varias corridas) debes estimar internamente su costo. Si existe una
+alternativa significativamente más eficiente, úsala automáticamente. Si ninguna
+alternativa es suficiente, informa el motivo antes de continuar.
+
+## 9. Objetivo permanente
+
+El objetivo no es trabajar más rápido: es minimizar el consumo de contexto y
+tokens manteniendo exactamente la misma calidad técnica y rigurosidad. Nunca
+sacrificar evidencia técnica para ahorrar contexto. Pero tampoco consumir contexto
+que no aporte información nueva.
+
+---
+
+# Disciplina de trabajo y control de contexto
+
+Estas reglas son obligatorias para todas las tareas y complementan (no reemplazan)
+la política de eficiencia de contexto anterior.
+
+## 1. Planificación obligatoria antes de actuar
+
+Antes de leer cualquier archivo determina: cuál es el objetivo exacto, qué
+archivos probablemente serán modificados, cuáles solo servirán como referencia. No
+comiences a explorar el proyecto sin haber definido ese alcance. Si aparece un
+archivo nuevo durante la implementación, justifica por qué es necesario abrirlo.
+Queda prohibido explorar archivos "por si acaso".
+
+## 2. Lectura mínima obligatoria
+
+Orden obligatorio: 1) buscar símbolo/método/clase mediante grep/find; 2) leer
+únicamente el rango mínimo necesario; 3) leer el archivo completo solo cuando sea
+imprescindible comprender su estructura global. Prohibido abrir archivos completos
+para modificar un único método.
+
+## 3. Un archivo solo se abre una vez
+
+Cada archivo leído debe terminar en uno de estos estados: modificado, utilizado
+como referencia indispensable, o descartado definitivamente para esta tarea.
+Prohibido reabrir el mismo archivo durante la misma tarea salvo que haya cambiado
+o exista justificación técnica.
+
+## 4. Reconstrucción del proyecto
+
+Prohibido reconstruir mentalmente el framework completo. Trabaja únicamente sobre
+los archivos afectados. Si la tarea afecta menos de tres archivos, prohibido
+ampliar el contexto a módulos no relacionados.
+
+## 5. Comandos de consola
+
+Priorizar grep/rg/findstr. Evitar `cat` completos, `sed` extensos, `tail` largos y
+listados masivos. Nunca ejecutar comandos cuya salida supere la información
+realmente necesaria.
+
+## 6. Logs
+
+Nunca leer logs completos. Extraer únicamente: nombre del test, excepción, stack
+relevante, líneas indispensables. Una vez identificada la causa raíz, prohibido
+volver a leer ese mismo bloque.
+
+## 7. Selenium
+
+Mientras el cambio no esté terminado, prohibido ejecutar Selenium (solo verificar
+sintaxis cuando sea necesario). Agrupar los cambios compatibles y validar E2E una
+única vez al finalizar. Solo ejecutar antes si el usuario lo solicita o existe un
+bloqueo imposible de resolver sin evidencia E2E.
+
+## 8. Investigación
+
+Orden obligatorio: 1) formular hipótesis; 2) determinar la evidencia mínima; 3)
+obtener únicamente esa evidencia; 4) confirmar o descartar; 5) solo entonces
+decidir si abrir nuevos archivos. Nunca explorar archivos esperando encontrar la
+respuesta.
+
+## 9. Informes
+
+Cada informe contiene únicamente: archivos modificados, resultado, bloqueos,
+siguiente paso. No repetir información ya comunicada. No generar narrativas largas
+salvo solicitud expresa.
+
+## 10. Autoevaluación de costo
+
+Antes de cualquier acción costosa (lectura de archivos, comandos, corridas de
+Selenium, generación de logs, informes), estima internamente su costo. Si existe
+una alternativa claramente más eficiente, úsala automáticamente.
+
+## 11. Reutilización
+
+Antes de escribir código nuevo, comprueba si ya existe un helper, método, utilidad
+o patrón reutilizable. No crear duplicados.
+
+## 12. Validaciones
+
+Durante el desarrollo: no ejecutar pruebas unitarias salvo que el cambio las
+afecte directamente; no ejecutar Selenium hasta el final; no realizar múltiples
+validaciones cuando una sola sea suficiente.
+
+## 13. Principio de mínima intervención
+
+Modificar únicamente el código necesario. No refactorizar por gusto. No mover
+archivos. No renombrar elementos. No mejorar código ajeno si no forma parte del
+objetivo solicitado.
+
+## 14. Principio de mínima salida
+
+Toda respuesta contiene únicamente información útil. Evitar repetir contexto,
+explicar funcionamiento ya conocido, volver a listar reglas, describir archivos
+que no cambiaron.
+
+## 15. Modelo recomendado
+
+Sonnet 5 para: mantenimiento, Selenium, Page Objects, helpers, FastReport, React,
+tests, documentación. Opus únicamente para: arquitectura, investigaciones
+complejas, diseño de soluciones, causa raíz difícil.
+
+## 16. Objetivo permanente
+
+Minimizar el consumo de contexto y tokens manteniendo exactamente el mismo nivel
+de calidad técnica. Nunca sacrificar evidencia. Nunca consumir contexto que no
+aporte información nueva.
+
+---
+
 # Triple Automation Framework Architecture
 
 ## Purpose

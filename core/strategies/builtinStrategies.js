@@ -49,27 +49,47 @@ class DirectSelectStrategy extends SelectionStrategy {
  *   4. CLICKEA el item (paso que no se puede omitir)
  */
 class SearchAndSelectStrategy extends SelectionStrategy {
+  /**
+   * `valor` acepta un string (comportamiento de siempre) o un array de strings
+   * (selección múltiple, en orden, para TagBox con `opciones.multiple`). Genérico:
+   * no hay nada específico de ningún módulo — cualquier control declarado como
+   * `searchAndSelect` en cualquier ESTRATEGIAS del framework lo hereda gratis.
+   */
   async aplicar(form, label, valor, opciones = {}) {
     if (valor === undefined || valor === null || valor === '') return form.seleccionarPrimera(label);
 
-    logger.info(`SearchAndSelect: "${valor}" en "${label}"`);
+    const valores = Array.isArray(valor) ? valor : [valor];
     await form._abrirDropdown(label);
 
-    // 2) escribir para filtrar (se limpia lo previo con Ctrl+A)
-    const input = await form._inputBusqueda(label);
-    await input.sendKeys(Key.chord(Key.CONTROL, 'a'), String(valor));
+    const textos = [];
+    for (const v of valores) {
+      logger.info(`SearchAndSelect: "${v}" en "${label}"`);
+      if (!opciones.multiple) {
+        // 2) escribir para filtrar (se limpia lo previo con Ctrl+A). Solo en
+        // selects simples: son los que "filtran al escribir" (ver doc de la
+        // clase). En un TagBox (multiple) NO se escribe — mismo camino que
+        // Form.seleccionarTagPorTexto, que clickea directo sobre la lista ya
+        // renderizada. Evidencia (comparación de código, misma investigación):
+        // escribir en el input de búsqueda de un TagBox deja, en al menos un
+        // caso reproducido, el overlay reportándose "abierto" para Selenium
+        // aunque la UI ya esté cerrada — _esperarOverlayCerrado() nunca resuelve.
+        // Sin ese paso, el TagBox sigue el mismo camino que sí termina siempre.
+        const input = await form._inputBusqueda(label);
+        await input.sendKeys(Key.chord(Key.CONTROL, 'a'), String(v));
+      }
 
-    // 3) esperar el filtrado + 4) seleccionar explícitamente el item
-    const item = await form._itemVisiblePorTexto(opciones.textoEsperado || valor);
-    const texto = (await item.getText()).trim();
-    await item.click();
+      // 3) esperar el filtrado (si hubo) + 4) seleccionar explícitamente el item
+      const item = await form._itemVisiblePorTexto(opciones.textoEsperado || v);
+      textos.push((await item.getText()).trim());
+      await item.click();
+    }
 
     if (opciones.multiple) {
       // un tagbox no cierra solo al elegir
       await form.driver.actions().sendKeys(Key.ESCAPE).perform();
     }
     await form._esperarOverlayCerrado();
-    return texto;
+    return Array.isArray(valor) ? textos : textos[0];
   }
 }
 

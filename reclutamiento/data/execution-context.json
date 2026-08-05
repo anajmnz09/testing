@@ -123,5 +123,62 @@
     "nombreRequisicion": "QA-crear-req-sustitucion-requeridos-1785368792392",
     "idRequisicion": "",
     "estado": ""
+  },
+  "crear-req-creacion": {
+    "Razón de solicitud": "",
+    "Persona(s) a sustituir": "",
+    "Documentos Requeridos": "",
+    "Supervisor": "",
+    "Ubicación": "",
+    "Fecha de Creación": "",
+    "Puesto": "",
+    "Sucursal": "",
+    "Departamento": "",
+    "Reclutador": "",
+    "Horario": "",
+    "Tipo de contrato": "",
+    "Modalidad": "",
+    "Nombre de requisición": "",
+    "Requisitos": "",
+    "Responsabilidades": "",
+    "Descripción": "",
+    "Comentario": "",
+    "Cantidad de empleado": "",
+    "Rotativo": ""
+  },
+  "crear-req-sustitucion": {
+    "Razón de solicitud": "Sustitucion",
+    "Persona(s) a sustituir": "Hugo Valentina Cordero Ruiz",
+    "Documentos Requeridos": "CV",
+    "Supervisor": "Juan Miranda Flores Montes",
+    "Ubicación": "Mi casa QA",
+    "Fecha de Creación": "",
+    "Puesto": "",
+    "Sucursal": "",
+    "Departamento": "",
+    "Reclutador": "",
+    "Horario": "Primer Turno 1",
+    "Tipo de contrato": "Por Servicio",
+    "Modalidad": "Híbrida",
+    "Nombre de requisición": "REQ DESDE PANEL SUST pt 3",
+    "Requisitos": "Requisitos",
+    "Responsabilidades": "Responsabilidades",
+    "Descripción": "",
+    "Comentario": "Comentario",
+    "Cantidad de empleado": "3",
+    "Rotativo": "si"
+  },
+  "agregar-comentario-requisicion": {
+    "codigo": "",
+    "nombre": "REQ DESDE PANEL SUST pt 3",
+    "comentario": "HOLAAAAA 2",
+    "estado": ""
+  },
+  "agregar-pregunta-personalizada": {
+    "codigo": "",
+    "nombre": "",
+    "pregunta": "",
+    "nombreCampo": "",
+    "estado": ""
   }
 }

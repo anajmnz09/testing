@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { execSync } = require('child_process');
 
 /**
  * Gestión de los PERFILES TEMPORALES de Chrome que crea el framework.
@@ -137,6 +138,51 @@ function limpiarPerfiles(baseDir = BASE) {
   return res;
 }
 
+/**
+ * Windows only, best-effort. Mata ÚNICAMENTE los procesos chromedriver.exe/
+ * chrome.exe cuya línea de comando contiene `perfilDir` (el --user-data-dir
+ * ÚNICO de esta sesión). NUNCA mata por nombre de imagen (`taskkill /IM`): eso
+ * afectaría a cualquier otra sesión de Selenium corriendo en la misma máquina.
+ * Cada proceso se identifica por su PID real, verificado contra su propia línea
+ * de comando, antes de cerrarlo (`taskkill /PID <pid> /F`).
+ *
+ * Existe porque `Builder().build()` de selenium-webdriver, si la sesión falla
+ * DESPUÉS de arrancar chromedriver/Chrome, no expone ningún handle del proceso
+ * al llamador (el `DriverService` se crea y arranca dentro de la promesa interna
+ * de `Builder().build()`, sin devolverse en el camino de error — verificado en
+ * node_modules/selenium-webdriver: remote/index.js#build() siempre construye un
+ * DriverService NUEVO, e index.js#build() no lo retorna si createSession falla).
+ * No hay forma soportada de obtener el PID exacto por API; esta es la alternativa
+ * segura: escanear por línea de comando y matar solo por PID verificado.
+ *
+ * @returns {{matados:number, advertencia:?string}}
+ */
+function matarProcesosPorPerfil(perfilDir) {
+  if (process.platform !== 'win32' || !perfilDir) return { matados: 0, advertencia: null };
+  try {
+    const out = execSync(
+      'wmic process where "name=\'chromedriver.exe\' or name=\'chrome.exe\'" get ProcessId,CommandLine /format:list',
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+    );
+    const bloques = out.split(/\r?\n\s*\r?\n/);
+    let matados = 0;
+    for (const bloque of bloques) {
+      if (!bloque.includes(perfilDir)) continue; // no es un proceso de ESTA sesión
+      const m = bloque.match(/ProcessId=(\d+)/);
+      if (!m) continue;
+      try {
+        execSync(`taskkill /PID ${m[1]} /F`, { stdio: 'ignore' });
+        matados++;
+      } catch (e) {
+        /* el proceso puede haber terminado por su cuenta entre la lectura y el kill */
+      }
+    }
+    return { matados, advertencia: null };
+  } catch (e) {
+    return { matados: 0, advertencia: `no se pudo verificar/cerrar procesos de esta sesión (${e.message})` };
+  }
+}
+
 module.exports = {
   BASE,
   EDAD_VIEJO_MS,
@@ -145,4 +191,5 @@ module.exports = {
   barrerViejos,
   contarPerfiles,
   limpiarPerfiles,
+  matarProcesosPorPerfil,
 };

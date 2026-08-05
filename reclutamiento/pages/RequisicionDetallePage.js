@@ -3,6 +3,7 @@ const { BasePage } = require('@triple/core');
 const Form = require('@triple/core/components/Form');
 const Notify = require('@triple/core/components/Notify');
 const FormsHeader = require('@triple/core/components/FormsHeader');
+const CommentEditor = require('@triple/core/components/CommentEditor');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 
@@ -52,6 +53,19 @@ class RequisicionDetallePage extends BasePage {
     // de localizarlos. Usa el selector por defecto de FormsHeader, que ya cubre
     // `forms-header` y `requisicion-header`.
     this.acciones = new FormsHeader(driver);
+    // Sección "Comentarios" (debajo de "Preguntas personalizadas"): NO es
+    // exclusiva de Requisiciones, el mismo widget vive en el core.
+    this.commentEditor = new CommentEditor(driver);
+  }
+
+  /**
+   * Agrega un comentario en la sección "Comentarios" del detalle. Delega
+   * completamente en CommentEditor (core): esta página no conoce ningún
+   * selector interno del editor.
+   */
+  async agregarComentario(texto) {
+    logger.info('RequisicionDetallePage: agregar comentario (sección Comentarios)');
+    return this.commentEditor.agregar(texto);
   }
 
   async estaCargado() {
@@ -93,6 +107,47 @@ class RequisicionDetallePage extends BasePage {
   }
   getEstado() {
     return this.form.getValor('Estado');
+  }
+
+  // -------------------------------------------------------------------------
+  // Edición (botón "Editar" del header) — habilita el formulario del detalle
+  // para modificar campos (p. ej. agregar un comentario o una pregunta
+  // personalizada a una requisición YA existente).
+  // -------------------------------------------------------------------------
+
+  /**
+   * Entra en modo edición del detalle clickeando "Editar" en el header (reutiliza
+   * `FormsHeader.clickBoton`: clic por nombre accesible, sin esperar notify —
+   * "Editar" no produce toast, solo habilita el formulario).
+   *
+   * Es tolerante: si el botón no aparece o está deshabilitado, NO lanza; asume que
+   * el formulario del detalle ya es editable y deja que el paso siguiente (escribir
+   * el comentario / abrir el modal de pregunta) confirme o falle con su propio
+   * diagnóstico. Devuelve el diagnóstico del intento.
+   */
+  async editar(timeout = config.timeouts.explicitWaitMs) {
+    logger.info('RequisicionDetallePage: entrar en modo edición ("Editar")');
+    const info = await this.acciones.clickBoton('editar', {
+      etiqueta: 'Editar',
+      timeout,
+      dataQa: 'boton-editar',
+    });
+    if (info.accionado) {
+      await this.esperarSinLoader(timeout);
+      // Confirmar que el modo edición quedó ACTIVO antes de tocar los editores: en
+      // edición aparece el botón "Guardar" del formulario. Sin esta espera, escribir
+      // justo tras el click corre contra el re-render de DevExtreme y el editor aún
+      // de solo lectura lanza "element not interactable".
+      await this.waitVisible(
+        By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Guardar']"),
+        timeout
+      ).catch(() => {});
+    } else {
+      logger.info(
+        `RequisicionDetallePage: "Editar" no accionado (${info.encontrado ? 'deshabilitado' : 'no encontrado'}); se asume detalle ya editable`
+      );
+    }
+    return info;
   }
 
   // -------------------------------------------------------------------------

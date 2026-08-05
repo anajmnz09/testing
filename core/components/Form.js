@@ -120,6 +120,50 @@ class Form extends BaseComponent {
       await boton.click();
     }
     await this.driver.wait(() => this._hayItemVisible(), this._timeout());
+    await this._esperarSiSinDatos();
+  }
+
+  /**
+   * True si el dropdown recién abierto muestra ÚNICAMENTE el placeholder "Sin
+   * datos para mostrar" (ni cero items —eso es un error de selector, no aplica—
+   * ni items reales).
+   */
+  async _soloSinDatos() {
+    const items = await this.driver.findElements(this._opcionLocator());
+    const visibles = [];
+    for (const it of items) {
+      try { if (await it.isDisplayed()) visibles.push(it); } catch (e) { /* stale */ }
+    }
+    if (visibles.length !== 1) return false;
+    try {
+      return (await visibles[0].getText()).trim() === 'Sin datos para mostrar';
+    } catch (e) {
+      return false; // stale u otro error: no es el caso que nos ocupa
+    }
+  }
+
+  /**
+   * Regla "Sin datos para mostrar" (permanente, en la infraestructura común):
+   * si el dropdown recién abierto muestra ÚNICAMENTE ese placeholder, espera
+   * 5000ms FIJOS —una sola vez, sin bucles ni reintentos— y vuelve a consultar
+   * la lista SIN cerrar el dropdown. Si ya hay opciones reales, no hace nada
+   * (comportamiento normal). Si tras los 5s sigue sin datos, solo lo registra y
+   * continúa: el comportamiento normal del framework decide qué pasa después
+   * (fallar o seguir, según el campo) — no se agrega lógica especial.
+   *
+   * Vive en `_abrirDropdownEn`, el único punto de apertura de dropdown que usan
+   * `_abrirDropdown` (por label) y `elegirEnSelectbox` (por locator, popups). Por
+   * eso lo heredan automáticamente TODOS los controles basados en lista —
+   * SelectBox, TagBox, SearchAndSelect, Lookup— de cualquier módulo, sin tocar
+   * ningún Page Object ni duplicar código.
+   */
+  async _esperarSiSinDatos() {
+    if (!(await this._soloSinDatos())) return;
+    logger.info('Form: dropdown con únicamente "Sin datos para mostrar" — esperando 5000ms fijos (una sola vez)');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (await this._soloSinDatos()) {
+      logger.info('Form: el control continúa sin datos tras los 5s — se sigue con el comportamiento normal del framework');
+    }
   }
 
   /**
