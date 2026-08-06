@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { testContext } = require('@triple/core');
+const { testContext, evidence } = require('@triple/core');
 const RequisicionFormPage = require('../pages/RequisicionFormPage');
 const fixtures = require('../support/fixtures');
 const datos = require('../data/requisiciones.data');
@@ -41,9 +41,21 @@ describe('Reclutamiento - Agregar pregunta personalizada a requisición existent
 
     await ctx.lista.volverAlListado();
     const detalle2 = await ctx.lista.abrirDetalle(nombre);
-    // La pregunta puede mostrarse por su "Nombre del campo" o por el texto de la pregunta.
-    const porNombre = await detalle2.tienePreguntaPersonalizada(pregunta.nombreCampo);
-    const porTexto = await detalle2.tienePreguntaPersonalizada('disponibilidad inmediata');
-    assert.ok(porNombre || porTexto, 'La pregunta personalizada no quedó almacenada');
+    // Única fuente de verdad: el mismo `pregunta.pregunta` que se envió a
+    // agregarPreguntaPersonalizada() arriba — sin duplicar el valor ni hardcodear
+    // un texto distinto.
+    const encontrada = await detalle2.tienePreguntaPersonalizada(pregunta.pregunta);
+    assert.ok(encontrada, `La pregunta personalizada "${pregunta.pregunta}" no quedó almacenada`);
+
+    // Evidencia ENFOCADA en la sección "Pregunta(s) Personalizada(s)" (no toda la
+    // página, no la sección de Comentarios): reutiliza el screenshot por elemento
+    // del core (evidence.attachScreenshot con `element`).
+    const seccion = await detalle2.localizarSeccionPreguntasPersonalizadas();
+    if (seccion) {
+      await evidence.attachScreenshot(ctx.driver, this, {
+        label: 'Pregunta personalizada agregada',
+        element: seccion,
+      });
+    }
   });
 });

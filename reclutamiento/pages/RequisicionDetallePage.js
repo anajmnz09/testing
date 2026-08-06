@@ -353,6 +353,41 @@ class RequisicionDetallePage extends BasePage {
       );
     }, 6000).catch(() => false);
   }
+
+  /**
+   * Localiza el CONTENEDOR de la sección "Pregunta(s) Personalizada(s)" (título
+   * + grid de preguntas), para poder evidenciarlo con un screenshot ENFOCADO
+   * (ver `evidence.attachScreenshot({element})` en el core) — sin incluir la
+   * sección de Comentarios ni el resto de la página.
+   *
+   * Localización por ESTRUCTURA del DOM, no por coordenadas: busca el heading
+   * cuyo texto sea "Pregunta(s) Personalizada(s)" y sube por sus ancestros
+   * hasta encontrar el primero que también contenga la fila del grid de
+   * preguntas (`Node.contains`) — así el contenedor devuelto abarca título +
+   * contenido real, sin adivinar cuántos niveles subir.
+   *
+   * @returns {Promise<import('selenium-webdriver').WebElement|null>}
+   */
+  async localizarSeccionPreguntasPersonalizadas() {
+    return this.driver.executeScript(() => {
+      const heading = Array.from(
+        document.querySelectorAll('h1,h2,h3,h4,h5,[class*="title"],[class*="caption"]')
+      ).find((e) => /pregunta\(s\)\s*personalizada\(s\)/i.test((e.textContent || '').trim()));
+      if (!heading) return null;
+
+      // Primera fila de grid que aparece DESPUÉS del heading en el documento
+      // (la sección de preguntas es la única con filas tras ese título).
+      const filaDeSeccion = Array.from(document.querySelectorAll('.dx-data-row')).find(
+        (f) => heading.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING
+      );
+
+      let ancestro = heading.parentElement;
+      while (ancestro && filaDeSeccion && !ancestro.contains(filaDeSeccion)) {
+        ancestro = ancestro.parentElement;
+      }
+      return ancestro || heading.parentElement || heading;
+    });
+  }
 }
 
 module.exports = RequisicionDetallePage;

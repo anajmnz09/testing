@@ -176,9 +176,9 @@
   },
   "agregar-pregunta-personalizada": {
     "codigo": "",
-    "nombre": "",
-    "pregunta": "",
-    "nombreCampo": "",
+    "nombre": "REQ DESDE PANEL SUST pt 3",
+    "pregunta": "Hola?",
+    "nombreCampo": "hce3",
     "estado": ""
   }
 }

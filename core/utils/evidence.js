@@ -169,9 +169,16 @@ registerEvidenceType('text', {
 
 /**
  * `context` debe ser el "this" de Mocha (hook o it()), no el test resuelto.
+ *
+ * Por defecto captura la página completa. Si se provee `element` (un
+ * WebElement ya localizado), captura ÚNICAMENTE ese elemento —vía el comando
+ * nativo de Selenium `WebElement.takeScreenshot()` (W3C "Take Element
+ * Screenshot"), que ya hace scroll-into-view internamente: no hay coordenadas
+ * fijas ni scroll manual involucrados—. Reutiliza el mismo guardado/adjuntado
+ * que la captura de página completa: solo cambia el origen de la imagen.
  */
-async function attachScreenshot(driver, context, { label } = {}) {
-  const image = await driver.takeScreenshot();
+async function attachScreenshot(driver, context, { label, element } = {}) {
+  const image = await (element ? element.takeScreenshot() : driver.takeScreenshot());
   const filePath = saveEvidenceBuffer('image', context, image, { label: label || 'screenshot' });
   attach('image', context, filePath, { label: label ? `Screenshot: ${label}` : 'Screenshot' });
   return filePath;
