@@ -77,16 +77,23 @@ class Form extends BaseComponent {
    * `selectorCss` es opcional: permite apuntar a otro tipo de item (ej. nodos de
    * un treeview) sin duplicar la lógica de espera. Sin él, comportamiento igual
    * que siempre.
+   *
+   * Comparación INSENSIBLE a mayúsculas/minúsculas: verificado que un valor
+   * enviado con distinta capitalización que el catálogo real (ej. "cedula" vs.
+   * "Cedula") nunca encontraba coincidencia y agotaba el timeout. Es aditivo:
+   * cualquier coincidencia que ya funcionaba con case exacto sigue funcionando
+   * igual (case-insensitive es un superconjunto de case-sensitive).
    */
   async _itemVisiblePorTexto(texto, selectorCss) {
     const locator = selectorCss ? By.css(selectorCss) : this._opcionLocator();
+    const textoBuscado = String(texto).toLowerCase();
     return this.driver.wait(async () => {
       const items = await this.driver.findElements(locator);
       for (const it of items) {
         try {
           if (await it.isDisplayed()) {
             const t = (await it.getText()).trim();
-            if (t.includes(texto)) return it;
+            if (t.toLowerCase().includes(textoBuscado)) return it;
           }
         } catch (e) { /* stale */ }
       }
@@ -352,13 +359,32 @@ class Form extends BaseComponent {
     return inval.length > 0;
   }
 
-  /** True si el editor del campo está vacío (clase dx-texteditor-empty de DevExtreme). */
+  /**
+   * True si el editor del campo está vacío (clase dx-texteditor-empty de
+   * DevExtreme).
+   *
+   * Excepción verificada: en editores enmascarados (`dx-texteditor-masked`,
+   * ej. "Celular") esa clase NO se aplica aunque el valor sea solo el
+   * esqueleto de la máscara (ej. "___-___-____", sin ningún dígito/letra
+   * real) — confirmado inspeccionando el DOM real del formulario recién
+   * abierto. Para ese caso puntual se revisa además el valor crudo del
+   * input; el resto de editores (sin esa clase) usa exactamente el mismo
+   * criterio que antes.
+   */
   async estaVacio(label) {
     const campo = await this._elemCampo(label);
     const eds = await campo.findElements(By.css('.dx-texteditor'));
     if (!eds.length) return true;
     const cls = (await eds[0].getAttribute('class')) || '';
-    return /dx-texteditor-empty/.test(cls);
+    if (/dx-texteditor-empty/.test(cls)) return true;
+    if (/dx-texteditor-masked/.test(cls)) {
+      const inputs = await eds[0].findElements(By.css('.dx-texteditor-input'));
+      if (inputs.length) {
+        const valor = (await inputs[0].getAttribute('value')) || '';
+        if (!/[0-9A-Za-z]/.test(valor)) return true;
+      }
+    }
+    return false;
   }
 
   /**
