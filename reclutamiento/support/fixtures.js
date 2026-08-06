@@ -1,5 +1,6 @@
 const { createDriver, authFlow, navigationFlow, testContext } = require('@triple/core');
 const RequisicionesPage = require('../pages/RequisicionesPage');
+const SolicitudEmpleoPage = require('../pages/SolicitudEmpleoPage');
 
 /**
  * Fixtures compartidos por los casos del módulo.
@@ -24,6 +25,18 @@ function usarListadoRequisiciones() {
     await authFlow.login(ctx.driver);
     await navigationFlow.abrirModulo(ctx.driver, 'Reclutamiento');
     ctx.lista = await new RequisicionesPage(ctx.driver).listo();
+  });
+  return ctx;
+}
+
+/** Igual que `usarListadoRequisiciones`, pero deja cargado el listado "Solicitudes de Empleo". */
+function usarListadoSolicitudesEmpleo() {
+  const ctx = {};
+  beforeEach(async function () {
+    ctx.driver = await createDriver();
+    await authFlow.login(ctx.driver);
+    await navigationFlow.abrirModulo(ctx.driver, 'Reclutamiento');
+    ctx.lista = await SolicitudEmpleoPage.ir(ctx.driver);
   });
   return ctx;
 }
@@ -89,6 +102,7 @@ async function abrirRequisicionExistente(ctx, caso) {
 
 module.exports = {
   usarListadoRequisiciones,
+  usarListadoSolicitudesEmpleo,
   iniciarColectorErroresJs,
   erroresJs,
   abrirRequisicionExistente,

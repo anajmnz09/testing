@@ -1,7 +1,7 @@
 require('../utils/env'); // asegura credenciales/URL cargadas
 const LoginPage = require('../pages/LoginPage');
 const DashboardPage = require('../pages/DashboardPage');
-const NavBar = require('../components/NavBar');
+const SRHHNavBar = require('../components/SRHHNavBar');
 const logger = require('../utils/logger');
 
 /**
@@ -35,7 +35,7 @@ async function login(
 /** Cierra la sesión desde el navbar. */
 async function logout(driver) {
   logger.info('authFlow: logout');
-  const navbar = new NavBar(driver);
+  const navbar = new SRHHNavBar(driver);
   await navbar.logout();
 }
 

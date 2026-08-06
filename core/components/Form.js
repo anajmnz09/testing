@@ -18,11 +18,39 @@ class Form extends BaseComponent {
     return config.timeouts.explicitWaitMs;
   }
 
-  /** Contenedor de un campo por el texto de su label. */
+  /**
+   * Contenedor de un campo por el texto de su label. Soporta DOS convenciones
+   * de formulario verificadas en la app: `group-field` (markup propio de la
+   * app, ej. Requisiciones) y `dx-field-item` (widget nativo `dxForm` de
+   * DevExtreme, ej. Crear Solicitud). Es un OR aditivo: para una pantalla que
+   * solo usa `group-field`, el DOM nunca contiene `dx-field-item`, así que
+   * agregar esa rama no cambia ni un resultado existente — compatibilidad
+   * hacia atrás garantizada por construcción, no por casualidad. `*` en vez de
+   * `div`: los contenedores `dx-field-item` no siempre son `div`.
+   *
+   * `dx-field-item` usa match EXACTO de clase (padding con espacios), no
+   * `contains()` simple sobre el nombre de clase (evita colisión con otros
+   * tokens que empiezan igual, ej. `dx-field-item-content`).
+   *
+   * CAUSA RAÍZ REAL confirmada por evidencia (no la del primer intento, que
+   * era incorrecta): `dxForm` puede agrupar varios campos relacionados dentro
+   * de UN `dx-field-item` contenedor marcado `dx-field-item-has-group` (ej.
+   * "Tipo ID" envuelve a "Primer Nombre" como descendiente anidado en el
+   * formulario de Solicitud de Empleo). Como `.//label` matchea CUALQUIER
+   * label descendiente, el contenedor EXTERIOR del grupo también satisface
+   * `.//label[contains(..., 'Primer Nombre')]` aunque su propio label visible
+   * sea "Tipo ID" — y al ser el primero en orden de documento, `getValor()`/
+   * `escribir()` operaban sobre el campo equivocado. Fix: excluir cualquier
+   * match que tenga un DESCENDIENTE que también matchee (quedarse con el más
+   * interno/específico). Para pantallas sin agrupamiento (ej. Requisiciones)
+   * esta exclusión nunca se activa — no cambia ningún resultado existente.
+   */
   _campo(label) {
-    return By.xpath(
-      `//div[contains(@class,'group-field')][.//label[contains(normalize-space(.), '${label}')]]`
-    );
+    const condicion =
+      `(contains(@class,'group-field') or ` +
+      `contains(concat(' ', normalize-space(@class), ' '), ' dx-field-item ')) ` +
+      `and .//label[contains(normalize-space(.), '${label}')]`;
+    return By.xpath(`//*[${condicion} and not(.//*[${condicion}])]`);
   }
 
   async _elemCampo(label) {
@@ -256,18 +284,52 @@ class Form extends BaseComponent {
   }
 
   /**
+   * Agrega un tag de TEXTO LIBRE a un tagbox (distinto de `seleccionarPrimerTag`/
+   * `seleccionarTagPorTexto`, que eligen de un CATÁLOGO existente): click en el
+   * editor, escribe `texto` y confirma con ENTER — verificado en la app real
+   * (sección "Etiquetas" del formulario de Solicitud de Empleo). No abre
+   * dropdown ni requiere que el texto exista de antemano.
+   *
+   * Sin `texto` (undefined/vacío) no hace nada — mismo criterio que el resto
+   * de las estrategias ante un valor no provisto (no hay un tag "por defecto"
+   * razonable para agregar).
+   */
+  async escribirTagLibre(label, texto) {
+    if (texto === undefined || texto === null || texto === '') return undefined;
+    logger.info(`Form: agregar tag libre "${texto}" en "${label}"`);
+    const campo = await this._elemCampo(label);
+    const input = await campo.findElement(By.css('.dx-texteditor-input'));
+    await input.click();
+    await input.sendKeys(texto, Key.ENTER);
+  }
+
+  /**
    * Escribe en un textbox / textarea por label.
    * Los editores DevExtreme commitean su valor en el evento 'change' (al perder
    * foco): por eso se envía TAB al final, para forzar el blur y que el valor
    * quede registrado por el validador (si no, el último campo escrito aparece
    * como "requerido" aunque tenga texto).
+   *
+   * `clear`: por defecto `true` (comportamiento de siempre; `.clear()` además
+   * enfoca el input como efecto colateral). Algunos editores DevExtreme (ej.
+   * inputs con MÁSCARA dinámica, como "Identificación" en Solicitud de Empleo)
+   * lanzan `invalid element state` ante `.clear()` — mismo problema ya
+   * documentado en `agregarPreguntaPersonalizada()` para los campos del modal
+   * de pregunta personalizada. Con `clear:false` se omite ese paso, pero se
+   * mantiene un `.click()` explícito para enfocar (sin él, `sendKeys` puede
+   * escribir con el cursor en una posición inesperada dentro de la máscara —
+   * verificado: sin el click, el valor resultante queda corrupto).
    */
-  async escribir(label, texto) {
+  async escribir(label, texto, { clear = true } = {}) {
     logger.info(`Form: escribir en "${label}"`);
     const campo = await this._elemCampo(label);
     await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', campo);
     const input = await campo.findElement(By.css('.dx-texteditor-input'));
-    await input.clear();
+    if (clear) {
+      await input.clear();
+    } else {
+      await input.click();
+    }
     await input.sendKeys(texto, Key.TAB);
   }
 

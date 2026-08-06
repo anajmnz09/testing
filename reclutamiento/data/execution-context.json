@@ -180,5 +180,28 @@
     "pregunta": "Hola?",
     "nombreCampo": "hce3",
     "estado": ""
+  },
+  "validacion-solicitud-empleo": {
+    "Primer Nombre": "",
+    "Segundo Nombre": "",
+    "Grado académico": "",
+    "Requisición": "",
+    "Comentario": "",
+    "Etiquetas": ""
+  },
+  "crear-solicitud-empleo": {
+    "Tipo ID": "cedula",
+    "Identificación": "40200624075",
+    "Primer Nombre": "Matias",
+    "Segundo Nombre": "Ramon",
+    "Primer Apellido": "Mella",
+    "Segundo Apellido": "Sanchez",
+    "Grado académico": "",
+    "Celular": "8097655432",
+    "Correo": "correo@gmail.com",
+    "Requisición": "administrador de redes",
+    "Fecha Ingreso": "",
+    "Etiquetas": "hola, admin, redes",
+    "Comentario": "comento"
   }
 }

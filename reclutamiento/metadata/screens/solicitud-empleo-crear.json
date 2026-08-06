@@ -1,0 +1,796 @@
+{
+  "pantalla": "solicitud-empleo-crear",
+  "capturadoEn": "2026-08-06T17:29:58.725Z",
+  "baseUrl": "https://test.triple.com.do/",
+  "inspector": {
+    "version": 2,
+    "firma": "f8f84161d5d0"
+  },
+  "botones": [
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Solicitudes de Empleo",
+      "soloIcono": false,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Mi Trabajo",
+      "soloIcono": false,
+      "texto": "Mi Trabajo"
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": "SyncCacheButton",
+      "nombreAccesible": "Actualizar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Cia_0042025",
+      "soloIcono": false,
+      "texto": "Cia_0042025"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Cargando...",
+      "soloIcono": false,
+      "texto": "Cargando..."
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Guardar",
+      "soloIcono": false,
+      "texto": "Guardar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Descartar",
+      "soloIcono": false,
+      "texto": "Descartar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text additional-btn ml-40",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Importar CV",
+      "soloIcono": false,
+      "texto": "Importar CV"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-icon",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "close",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Guardar",
+      "soloIcono": false,
+      "texto": "Guardar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Descartar",
+      "soloIcono": false,
+      "texto": "Descartar"
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    }
+  ],
+  "controles": [
+    {
+      "claseContenedor": "dx-first-row dx-first-col dx-last-row dx-field-item dx-col-0 dx-field-item-optional dx-field-item-has-group",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Tipo ID:",
+      "name": "tipo_Identificacion",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-row dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Tipo ID:",
+      "name": "tipo_Identificacion",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_identificacion",
+      "label": "Identificación:",
+      "name": "identificacion",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_primer_Nombre",
+      "label": "Primer Nombre:",
+      "name": "primer_Nombre",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_segundo_Nombre",
+      "label": "Segundo Nombre:",
+      "name": "segundo_Nombre",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_primer_Apellido",
+      "label": "Primer Apellido:",
+      "name": "primer_Apellido",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_segundo_Apellido",
+      "label": "Segundo Apellido:",
+      "name": "segundo_Apellido",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Origen Solicitante:",
+      "name": "origen_Solicitante",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "selectbox",
+      "valor": "0"
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Grado académico:",
+      "name": "id_GradoAcademico",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Celular:",
+      "name": "telefono",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-last-row dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_email",
+      "label": "Correo:",
+      "name": "email",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-row dx-last-col dx-last-row dx-field-item dx-col-1 dx-field-item-optional dx-field-item-has-group",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Requisición:",
+      "name": "id_Requisicion",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "tagbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "search-icon dx-first-row dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Requisición:",
+      "name": "id_Requisicion",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__nombreDepartamento",
+      "label": "Departamento:",
+      "name": "_nombreDepartamento",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__nombrePuesto",
+      "label": "Puesto de trabajo:",
+      "name": "_nombrePuesto",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__nombreSupervisor",
+      "label": "Supervisor:",
+      "name": "_nombreSupervisor",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Fecha Ingreso:",
+      "name": "fecha_Ingreso",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "datebox",
+      "valor": "2026-08-06"
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__etiquetasArray",
+      "label": "Etiquetas:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "tagbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-col dx-last-row dx-field-item dx-col-0 dx-field-item-optional dx-flex-layout dx-label-v-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_comentario",
+      "label": "Comentario:",
+      "name": "comentario",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textarea",
+      "valor": null
+    }
+  ],
+  "grids": [],
+  "headers": [
+    {
+      "acciones": [
+        {
+          "deshabilitado": false,
+          "nombre": "Guardar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Descartar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Importar CV",
+          "soloIcono": false
+        }
+      ],
+      "botones": [
+        "Guardar",
+        "Descartar",
+        "Importar CV"
+      ],
+      "clase": "forms-header",
+      "labels": [
+        "Guardar",
+        "Descartar",
+        "Importar CV"
+      ],
+      "switches": [],
+      "texto": "Solicitudes de EmpleoCrear SolicitudGuardarDescartarImportar CV"
+    }
+  ],
+  "identificadores": [
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "viewport",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "theme-color",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "description",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "rootBody",
+      "name": null,
+      "tag": "body",
+      "texto": "You need to enable JavaScript to run this app.RequisicionesS"
+    },
+    {
+      "dataTestId": null,
+      "id": "root",
+      "name": null,
+      "tag": "div",
+      "texto": "RequisicionesSolicitudes de EmpleoSolicitudes de EmpleoBanco"
+    },
+    {
+      "dataTestId": null,
+      "id": "Layer_1",
+      "name": null,
+      "tag": "svg",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "selectModulos",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-983daadb-b61a-81bc-d4cc-7de7d2710f74",
+      "name": null,
+      "tag": "div",
+      "texto": "Solicitudes de EmpleoBanco de candidatos"
+    },
+    {
+      "dataTestId": null,
+      "id": "SyncCacheButton",
+      "name": null,
+      "tag": "button",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "NotificationDropDown",
+      "name": null,
+      "tag": "a",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "ConfiguracionDropdown",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "CompanyDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cia_0042025"
+    },
+    {
+      "dataTestId": null,
+      "id": "userDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cargando..."
+    },
+    {
+      "dataTestId": null,
+      "id": "file-upload",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": "container",
+      "id": null,
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "tipo_Identificacion",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_tipo_Identificacion",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_identificacion",
+      "name": "identificacion",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_primer_Nombre",
+      "name": "primer_Nombre",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_segundo_Nombre",
+      "name": "segundo_Nombre",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_primer_Apellido",
+      "name": "primer_Apellido",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_segundo_Apellido",
+      "name": "segundo_Apellido",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "origen_Solicitante",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_origen_Solicitante",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "id_GradoAcademico",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_id_GradoAcademico",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "telefono",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_telefono",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_email",
+      "name": "email",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "id_Requisicion",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_id_Requisicion",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__nombreDepartamento",
+      "name": "_nombreDepartamento",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__nombrePuesto",
+      "name": "_nombrePuesto",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__nombreSupervisor",
+      "name": "_nombreSupervisor",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "fecha_Ingreso",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_fecha_Ingreso",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "_etiquetasArray",
+      "tag": "select",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1__etiquetasArray",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-9bbaa79e-d6b1-c5d2-dd87-a717994a72a1_comentario",
+      "name": "comentario",
+      "tag": "textarea",
+      "texto": ""
+    }
+  ],
+  "navegacion": [
+    {
+      "clase": "\n                  navItemLink \n                  undefined \n                  false\n                ",
+      "href": "/srhh/reclutamiento/requisicion",
+      "id": null,
+      "texto": "Requisiciones"
+    },
+    {
+      "clase": "dropdownLinkItem false",
+      "href": "/srhh/reclutamiento/solicitudes",
+      "id": null,
+      "texto": "Solicitudes de Empleo"
+    },
+    {
+      "clase": "dropdownLinkItem false",
+      "href": "/srhh/reclutamiento/bancos",
+      "id": null,
+      "texto": "Banco de candidatos"
+    }
+  ],
+  "switchesSueltos": [],
+  "titulo": "Triple",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX18rx2lBWsC4XTagBUxN8ccnWhXqzuhLzS2nyvo9mNJP1dkiPGvkRqiwk_yrtjvTLKfI_wFBu6Oc7g",
+  "validaciones": {
+    "camposInvalidos": [],
+    "notifyVisible": ""
+  }
+}

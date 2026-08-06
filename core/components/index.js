@@ -27,7 +27,10 @@ module.exports = {
   FileUploader: require('./FileUploader'),
   Form: require('./Form'),
   FormsHeader: require('./FormsHeader'),
-  NavBar: require('./NavBar'),
+  SRHHNavBar: require('./SRHHNavBar'),
+  // alias de compatibilidad: el componente se llamaba "NavBar" antes de
+  // alinear su nombre con el widget real de la app (SRHHNavBar).
+  NavBar: require('./SRHHNavBar'),
   Notify: require('./Notify'),
   Popup: require('./Popup'),
 };

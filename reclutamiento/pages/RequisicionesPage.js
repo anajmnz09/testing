@@ -1,5 +1,5 @@
 const { By, until } = require('selenium-webdriver');
-const { BasePage, DataGrid } = require('@triple/core');
+const { BasePage, DataGrid, SRHHNavBar } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 const RequisicionDetallePage = require('./RequisicionDetallePage');
@@ -22,6 +22,9 @@ class RequisicionesPage extends BasePage {
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);
+    // Navegación del navbar (navRouteItems): NUNCA selectores propios acá —
+    // toda navegación del navbar se centraliza en SRHHNavBar (core).
+    this.navBar = new SRHHNavBar(driver);
   }
 
   /** Espera a que el listado de requisiciones esté cargado. Encadenable. */
@@ -68,8 +71,7 @@ class RequisicionesPage extends BasePage {
    * Útil tras crear una requisición para reabrirla.
    */
   async volverAlListado() {
-    const nav = By.xpath("//*[contains(@class,'navItemLink')][contains(normalize-space(.),'Requisiciones')]");
-    await (await this.waitVisible(nav)).click();
+    await this.navBar.ir('Requisiciones');
     await this.listo();
     return this;
   }

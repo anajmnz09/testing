@@ -41,6 +41,8 @@ module.exports = {
   LoginPage: require('./pages/LoginPage'),
   DashboardPage: require('./pages/DashboardPage'),
   // componentes reutilizables (registro en components/index.js)
+  SRHHNavBar: components.SRHHNavBar,
+  // alias de compatibilidad (ver components/index.js)
   NavBar: components.NavBar,
   DataGrid: components.DataGrid,
   Form: components.Form,

@@ -1,5 +1,5 @@
 const DashboardPage = require('../pages/DashboardPage');
-const NavBar = require('../components/NavBar');
+const SRHHNavBar = require('../components/SRHHNavBar');
 const logger = require('../utils/logger');
 
 /**
@@ -23,7 +23,7 @@ async function abrirModulo(driver, nombre) {
  */
 async function volverAlDashboard(driver) {
   logger.info('navigationFlow: volver al dashboard');
-  const navbar = new NavBar(driver);
+  const navbar = new SRHHNavBar(driver);
   await navbar.irAlDashboard();
 
   const dashboard = new DashboardPage(driver);
