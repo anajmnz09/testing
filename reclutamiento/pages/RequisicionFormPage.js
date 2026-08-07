@@ -5,6 +5,7 @@ const Notify = require('@triple/core/components/Notify');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 const testContext = require('@triple/core/context/testContext');
+const { parsearValoresMultiples } = require('@triple/core/strategies');
 const datos = require('../data/requisiciones.data');
 
 const RAZON = { CREACION: 'Creacion', SUSTITUCION: 'Sustitucion' };
@@ -354,10 +355,59 @@ class RequisicionFormPage extends BasePage {
   }
 
   /**
-   * Agrega una pregunta personalizada vía el modal "+ Pregunta(s) Personalizada(s)".
-   * Completa la pregunta, el tipo (primera opción) y el nombre del campo.
+   * Abre el selectbox del modal que sigue a un label y elige el item cuyo
+   * texto CONTIENE `texto` — no reimplementa nada: reutiliza
+   * `Form._itemVisiblePorTexto` (ya case-insensitive, mismo criterio que el
+   * resto del framework; evita el problema ya conocido de "cedula" vs.
+   * "Cedula") y `Form._esperarOverlayCerrado`. Mismo patrón de apertura que
+   * `_modalSelectPrimera` (click nativo, ya probado para este modal).
    */
-  async agregarPreguntaPersonalizada({ pregunta, nombreCampo }) {
+  async _modalSeleccionarPorTexto(labelContiene, texto) {
+    const dd = await this.waitVisible(
+      By.xpath(
+        `//div[contains(@class,'dx-overlay-content')]//label[contains(normalize-space(.),'${labelContiene}')]/following::*[contains(@class,'dx-dropdowneditor')][1]`
+      )
+    );
+    await dd.click();
+    const item = await this.form._itemVisiblePorTexto(texto);
+    await item.click();
+    await this.form._esperarOverlayCerrado();
+  }
+
+  /**
+   * Input del TAGBOX del modal que sigue a un label dado (ej. "Opciones").
+   * Distinto de `_modalInput`/`_modalSelectPrimera`: el widget es un
+   * `dx-tagbox`, no un textbox ni un selectbox de catálogo.
+   */
+  async _modalTagbox(labelContiene) {
+    const campo = await this.waitVisible(
+      By.xpath(
+        `//div[contains(@class,'dx-overlay-content')]//label[contains(normalize-space(.),'${labelContiene}')]/following::*[contains(@class,'dx-tagbox')][1]`
+      )
+    );
+    return campo.findElement(By.css('.dx-texteditor-input'));
+  }
+
+  /**
+   * Agrega una pregunta personalizada vía el modal "+ Pregunta(s) Personalizada(s)".
+   * Completa la pregunta, el tipo, el nombre del campo y —cuando el tipo lo
+   * requiere— las opciones.
+   *
+   * `tipo`: texto LIBRE, tal cual lo escribe el usuario desde el Panel (ej.
+   * "Numérica", "Selección de una opción", "Selección Múltiple", "Texto" —
+   * nombres reales verificados en la app, case-insensitive vía
+   * `_modalSeleccionarPorTexto`). Sin `tipo`, se mantiene el comportamiento
+   * ORIGINAL (elige la primera opción) — retrocompatible con los casos que ya
+   * usan este método sin dirigir el tipo.
+   *
+   * `opciones`: texto LIBRE con varios valores separados por `|` (ej.
+   * "Rojo | Azul | Verde", ver `parsearValoresMultiples` en
+   * `core/strategies/builtinStrategies.js`). Solo tiene efecto si el tipo
+   * elegido habilita el tagbox "Opciones" (Selección de una opción /
+   * Selección Múltiple); para los demás tipos el campo queda deshabilitado
+   * por la propia app, así que si se provee igual, simplemente no se aplica.
+   */
+  async agregarPreguntaPersonalizada({ pregunta, tipo, nombreCampo, opciones }) {
     logger.info('RequisicionForm: agregar pregunta personalizada');
     const btn = await this.waitVisible(this.btnAgregarPregunta);
     await this.driver.executeScript('arguments[0].click()', btn);
@@ -368,11 +418,26 @@ class RequisicionFormPage extends BasePage {
     // sobre estos editores lanza "invalid element state").
     const inPregunta = await this._modalTextarea('Pregunta Personalizada');
     await inPregunta.sendKeys(pregunta, Key.TAB);
-    await this._modalSelectPrimera('Tipo de Pregunta');
+
+    if (tipo) {
+      await this._modalSeleccionarPorTexto('Tipo de Pregunta', tipo);
+    } else {
+      await this._modalSelectPrimera('Tipo de Pregunta');
+    }
+
     if (nombreCampo) {
       const inNombre = await this._modalInput('Nombre del campo');
       await inNombre.sendKeys(nombreCampo, Key.TAB);
     }
+
+    if (opciones) {
+      const valores = parsearValoresMultiples(opciones);
+      if (valores.length) {
+        const inputOpciones = await this._modalTagbox('Opciones');
+        await this.form._escribirTagsEnInput(inputOpciones, valores);
+      }
+    }
+
     // Guardar dentro del modal
     const guardarModal = By.xpath(
       "//div[contains(@class,'dx-overlay-content')]//div[contains(@class,'dx-button')][normalize-space(.)='Guardar']"

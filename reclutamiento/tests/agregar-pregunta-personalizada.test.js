@@ -8,7 +8,13 @@ const CASO = 'agregar-pregunta-personalizada';
 // Entradas del caso (Execution Context): identifican una requisición YA EXISTENTE
 // a editar. `pregunta` y `nombreCampo` son opcionales (default en
 // requisiciones.data). Este caso NO crea requisición.
-testContext.registrarCaso(CASO, ['codigo', 'nombre', 'estado', 'pregunta', 'nombreCampo']);
+// `tipo`: texto libre con el nombre REAL del tipo de pregunta ("Numérica",
+// "Selección de una opción", "Selección Múltiple", "Texto"). Vacío -> se
+// mantiene el comportamiento original (primera opción del dropdown).
+// `opciones`: texto libre con varios valores separados por "|" (ej.
+// "Rojo | Azul | Verde"). Solo se usa cuando el `tipo` habilita el tagbox
+// "Opciones" (Selección de una opción / Selección Múltiple).
+testContext.registrarCaso(CASO, ['codigo', 'nombre', 'estado', 'pregunta', 'tipo', 'nombreCampo', 'opciones']);
 
 /**
  * Agrega una pregunta personalizada a una requisición EXISTENTE (no crea ninguna)
@@ -25,7 +31,9 @@ describe('Reclutamiento - Agregar pregunta personalizada a requisición existent
   it(`${CASO}: agrega una pregunta personalizada a una requisición existente y la valida al reabrir`, async function () {
     const pregunta = {
       pregunta: testContext.get(CASO, 'pregunta') || datos.preguntaPersonalizada.pregunta,
+      tipo: testContext.get(CASO, 'tipo'),
       nombreCampo: testContext.get(CASO, 'nombreCampo') || datos.preguntaPersonalizada.nombreCampo,
+      opciones: testContext.get(CASO, 'opciones'),
     };
 
     const { detalle } = await fixtures.abrirRequisicionExistente(ctx, CASO);

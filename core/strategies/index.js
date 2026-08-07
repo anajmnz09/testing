@@ -56,6 +56,7 @@ registrar('switch', new builtin.SwitchStrategy());
 registrar('datePicker', new builtin.DatePickerStrategy());
 registrar('treeView', new builtin.TreeViewStrategy());
 registrar('custom', new builtin.CustomStrategy());
+registrar('tagsLibres', new builtin.TagsLibresStrategy());
 
 /** Estrategia usada cuando un control no declara ninguna. */
 const POR_DEFECTO = 'firstOption';

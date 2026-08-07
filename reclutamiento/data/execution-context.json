@@ -177,8 +177,10 @@
   "agregar-pregunta-personalizada": {
     "codigo": "",
     "nombre": "REQ DESDE PANEL SUST pt 3",
-    "pregunta": "Hola?",
+    "pregunta": "Cual es el software que mas ha utilizado?",
+    "tipo": "SelecciOn de una opcion",
     "nombreCampo": "hce3",
+    "opciones": "Figma | Adobe | Ninguno",
     "estado": ""
   },
   "consultar-solicitudes-desde-requisicion": {

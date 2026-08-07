@@ -73,32 +73,122 @@ class Form extends BaseComponent {
   }
 
   /**
-   * Espera y devuelve el item VISIBLE cuyo texto contiene `texto`.
-   * `selectorCss` es opcional: permite apuntar a otro tipo de item (ej. nodos de
-   * un treeview) sin duplicar la lógica de espera. Sin él, comportamiento igual
-   * que siempre.
-   *
-   * Comparación INSENSIBLE a mayúsculas/minúsculas: verificado que un valor
-   * enviado con distinta capitalización que el catálogo real (ej. "cedula" vs.
-   * "Cedula") nunca encontraba coincidencia y agotaba el timeout. Es aditivo:
-   * cualquier coincidencia que ya funcionaba con case exacto sigue funcionando
-   * igual (case-insensitive es un superconjunto de case-sensitive).
+   * Quita acentos/diacríticos, pasa a minúsculas, colapsa espacios múltiples y
+   * recorta los bordes. Base de TODA comparación de texto contra opciones de
+   * un dropdown/lista/treeview del framework — no un caso puntual.
    */
-  async _itemVisiblePorTexto(texto, selectorCss) {
-    const locator = selectorCss ? By.css(selectorCss) : this._opcionLocator();
-    const textoBuscado = String(texto).toLowerCase();
-    return this.driver.wait(async () => {
-      const items = await this.driver.findElements(locator);
-      for (const it of items) {
-        try {
-          if (await it.isDisplayed()) {
-            const t = (await it.getText()).trim();
-            if (t.toLowerCase().includes(textoBuscado)) return it;
-          }
-        } catch (e) { /* stale */ }
+  _normalizarTexto(s) {
+    return String(s == null ? '' : s)
+      .normalize('NFD')
+      .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Distancia de Levenshtein clásica (programación dinámica, O(m·n), sin
+   * dependencias externas): mínimo de inserciones/borrados/sustituciones para
+   * convertir `a` en `b`.
+   */
+  _levenshtein(a, b) {
+    const m = a.length;
+    const n = b.length;
+    if (!m) return n;
+    if (!n) return m;
+    const fila = new Array(n + 1);
+    for (let j = 0; j <= n; j++) fila[j] = j;
+    for (let i = 1; i <= m; i++) {
+      let anterior = fila[0];
+      fila[0] = i;
+      for (let j = 1; j <= n; j++) {
+        const temp = fila[j];
+        fila[j] = a[i - 1] === b[j - 1] ? anterior : 1 + Math.min(anterior, fila[j], fila[j - 1]);
+        anterior = temp;
       }
-      return false;
-    }, this._timeout());
+    }
+    return fila[n];
+  }
+
+  /** Similitud 0..1 entre dos textos YA normalizados (1 = idénticos, 0 = nada en común). */
+  _similitud(a, b) {
+    if (!a.length && !b.length) return 1;
+    return 1 - this._levenshtein(a, b) / Math.max(a.length, b.length);
+  }
+
+  /**
+   * Espera y devuelve el item VISIBLE que mejor coincide con `texto`.
+   * `selectorCss` es opcional: permite apuntar a otro tipo de item (ej. nodos
+   * de un treeview) sin duplicar la lógica de espera.
+   *
+   * SELECTOR TOLERANTE — comportamiento ESTÁNDAR del framework para cualquier
+   * dropdown/selectbox/lista que se elija por texto (no una solución puntual
+   * para un solo caso). Verificado en la app real: exigir coincidencia casi
+   * exacta rompía con diferencias mínimas ajenas al dato en sí — ej. "Selección
+   * de una opcion" (sin el acento de "opción") jamás encontraba la opción real
+   * de la app y agotaba el timeout, igual que antes pasó con "cedula" vs.
+   * "Cedula".
+   *
+   * Orden de búsqueda:
+   *  1. Coincidencia por SUBSTRING ya normalizado (sin acentos, minúsculas,
+   *     espacios colapsados) — mismo criterio de siempre, ahora tolerante a
+   *     acentos/espacios además de mayúsculas. Rápido, sin calcular similitud.
+   *  2. Si ninguna coincide así, similitud por distancia de Levenshtein contra
+   *     TODAS las opciones visibles; se elige la de mayor puntaje si supera
+   *     `umbral` (default 0.85 = 85%, dentro del rango 80–90% razonable:
+   *     tolera acentos sueltos y pequeños errores de tipeo, sin llegar a
+   *     confundir opciones realmente distintas entre sí).
+   *
+   * Si NADA supera el umbral al agotar el timeout, no se adivina: se lanza un
+   * error con las opciones REALMENTE visibles, para diagnóstico accionable
+   * (mismo criterio que ya usa `FormsHeader` para sus botones).
+   */
+  async _itemVisiblePorTexto(texto, selectorCss, { umbral = 0.85 } = {}) {
+    const locator = selectorCss ? By.css(selectorCss) : this._opcionLocator();
+    const buscado = this._normalizarTexto(texto);
+    let disponibles = [];
+
+    try {
+      return await this.driver.wait(async () => {
+        const items = await this.driver.findElements(locator);
+        const visibles = [];
+        for (const it of items) {
+          try {
+            if (await it.isDisplayed()) {
+              const t = (await it.getText()).trim();
+              visibles.push({ el: it, texto: t, normalizado: this._normalizarTexto(t) });
+            }
+          } catch (e) { /* stale */ }
+        }
+        disponibles = visibles.map((v) => v.texto);
+        if (!visibles.length) return false;
+
+        const exacto = visibles.find((v) => v.normalizado.includes(buscado));
+        if (exacto) return exacto.el;
+
+        let mejor = null;
+        let mejorPuntaje = 0;
+        for (const v of visibles) {
+          const puntaje = this._similitud(buscado, v.normalizado);
+          if (puntaje > mejorPuntaje) {
+            mejorPuntaje = puntaje;
+            mejor = v;
+          }
+        }
+        if (mejor && mejorPuntaje >= umbral) {
+          logger.info(
+            `Form: "${texto}" no coincide exacto; se usa la opción más similar "${mejor.texto}" (${Math.round(mejorPuntaje * 100)}% similitud)`
+          );
+          return mejor.el;
+        }
+        return false;
+      }, this._timeout());
+    } catch (e) {
+      throw new Error(
+        `Form: no se encontró ninguna opción suficientemente similar a "${texto}". ` +
+          `Opciones disponibles: ${disponibles.length ? disponibles.join(', ') : '(ninguna visible)'}`
+      );
+    }
   }
 
   /** Espera a que no quede ningún item de dropdown visible. */
@@ -306,8 +396,46 @@ class Form extends BaseComponent {
     logger.info(`Form: agregar tag libre "${texto}" en "${label}"`);
     const campo = await this._elemCampo(label);
     const input = await campo.findElement(By.css('.dx-texteditor-input'));
-    await input.click();
-    await input.sendKeys(texto, Key.ENTER);
+    await this._escribirTagsEnInput(input, [texto]);
+  }
+
+  /**
+   * Igual que `escribirTagLibre`, pero agrega VARIOS tags (uno por cada valor
+   * de `valores`, en orden): click + texto + ENTER por cada uno. Generaliza el
+   * mismo mecanismo para cualquier control que necesite crear N tags desde un
+   * solo campo del Execution Context (ver estrategia `tagsLibres` en
+   * `core/strategies/builtinStrategies.js`, que parsea "Rojo | Azul | Verde"
+   * antes de llamar acá). Valores vacíos se descartan; sin valores válidos no
+   * hace nada — mismo criterio que `escribirTagLibre`.
+   */
+  async escribirTagsLibres(label, valores) {
+    const lista = (Array.isArray(valores) ? valores : [valores]).filter(
+      (v) => v !== undefined && v !== null && String(v).trim() !== ''
+    );
+    if (!lista.length) return undefined;
+    logger.info(`Form: agregar ${lista.length} tag(s) libre(s) en "${label}": ${lista.join(' | ')}`);
+    const campo = await this._elemCampo(label);
+    const input = await campo.findElement(By.css('.dx-texteditor-input'));
+    await this._escribirTagsEnInput(input, lista);
+    return lista;
+  }
+
+  /**
+   * Mecánica de bajo nivel de `escribirTagLibre`/`escribirTagsLibres`: dado un
+   * input YA LOCALIZADO, escribe cada valor de `valores` seguido de ENTER.
+   * Separada de la localización del campo para que un Page Object con su
+   * PROPIO mecanismo de búsqueda (ej. un campo dentro de un popup/modal, que
+   * no vive en un `group-field`/`dx-field-item` normal y por eso no lo
+   * encuentra `_elemCampo`) pueda reutilizar EXACTAMENTE esta misma mecánica
+   * sin duplicarla (ver `RequisicionFormPage._modalTagbox` +
+   * `agregarPreguntaPersonalizada`, campo "Opciones" del modal de Pregunta
+   * Personalizada).
+   */
+  async _escribirTagsEnInput(input, valores) {
+    for (const valor of valores) {
+      await input.click();
+      await input.sendKeys(String(valor), Key.ENTER);
+    }
   }
 
   /**

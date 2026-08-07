@@ -173,6 +173,52 @@ class CustomStrategy extends SelectionStrategy {
   }
 }
 
+/**
+ * Separador para representar VARIOS valores libres en UN solo campo del
+ * Execution Context (ej. "Opciones" de una pregunta personalizada, o
+ * cualquier tagbox de texto libre que necesite varios tags). Se eligió `|`
+ * en vez de coma porque la coma ya tiene un significado distinto en un caso
+ * real ya en uso: "Etiquetas" de Solicitud de Empleo envía HOY el string
+ * completo como UN solo tag (ej. "hola, admin, redes" -> un único tag con
+ * comas incluidas) — reutilizar coma como separador de tags acá sería
+ * ambiguo con ese caso. El Panel además solo tiene un input de una línea
+ * (verificado en `panel/web/js/contexto.js`: no hay `<textarea>`), así que
+ * el separador tiene que poder tipearse en una sola línea; salto de línea
+ * queda descartado por eso, no por preferencia.
+ */
+const SEPARADOR_VALORES_MULTIPLES = '|';
+
+/**
+ * Convierte "Rojo | Azul | Verde" en ['Rojo', 'Azul', 'Verde']. Recorta
+ * espacios de cada segmento y descarta los vacíos (separador repetido o al
+ * borde del string). Pura (sin Selenium, sin disco): reutilizable y
+ * testeable de forma aislada por cualquier estrategia o Page Object que
+ * necesite interpretar un campo de "varios valores" del Execution Context.
+ */
+function parsearValoresMultiples(texto, separador = SEPARADOR_VALORES_MULTIPLES) {
+  if (texto === undefined || texto === null) return [];
+  return String(texto)
+    .split(separador)
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Agrega VARIOS tags de texto libre a un tagbox desde UN SOLO valor del
+ * Execution Context (ver `parsearValoresMultiples`). Generaliza el patrón de
+ * "Etiquetas" (que vía CustomStrategy solo manda UN tag) para cualquier
+ * control que necesite crear N tags — declarando `estrategia: 'tagsLibres'`
+ * en el Page Object, sin escribir una función `custom` nueva por caso.
+ */
+class TagsLibresStrategy extends SelectionStrategy {
+  async aplicar(form, label, valor) {
+    const valores = parsearValoresMultiples(valor);
+    if (!valores.length) return undefined;
+    await form.escribirTagsLibres(label, valores);
+    return valores;
+  }
+}
+
 module.exports = {
   FirstOptionStrategy,
   DirectSelectStrategy,
@@ -183,4 +229,7 @@ module.exports = {
   DatePickerStrategy,
   TreeViewStrategy,
   CustomStrategy,
+  TagsLibresStrategy,
+  parsearValoresMultiples,
+  SEPARADOR_VALORES_MULTIPLES,
 };
