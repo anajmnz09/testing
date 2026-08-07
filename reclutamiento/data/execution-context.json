@@ -181,6 +181,11 @@
     "nombreCampo": "hce3",
     "estado": ""
   },
+  "consultar-solicitudes-desde-requisicion": {
+    "codigo": "",
+    "nombre": "ADMINISTRADOR DE REDES2",
+    "estado": ""
+  },
   "validacion-solicitud-empleo": {
     "Primer Nombre": "",
     "Segundo Nombre": "",

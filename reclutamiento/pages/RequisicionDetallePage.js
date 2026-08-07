@@ -4,6 +4,7 @@ const Form = require('@triple/core/components/Form');
 const Notify = require('@triple/core/components/Notify');
 const FormsHeader = require('@triple/core/components/FormsHeader');
 const CommentEditor = require('@triple/core/components/CommentEditor');
+const SolicitudEmpleoPage = require('./SolicitudEmpleoPage');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 
@@ -337,6 +338,45 @@ class RequisicionDetallePage extends BasePage {
       if (b) b.click();
     }, SEL_COMPARTIR);
     return this.notify.esperarResultado(timeout);
+  }
+
+  // -------------------------------------------------------------------------
+  // Solicitudes de Empleo (botón "Solicitudes de Empleo" del header)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Abre "Solicitudes de Empleo" FILTRADAS por esta requisición, vía el botón
+   * del header (verificado en el DOM real: `aria-label`/`title` "Solicitudes
+   * de Empleo", localizado por `FormsHeader.clickBoton` — mismo mecanismo que
+   * "Editar"/"Pausar", nombre accesible, no produce notify). El filtrado lo
+   * aplica la propia app al navegar; el test no filtra nada acá.
+   *
+   * A diferencia de `editar()`, esto SÍ lanza si el botón no aparece o está
+   * deshabilitado: el propósito del método es navegar, así que no encontrarlo
+   * es una falla real, no algo tolerable.
+   *
+   * @returns {Promise<SolicitudEmpleoPage>} listado ya cargado (mismo Page
+   *   Object que se usa al entrar por el navbar).
+   */
+  async irASolicitudesDeEmpleo(timeout = config.timeouts.explicitWaitMs) {
+    logger.info('RequisicionDetallePage: ir a "Solicitudes de Empleo" (header)');
+    const info = await this.acciones.clickBoton('solicitudes de empleo', {
+      etiqueta: 'Solicitudes de Empleo',
+      timeout,
+      dataQa: 'boton-solicitudes-empleo',
+    });
+    if (!info.accionado) {
+      throw new Error(
+        `RequisicionDetallePage: no se pudo abrir "Solicitudes de Empleo" desde el header ` +
+          `(${info.encontrado ? 'deshabilitado' : 'no encontrado'}). Botones: ${JSON.stringify(info.botones)}`
+      );
+    }
+    // Mismo overlay de carga que el resto de la app (ver `esperarSinLoader`):
+    // el grid aparece visible casi de inmediato, pero las filas filtradas
+    // llegan un instante después (fetch async); sin esto, contar filas justo
+    // tras el click puede leer 0 aunque sí existan solicitudes.
+    await this.esperarSinLoader(timeout);
+    return new SolicitudEmpleoPage(this.driver).listo();
   }
 
   /**
