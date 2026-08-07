@@ -4,6 +4,8 @@ const Form = require('@triple/core/components/Form');
 const Notify = require('@triple/core/components/Notify');
 const FormsHeader = require('@triple/core/components/FormsHeader');
 const CommentEditor = require('@triple/core/components/CommentEditor');
+const logger = require('@triple/core/utils/logger');
+const config = require('@triple/core/config');
 
 /**
  * MAPEO VERIFICADO — vista de CONSULTA de una Solicitud de Empleo en etapa
@@ -81,7 +83,30 @@ const CommentEditor = require('@triple/core/components/CommentEditor');
  *    core (misma clase `CommentEditor_commentTitle__...` que
  *    `RequisicionDetallePage`), reutilizable tal cual, sin pasar por
  *    "Editar" primero.
+ *
+ * ESTRELLAS (valoración) — mapeo verificado con clicks reales (no supuesto):
+ * NO es un widget DevExtreme (el único `.dx-slider` de la página pertenece al
+ * zoom del recortador de foto, "Cargar Imagen" — mismo contenedor pero un
+ * control totalmente distinto, sin relación). Las estrellas son 5 `<img
+ * width="25">` simples, sin `alt` ni nombre accesible, dentro del contenedor
+ * `.mb-40.pt-20.pb-20.border-top-1px.border-bottom-1px.border-gray.d-flex
+ * .justify-between` (el mismo bloque que agrupa foto + nombre + estrellas +
+ * la fila Tipo ID/Identificación/etc.). Estrella "llena" = `src` en
+ * `data:image/png;base64,...`; "vacía" = `src` apuntando a un archivo
+ * `/static/media/SRH-Estrella-Empty...png`. Clickear la estrella de índice
+ * N-1 (0-based) llena las estrellas 1..N (confirmado clickeando la 5ta y
+ * viendo las 5 pasar a "llena"); no se probó si permite bajar el valor
+ * clickeando una ya llena. Requiere modo Editar (igual que el resto de los
+ * campos); persiste al Guardar con el botón principal del form (confirmado
+ * recargando la página tras guardar).
  */
+
+// Estrellas: ver mapeo arriba. `imagen` filtra por `width="25"` porque el
+// mismo contenedor tiene otra imagen (la foto) sin ese atributo.
+const SEL_ESTRELLAS = {
+  contenedor: '.mb-40.pt-20.pb-20.border-top-1px.border-bottom-1px.border-gray.d-flex.justify-between',
+  imagen: 'img[width="25"]',
+};
 
 class SolicitudEmpleoDetallePage extends BasePage {
   constructor(driver) {
@@ -93,11 +118,74 @@ class SolicitudEmpleoDetallePage extends BasePage {
     this.acciones = new FormsHeader(driver);
     // Sección "Comentarios": mismo componente reutilizable que Requisición.
     this.commentEditor = new CommentEditor(driver);
+    this.btnGuardar = By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Guardar']");
   }
 
-  // Métodos de interacción (abrir, editar, leer estado/etapa, documentos,
-  // preguntas personalizadas, etc.) pendientes de codificar cuando se arme
-  // el test — este archivo por ahora solo deja fijado el mapeo verificado.
+  /** Espera a que el detalle esté cargado (header visible, sin loader). */
+  async estaCargado() {
+    await this.waitVisible(this.header);
+    await this.esperarSinLoader();
+    return this;
+  }
+
+  /**
+   * Entra en modo edición ("Editar" del header) — mismo patrón que
+   * `RequisicionDetallePage.editar`: tolerante, no lanza si ya está editable.
+   */
+  async editar(timeout = config.timeouts.explicitWaitMs) {
+    logger.info('SolicitudEmpleoDetalle: entrar en modo edición ("Editar")');
+    const info = await this.acciones.clickBoton('editar', {
+      etiqueta: 'Editar',
+      timeout,
+      dataQa: 'boton-editar',
+    });
+    if (info.accionado) {
+      await this.esperarSinLoader(timeout);
+      await this.waitVisible(this.btnGuardar, timeout).catch(() => {});
+    }
+    return info;
+  }
+
+  /** Guarda el formulario en edición (botón "Guardar" del header). */
+  async guardar() {
+    logger.info('SolicitudEmpleoDetalle: Guardar');
+    const btn = await this.waitVisible(this.btnGuardar);
+    await this.driver.executeScript('arguments[0].click()', btn);
+  }
+
+  /** Clasifica el resultado tras Guardar según el notify (mismo mecanismo que Requisición/Solicitud). */
+  async resultadoGuardado(timeoutMs = config.timeouts.explicitWaitMs) {
+    const texto = await this.notify.esperarTexto(timeoutMs);
+    return Notify.clasificar(texto);
+  }
+
+  /** Cantidad de estrellas llenas actualmente (0-5), leídas por `src` (ver mapeo arriba). */
+  async getValoracion() {
+    return this.driver.executeScript((sel) => {
+      const cont = document.querySelector(sel.contenedor);
+      if (!cont) return 0;
+      const imgs = Array.from(cont.querySelectorAll(sel.imagen));
+      return imgs.filter((img) => (img.getAttribute('src') || '').startsWith('data:')).length;
+    }, SEL_ESTRELLAS);
+  }
+
+  /**
+   * Pone la valoración a `n` estrellas (1-5), clickeando la N-ésima (ver
+   * mapeo arriba). Requiere modo Editar ya activo (no lo activa acá, para no
+   * mezclar responsabilidades con `editar()`).
+   */
+  async setValoracion(n) {
+    const cantidad = Math.max(1, Math.min(5, Math.round(Number(n))));
+    logger.info(`SolicitudEmpleoDetalle: valoración -> ${cantidad} estrella(s)`);
+    const imgs = await this.driver.findElements(By.css(`${SEL_ESTRELLAS.contenedor} ${SEL_ESTRELLAS.imagen}`));
+    if (imgs.length !== 5) {
+      throw new Error(`SolicitudEmpleoDetalle: no se encontraron las 5 estrellas (encontradas: ${imgs.length})`);
+    }
+    const estrella = imgs[cantidad - 1];
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', estrella);
+    await this.driver.executeScript('arguments[0].click()', estrella);
+    return cantidad;
+  }
 }
 
 module.exports = SolicitudEmpleoDetallePage;

@@ -20,17 +20,16 @@ async function createDriver() {
   const options = new chrome.Options();
   if (config.browser.headless) {
     options.addArguments('--headless=new');
+    // Viewport EXPLÍCITO en Headless: no hay pantalla real que maximizar (corre
+    // en un display virtual), así que se fija un tamaño consistente entre
+    // corridas — ORIGEN de este valor: sin él, headless quedaba en ~782x439 y
+    // los controles que caen debajo del pliegue (p. ej. el botón "Guardar" de
+    // un modal alto) quedaban FUERA del viewport: el click nativo de Selenium
+    // apunta a una coordenada sin elemento (elementFromPoint = null) y falla
+    // con ElementClickInterceptedError. Solo aplica a Headless (ver más abajo
+    // por qué Headed ya NO comparte este mismo flag).
+    options.addArguments('--window-size=1920,1080');
   }
-  // Viewport EXPLÍCITO e IDÉNTICO en ambos modos (Headed y Headless): sin esto,
-  // cada modo terminaba con un tamaño de ventana distinto (headless quedaba con
-  // ~782x439 vía "maximize"; headed dependía de la resolución física de pantalla,
-  // ~1536x674 en esta máquina). Los controles que caen debajo del pliegue (p. ej.
-  // el botón "Guardar" de un modal alto) quedaban FUERA del viewport en el modo más
-  // chico: el click nativo de Selenium apunta a una coordenada sin elemento
-  // (elementFromPoint = null) y falla con ElementClickInterceptedError. Con el
-  // MISMO tamaño de escritorio en los dos modos, la configuración del driver deja
-  // de ser una variable entre corridas Headed/Headless. Aplica a todos los módulos.
-  options.addArguments('--window-size=1920,1080');
 
   // Perfil temporal propio y rastreable, para poder limpiarlo al cerrar (en vez
   // del `scoped_dir*` aleatorio que Chrome no siempre borra). Comportamiento de
@@ -74,10 +73,32 @@ async function createDriver() {
   }
 
   driver.__perfilDir = perfilDir;
-  // Ya NO se llama a maximize(): dependía de la resolución física de pantalla y
-  // era la fuente de la diferencia de configuración entre Headed y Headless (ver
-  // comentario arriba). El --window-size explícito fija el mismo tamaño en ambos
-  // modos, sin depender del entorno donde corra la máquina.
+
+  if (!config.browser.headless) {
+    // Headed: maximizar a la pantalla REAL disponible (pedido explícito — sin
+    // esto, Chrome abre con un tamaño que puede quedar parcialmente fuera de
+    // pantalla, dificultando observar la corrida).
+    //
+    // Se usa el comando WebDriver `window().maximize()` (spec W3C), llamado
+    // DESPUÉS de crear la sesión — no el flag de lanzamiento `--start-maximized`:
+    // ese flag es menos confiable en Windows con ChromeDriver (en algunas
+    // versiones de Chrome no maximiza de forma consistente, sobre todo si
+    // coexiste con otro flag de tamaño de ventana). `maximize()` es además el
+    // mismo mecanismo que este archivo ya usaba antes de introducir el
+    // `--window-size` fijo (ver historia debajo), así que no es una mecánica
+    // nueva para el framework.
+    //
+    // TRADE-OFF conocido (a propósito, por pedido explícito): esto reintroduce
+    // que Headed y Headless tengan un viewport DISTINTO entre sí — Headless
+    // queda fijo en 1920x1080 (ver arriba), Headed queda del tamaño real de la
+    // pantalla, que puede ser más chico. Es justo lo que se había evitado antes
+    // quitando `maximize()` (un control debajo del pliegue podía fallar en el
+    // modo con viewport más chico). Se prioriza que Headed se vea maximizado
+    // para observar la corrida; si algún test empieza a fallar en Headed por un
+    // control fuera del viewport en pantallas chicas, ese es el motivo.
+    await driver.manage().window().maximize();
+  }
+
   currentDriver = driver;
   return driver;
 }

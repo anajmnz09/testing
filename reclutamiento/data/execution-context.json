@@ -188,6 +188,10 @@
     "nombre": "ADMINISTRADOR DE REDES2",
     "estado": ""
   },
+  "agregar-valoracion-solicitud-empleo": {
+    "codigo": "1816",
+    "estrellas": "3"
+  },
   "validacion-solicitud-empleo": {
     "Primer Nombre": "",
     "Segundo Nombre": "",
@@ -198,7 +202,7 @@
   },
   "crear-solicitud-empleo": {
     "Tipo ID": "cedula",
-    "Identificación": "40200624075",
+    "Identificación": "40200624078",
     "Primer Nombre": "Matias",
     "Segundo Nombre": "Ramon",
     "Primer Apellido": "Mella",
@@ -206,9 +210,9 @@
     "Grado académico": "",
     "Celular": "8097655432",
     "Correo": "correo@gmail.com",
-    "Requisición": "administrador de redes",
+    "Requisición": "REQ DESDE PANEL SUST pt 3",
     "Fecha Ingreso": "",
-    "Etiquetas": "hola, admin, redes",
+    "Etiquetas": "hola| admin| redes",
     "Comentario": "comento"
   }
 }
