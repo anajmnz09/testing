@@ -78,6 +78,39 @@ class DataGrid extends BaseComponent {
     return filas.length;
   }
 
+  /**
+   * Lee TODAS las filas visibles del grid, indexadas por el nombre REAL de
+   * cada columna del header (ej. `{Código:"1815", Etapa:"...", Estado:"..."}`).
+   * Reutilizable por cualquier caso que necesite verificar/filtrar datos de
+   * una fila SIN abrir el detalle (muchos listados del módulo ya exponen
+   * columnas de estado/etapa/etc. directamente en el grid).
+   */
+  async filasPorColumnas() {
+    return this.driver.executeScript(() => {
+      const norm = (e) => (e && e.textContent || '').replace(/\s+/g, ' ').trim();
+      const headers = Array.from(
+        document.querySelectorAll('.dx-datagrid-headers .dx-header-row td, .dx-datagrid-headers .dx-header-row th')
+      ).map(norm);
+      return Array.from(document.querySelectorAll('.dx-data-row')).map((fila) => {
+        const celdas = Array.from(fila.querySelectorAll('td')).map(norm);
+        const resultado = {};
+        headers.forEach((h, i) => {
+          if (h) resultado[h] = celdas[i];
+        });
+        return resultado;
+      });
+    });
+  }
+
+  /**
+   * Como `filasPorColumnas`, pero devuelve solo la fila que contiene `texto`
+   * en alguna celda (o `null` si no hay ninguna).
+   */
+  async leerFilaPorColumnas(texto) {
+    const filas = await this.filasPorColumnas();
+    return filas.find((f) => Object.values(f).some((v) => v && v.includes(texto))) || null;
+  }
+
   /** Abre el formulario de creación (botón Crear). */
   async crear() {
     logger.info('DataGrid: click en Crear');

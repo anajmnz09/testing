@@ -192,6 +192,16 @@
     "codigo": "1816",
     "estrellas": "3"
   },
+  "agregar-foto-solicitud-empleo": {
+    "codigo": "1815",
+    "archivo": ""
+  },
+  "editar-paquete-beneficios-solicitud-empleo": {
+    "codigo": "1810",
+    "estadoLaboral": "empleado",
+    "ultimoSalario": "45000",
+    "beneficios": "viaticos"
+  },
   "validacion-solicitud-empleo": {
     "Primer Nombre": "",
     "Segundo Nombre": "",

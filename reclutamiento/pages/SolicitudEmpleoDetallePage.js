@@ -4,6 +4,7 @@ const Form = require('@triple/core/components/Form');
 const Notify = require('@triple/core/components/Notify');
 const FormsHeader = require('@triple/core/components/FormsHeader');
 const CommentEditor = require('@triple/core/components/CommentEditor');
+const FileUploader = require('@triple/core/components/FileUploader');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 
@@ -108,6 +109,37 @@ const SEL_ESTRELLAS = {
   imagen: 'img[width="25"]',
 };
 
+// Foto — botón de carga YA MAPEADO (`UserImage_load_image_btn__dzaym`),
+// envuelve el `<input id="file-upload" type="file" accept=".jpg,.jpeg,.png">`
+// oculto. No se clickea el botón: se envía la ruta directo al input vía
+// `FileUploader` del core (sin diálogo del SO). Eso abre el popup "Cargar
+// Imagen" (`ImgViewer_img_viewer_overlay...`, mismo contenedor donde vive el
+// slider de zoom del recorte — NO tocar) con su PROPIO botón "Guardar"
+// (`aria-label="Guardar"`, distinto del Guardar del formulario principal)
+// para confirmar sin recortar/mover/ajustar nada.
+const SEL_FOTO = {
+  imagen: '.UserImage_user_image_component__R8CsV img',
+  botonGuardarOverlay: "//div[contains(@class,'ImgViewer_img_viewer_overlay')]//*[@aria-label='Guardar']",
+  placeholderPorDefecto: 'SRH-PFP-Negro',
+};
+
+/**
+ * Mapa CONTROL -> SELECTION STRATEGY de la columna "Paquete actual de
+ * beneficios" (mismo dxForm que "Acerca del puesto de trabajo", ya conocido
+ * — estos 3 controles se leen/escriben con los métodos genéricos de `Form`,
+ * igual que Requisición/Departamento/etc.).
+ *
+ * "Estado laboral": selectbox con SOLO 2 opciones reales, verificadas
+ * abriendo el dropdown de una solicitud real: "Empleado", "Desempleado".
+ * `directSelect` (mismo criterio que "Tipo ID": lista corta, sin necesidad
+ * de buscador).
+ */
+const ESTRATEGIAS_PAQUETE_BENEFICIOS = {
+  'Estado laboral': 'directSelect',
+  'Último salario': 'text',
+  Beneficios: 'text',
+};
+
 class SolicitudEmpleoDetallePage extends BasePage {
   constructor(driver) {
     super(driver);
@@ -119,6 +151,8 @@ class SolicitudEmpleoDetallePage extends BasePage {
     // Sección "Comentarios": mismo componente reutilizable que Requisición.
     this.commentEditor = new CommentEditor(driver);
     this.btnGuardar = By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Guardar']");
+    // Carga de foto: mismo componente FileUploader que usa Documentos (Requisición).
+    this.uploader = new FileUploader(driver, { selector: 'input#file-upload' });
   }
 
   /** Espera a que el detalle esté cargado (header visible, sin loader). */
@@ -185,6 +219,41 @@ class SolicitudEmpleoDetallePage extends BasePage {
     await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', estrella);
     await this.driver.executeScript('arguments[0].click()', estrella);
     return cantidad;
+  }
+
+  /** `src` actual de la foto del candidato (para comparar antes/después de subir una). */
+  async getFotoSrc() {
+    const img = await this.driver.findElement(By.css(SEL_FOTO.imagen));
+    return img.getAttribute('src');
+  }
+
+  /**
+   * Sube una foto al candidato: envía `rutaArchivo` directo al input oculto
+   * (sin diálogo del SO, ver mapeo arriba), espera el popup "Cargar Imagen" y
+   * lo confirma con SU botón "Guardar" — sin recortar, mover ni ajustar
+   * nada. Requiere modo Editar ya activo (no lo activa acá).
+   */
+  async subirFoto(rutaArchivo) {
+    logger.info('SolicitudEmpleoDetalle: subir foto');
+    await this.uploader.subir(rutaArchivo);
+    const btnGuardarOverlay = await this.waitVisible(By.xpath(SEL_FOTO.botonGuardarOverlay));
+    await this.driver.executeScript('arguments[0].click()', btnGuardarOverlay);
+  }
+
+  /**
+   * Pone un valor en un control de "Paquete actual de beneficios" con su
+   * estrategia declarada (ver `ESTRATEGIAS_PAQUETE_BENEFICIOS`). Requiere
+   * modo Editar ya activo.
+   */
+  async setCampoPaqueteBeneficios(label, valor) {
+    const estrategia = ESTRATEGIAS_PAQUETE_BENEFICIOS[label];
+    if (!estrategia) {
+      throw new Error(
+        `SolicitudEmpleoDetalle: "${label}" no es un control de Paquete actual de beneficios. ` +
+          `Declarados: ${Object.keys(ESTRATEGIAS_PAQUETE_BENEFICIOS).join(', ')}`
+      );
+    }
+    return this.form.setValor(label, valor, { estrategia });
   }
 }
 

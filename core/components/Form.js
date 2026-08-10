@@ -163,6 +163,17 @@ class Form extends BaseComponent {
         disponibles = visibles.map((v) => v.texto);
         if (!visibles.length) return false;
 
+        // Coincidencia EXACTA (tras normalizar) SIEMPRE gana antes que una
+        // por substring: verificado un caso real donde una opción es
+        // substring literal de otra ("Empleado" dentro de "Desempleado") —
+        // buscar "Empleado" por substring podía coincidir con "Desempleado"
+        // primero según el orden/momento de render, seleccionando la opción
+        // equivocada (o una todavía animándose, con "stale element" o cuelgue
+        // posterior). Sin esto se pierde la garantía que ya tenía el
+        // matching exacto de siempre.
+        const exactoIgual = visibles.find((v) => v.normalizado === buscado);
+        if (exactoIgual) return exactoIgual.el;
+
         const exacto = visibles.find((v) => v.normalizado.includes(buscado));
         if (exacto) return exacto.el;
 
@@ -238,6 +249,27 @@ class Form extends BaseComponent {
    */
   async _abrirDropdownEn(rootEl, { jsClick = false } = {}) {
     await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', rootEl);
+    // Espera a que la posición de scroll se ESTABILICE antes de clickear: un
+    // scroll que anima (suave) puede seguir en movimiento cuando el click ya
+    // se disparó, sobre todo en campos que requieren desplazamiento largo —
+    // verificado en "Estado laboral" (Solicitud de Empleo, más abajo en la
+    // página tras Editar): el click nativo caía en una posición que ya había
+    // cambiado, dejando el dropdown sin abrir (timeout) o el item recién
+    // ubicado stale. Mismo criterio de estabilidad ya usado en
+    // `identificarYEsperarAutollenado` (dos lecturas consecutivas iguales),
+    // acotado a 2s para no penalizar el caso normal (sin scroll animado).
+    let anterior = null;
+    await this.driver
+      .wait(async () => {
+        const actual = await this.driver.executeScript((el) => {
+          const r = el.getBoundingClientRect();
+          return `${Math.round(r.x)},${Math.round(r.y)}`;
+        }, rootEl);
+        const estable = actual === anterior;
+        anterior = actual;
+        return estable;
+      }, 2000)
+      .catch(() => {});
     const boton = await rootEl.findElement(By.css('.dx-dropdowneditor-button, .dx-texteditor-input'));
     if (jsClick) {
       await this.driver.executeScript('arguments[0].click()', boton);
@@ -305,13 +337,32 @@ class Form extends BaseComponent {
     return texto;
   }
 
-  /** Selecciona una opción por su texto exacto/contenido en un selectbox. */
-  async seleccionar(label, opcionTexto) {
-    logger.info(`Form: seleccionar "${opcionTexto}" en "${label}"`);
-    await this._abrirDropdown(label);
-    const item = await this._itemVisiblePorTexto(opcionTexto);
-    await item.click();
-    await this._esperarOverlayCerrado();
+  /**
+   * Selecciona una opción por su texto exacto/contenido en un selectbox.
+   *
+   * Reintenta ante "stale element" (mismo criterio ya usado en
+   * `elegirEnSelectbox`): el item ubicado por `_itemVisiblePorTexto` puede
+   * quedar stale si el dropdown termina de asentarse/re-renderiza entre que
+   * se lo localiza y se lo clickea — verificado en un campo recién habilitado
+   * al entrar en modo Editar (el widget aún se está inicializando).
+   */
+  async seleccionar(label, opcionTexto, intentos = 2) {
+    let ultimoError;
+    for (let i = 0; i < intentos; i++) {
+      try {
+        logger.info(`Form: seleccionar "${opcionTexto}" en "${label}"`);
+        await this._abrirDropdown(label);
+        const item = await this._itemVisiblePorTexto(opcionTexto);
+        await item.click();
+        await this._esperarOverlayCerrado();
+        return;
+      } catch (err) {
+        ultimoError = err;
+        if (!/stale element/i.test(err.message) || i === intentos - 1) throw err;
+        logger.info(`Form: reintentando seleccionar tras stale (intento ${i + 1}/${intentos})`);
+      }
+    }
+    throw ultimoError;
   }
 
   /**
@@ -673,12 +724,54 @@ class Form extends BaseComponent {
     return textos.filter(Boolean);
   }
 
-  /** Valor actual mostrado en el input del campo. */
-  async getValor(label) {
+  /**
+   * Hace scroll hasta que un campo sea visible, sin interactuar con él.
+   * Pensado para evidencia (screenshots): sin esto, una captura tomada tras
+   * completar un campo lejos del tope de la página puede quedar desplazada a
+   * otra sección y no mostrar lo que realmente se editó.
+   */
+  async scrollAlCampo(label) {
     const campo = await this._elemCampo(label);
-    const inputs = await campo.findElements(By.css('.dx-texteditor-input, input'));
-    if (!inputs.length) return '';
-    return (await inputs[0].getAttribute('value')) || '';
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', campo);
+    return campo;
+  }
+
+  /**
+   * Valor actual MOSTRADO (texto visible) en el input del campo.
+   *
+   * Prioriza `.dx-texteditor-input` (el input VISIBLE que DevExtreme usa
+   * para mostrar el texto) antes que cualquier `input` genérico. Un
+   * selectbox atado a un catálogo (ej. "Estado laboral") renderiza además un
+   * `<input type="hidden" value="1">` con el ID interno, ANTES en el DOM que
+   * el input visible — verificado con un caso real: el selector combinado
+   * `.dx-texteditor-input, input` tomaba ese oculto por aparecer primero, así
+   * que `getValor()` devolvía el ID ("1") en vez del texto ("Empleado") aun
+   * en modo consulta. Con `.dx-texteditor-input` priorizado, siempre gana el
+   * visible; el `input` genérico queda solo de último recurso, para no
+   * romper ningún campo que ya funcionaba sin esa clase.
+   *
+   * Reintenta ante "stale element" (mismo criterio que `seleccionar`/
+   * `elegirEnSelectbox`): leer justo después de un Guardar puede toparse con
+   * el formulario aún re-renderizando de modo edición a consulta —
+   * verificado leyendo un campo inmediatamente después de
+   * `resultadoGuardado()`.
+   */
+  async getValor(label, intentos = 2) {
+    let ultimoError;
+    for (let i = 0; i < intentos; i++) {
+      try {
+        const campo = await this._elemCampo(label);
+        let inputs = await campo.findElements(By.css('.dx-texteditor-input'));
+        if (!inputs.length) inputs = await campo.findElements(By.css('input'));
+        if (!inputs.length) return '';
+        return (await inputs[0].getAttribute('value')) || '';
+      } catch (err) {
+        ultimoError = err;
+        if (!/stale element/i.test(err.message) || i === intentos - 1) throw err;
+        logger.info(`Form: reintentando getValor("${label}") tras stale (intento ${i + 1}/${intentos})`);
+      }
+    }
+    throw ultimoError;
   }
 }
 
