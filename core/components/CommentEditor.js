@@ -163,6 +163,30 @@ class CommentEditor extends BaseComponent {
 
     await this.driver.wait(async () => !(await this._localizarEditorAbierto()), timeout);
     logger.info('CommentEditor: guardado finalizado (editor de escritura ya no visible)');
+
+    // Scroll al comentario recién guardado (la lista muestra el más reciente
+    // primero) — sin esto, la vista queda en el editor de escritura ya
+    // colapsado ("Has click para agregar un comentario"), ARRIBA de la
+    // lista, y una captura de pantalla tomada justo después de `agregar()`
+    // no mostraba el comentario ya guardado (confirmado con evidencia real).
+    // La lista se recarga desde el servidor DESPUÉS de que el editor de
+    // escritura ya cerró ("cargando-comentarios" visible un instante) — se
+    // espera (poll, no un solo intento) a que aparezca el ITEM CON ESE TEXTO
+    // puntual, no cualquier `commentItem` viejo que ya estuviera ahí.
+    const itemNuevo = await this.driver
+      .wait(async () => {
+        const items = await this.driver.findElements(By.css('[class*="CommentEditor_commentItem"]'));
+        for (const it of items) {
+          try {
+            if ((await it.getText()).includes(texto)) return it;
+          } catch (e) { /* stale */ }
+        }
+        return null;
+      }, timeout)
+      .catch(() => null);
+    if (itemNuevo) {
+      await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', itemNuevo);
+    }
     return true;
   }
 }

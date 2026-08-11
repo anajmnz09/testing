@@ -92,7 +92,22 @@ export function colapsable(titulo, contador, contenidoFn, abierto = false) {
 }
 
 export function vacio(mensaje, accion) {
-  return el("div", { class: "vacio" }, el("div", { class: "vacio-ico" }, "▢"), el("p", {}, mensaje), accion || null);
+  return el("div", { class: "vacio" }, el("p", {}, mensaje), accion || null);
+}
+
+/**
+ * Pantalla de inicio del Panel (sin selección de test): logo de Triple +
+ * marca + subtítulo, centrados. Reemplaza el uso de `vacio()` (que trae el
+ * ícono "▢") para esta pantalla específica — a pedido, sin ícono acá.
+ */
+export function pantallaInicio() {
+  return el(
+    "div",
+    { class: "inicio" },
+    el("img", { src: "/assets/logo.png", alt: "Triple", class: "inicio-logo" }),
+    el("div", { class: "inicio-marca" }, "TRIPLE"),
+    el("div", { class: "inicio-sub" }, "Panel de Automatización")
+  );
 }
 
 export function confirmar(mensaje, fn) {

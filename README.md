@@ -146,7 +146,7 @@ testing/                           # raíz del monorepo (npm workspaces)
     │   ├── crear-req-comentarios.test.js
     │   ├── publicar-requisicion.test.js
     │   ├── pausar-requisicion.test.js
-    │   └── importar-archivos-requisicion.test.js
+    │   └── agregar-archivos-requisicion.test.js
     └── reports/                   # reportes generados de ESTE módulo (no se versiona)
 ```
 
@@ -414,7 +414,7 @@ Cada caso se identifica con un **nombre descriptivo y estable**, no con un códi
 | `crear-req-comentarios.test.js` | `crear-req-comentarios` |
 | `publicar-requisicion.test.js` | `publicar-requisicion` |
 | `pausar-requisicion.test.js` | `pausar-requisicion` |
-| `importar-archivos-requisicion.test.js` | `importar-archivos-requisicion` |
+| `agregar-archivos-requisicion.test.js` | `agregar-archivos-requisicion` |
 
 ### Cómo nombrar un caso nuevo
 

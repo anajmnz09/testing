@@ -506,17 +506,31 @@ class Form extends BaseComponent {
    * escribir con el cursor en una posición inesperada dentro de la máscara —
    * verificado: sin el click, el valor resultante queda corrupto).
    */
-  async escribir(label, texto, { clear = true } = {}) {
+  /**
+   * Reintenta ante `StaleElementReferenceError` (confirmado con evidencia
+   * real: justo tras entrar a "Editar", el dxForm puede re-renderizar un
+   * campo recién montado entre ubicarlo y escribirle — mismo tipo de carrera
+   * ya visto en otras acciones de header/formulario de la app).
+   */
+  async escribir(label, texto, { clear = true } = {}, intentos = 3) {
     logger.info(`Form: escribir en "${label}"`);
-    const campo = await this._elemCampo(label);
-    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', campo);
-    const input = await campo.findElement(By.css('.dx-texteditor-input'));
-    if (clear) {
-      await input.clear();
-    } else {
-      await input.click();
+    for (let intento = 1; intento <= intentos; intento++) {
+      try {
+        const campo = await this._elemCampo(label);
+        await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', campo);
+        const input = await campo.findElement(By.css('.dx-texteditor-input'));
+        if (clear) {
+          await input.clear();
+        } else {
+          await input.click();
+        }
+        await input.sendKeys(texto, Key.TAB);
+        return;
+      } catch (e) {
+        if (e.name !== 'StaleElementReferenceError' || intento === intentos) throw e;
+        logger.info(`Form: campo "${label}" "stale" (intento ${intento}/${intentos}), reintentando`);
+      }
     }
-    await input.sendKeys(texto, Key.TAB);
   }
 
   /** Activa (o desactiva) un switch por label. */

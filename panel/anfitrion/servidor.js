@@ -11,6 +11,9 @@ const contexto = require('./contexto');
 const lanzador = require('./lanzador');
 
 const WEB = path.join(__dirname, '..', 'web');
+// Assets compartidos del framework (ej. el logo de Triple) — se sirven desde
+// donde YA viven (core/assests), sin duplicar el archivo dentro del panel.
+const ASSETS = path.join(__dirname, '..', '..', 'core', 'assests');
 const PUERTO = Number(process.env.PANEL_PORT) || 4599;
 
 const MIME = {
@@ -109,6 +112,13 @@ const server = http.createServer(async (req, res) => {
       const rel = ruta.replace(/^\/web\//, '').replace(/^\//, '');
       const p = path.resolve(WEB, rel);
       if ((p === WEB || p.startsWith(WEB + path.sep)) && fs.existsSync(p) && fs.statSync(p).isFile()) {
+        return servirArchivo(res, p);
+      }
+    }
+    if (ruta.startsWith('/assets/')) {
+      const rel = ruta.replace(/^\/assets\//, '');
+      const p = path.resolve(ASSETS, rel);
+      if ((p === ASSETS || p.startsWith(ASSETS + path.sep)) && fs.existsSync(p) && fs.statSync(p).isFile()) {
         return servirArchivo(res, p);
       }
     }

@@ -439,6 +439,34 @@ Never use indexes, DOM order, visual order, base64 or fragile selectors. Prefer 
 name, title, aria-label, visible text, metadata, data-testid. If identification is
 uncertain: do not guess — fail explicitly, generate diagnostics, attach evidence.
 
+## Reading DataGrid rows without opening the detail
+
+Many of this app's listing grids (DevExtreme DataGrid) already expose business-relevant
+columns directly in the row (e.g. Etapa, Estado) — checking or filtering by those values
+does NOT require opening each record's detail view. Reuse `DataGrid.filasPorColumnas()`
+(all visible rows, each as `{Header: "cellText", ...}` keyed by the real column header) or
+`DataGrid.leerFilaPorColumnas(texto)` (the single row containing `texto`) — both already in
+`core/components/DataGrid.js`. Do not re-implement header/row scraping per test; if a case
+needs "find the first row matching some criteria" or "verify a column value before/without
+opening the record", filter/read from these first. Comparisons against grid text should be
+case-insensitive (`.trim().toLowerCase()`), matching how the app renders these columns.
+
+## Repeatable "add via popup" widgets (multi-value, optional catalog match)
+
+Some sections are not a Form field but a small table + an "add" button (accessible via
+`aria-label`, e.g. `add`) that opens a popup with its own fields (a catalog selectbox, a
+value input, and often a "keep it open to add another" checkbox — verified pattern:
+`SolicitudEmpleoDetallePage.agregarOtroBeneficio`/`agregarBeneficios` for "Otros
+beneficios"). For a Panel/Execution Context field that should accept several values in one
+run, split on `|` with `parsearValoresMultiples` (`@triple/core/strategies`) — the
+framework-wide multi-value convention, already used for tags/options fields. When the
+target control is a NON-required catalog match (selecting from a fixed list, not free
+text) and the section itself is optional, a value that does not match any catalog option
+(tolerant match via `Form._itemVisiblePorTexto`, catches its thrown error) should be
+discarded silently rather than failing the case — log it and move on. Don't invent a
+bespoke "strict mode"; only add one if a future case explicitly needs the field to be
+required.
+
 ## Validation
 
 Every test should verify: expected UI state, expected notifications, expected persistence,
@@ -460,11 +488,41 @@ available.
 Whenever a new testing pattern is introduced, update README, GUIDELINES, examples and
 document the pattern.
 
+## Panel organization and case description (mandatory for every new test)
+
+Every new test case must be registered in its module's `data/organizacion-tests.js`
+(create the file if the module doesn't have one yet, following the same shape as
+`reclutamiento/data/organizacion-tests.js`). This file is what the Automation Panel reads
+to group cases in its tree and to render the description block — it is NOT derived from
+the filename anymore (the old "first hyphen segment" grouping is deprecated).
+
+Each entry needs:
+- `seccion`: the real section of the app the test belongs to (e.g. "Requisiciones",
+  "Solicitudes" — mirror the app's own navigation, not an invented taxonomy). Ask the user
+  if unsure which section a new test belongs to, or if the app doesn't have that section
+  yet.
+- `categoria`: what the test DOES within that section (e.g. "Agregar", "Crear",
+  "Compartir", "Consultar", "Editar"; use "Otros" only when nothing more specific fits).
+- `descripcion`: ONE short sentence, in Spanish, stating plainly what the test does (e.g.
+  "Pausa una requisición que se encuentra autorizada."). This renders in the Panel between
+  the case header and the "Ejecutar" button — do not restate the case name, do not
+  describe implementation details, just the business action.
+
+A test that is pure FLOW (login, navigation, opening a listing as a setup step — not a
+business action on its own) must NOT get an entry: it stays out of the Panel's grouped
+tree on purpose, while remaining a normal runnable test.
+
+The Panel also renders a SECOND, FIXED paragraph after the per-test description — same
+text for every case, already implemented in `panel/web/js/detalle.js`, describing the
+automatic-vs-directed execution behavior (Execution Context / Screenshots). Do not
+duplicate that paragraph in `descripcion`; it is appended automatically.
+
 ## Checklist
 
 Before finishing verify: uses existing infrastructure; no duplicated logic; correct naming;
 correct selectors; Execution Context updated; evidence generated; compatibility preserved;
-documentation updated.
+documentation updated; new case registered in `organizacion-tests.js` (section, category,
+one-sentence description) unless it's a pure flow test.
 
 ## Expected Output
 

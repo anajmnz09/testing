@@ -7,7 +7,7 @@ const requisicionesFlow = require('../flows/requisicionesFlow');
 const DocumentosRequisicionPage = require('../pages/DocumentosRequisicionPage');
 const { CLASIFICACIONES } = require('../data/documentos.data');
 
-const CASO = 'importar-archivos-requisicion';
+const CASO = 'agregar-archivos-requisicion';
 const ESTADO_ORIGEN = 'Autorizada';
 
 // Sección del caso en el Execution Context. Vacía por defecto -> el test
@@ -17,7 +17,7 @@ const ESTADO_ORIGEN = 'Autorizada';
 testContext.registrarCaso(CASO, ['nombreRequisicion', 'idRequisicion', 'estado', 'archivo', 'clasificaciones']);
 
 /**
- * importar-archivos-requisicion — Importar documentos a una requisición.
+ * agregar-archivos-requisicion — Agregar (importar) documentos a una requisición.
  *
  * Flujo: login -> módulo Reclutamiento -> listado -> primera requisición
  * "Autorizada" -> abrir detalle -> panel "Documentos" -> por CADA una de las 4
@@ -30,7 +30,7 @@ testContext.registrarCaso(CASO, ['nombreRequisicion', 'idRequisicion', 'estado',
  * Object (que compone FormsHeader, Popup, Form, FileUploader y Notify del core).
  * Screenshot/log/recuperación ante fallo los aplica la política global.
  */
-describe('Reclutamiento - Importar Archivos a Requisición', function () {
+describe('Reclutamiento - Agregar Archivos a Requisición', function () {
   this.timeout(600000);
   let driver;
 
@@ -153,7 +153,7 @@ describe('Reclutamiento - Importar Archivos a Requisición', function () {
         documentosDespues: docsDespues,
       };
       resumen.push(item);
-      logger.info(`importar-archivos-requisicion: ${JSON.stringify(item)}`);
+      logger.info(`${CASO}: ${JSON.stringify(item)}`);
 
       evidence.saveEvidenceBuffer('json', this, JSON.stringify({ ...item, adjuntos }, null, 2), {
         label: `importar-${clasificacion}`,

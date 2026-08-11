@@ -52,15 +52,42 @@ function modulos() {
     .filter((w) => fs.existsSync(path.join(RAIZ, w, 'tests')) && archivosTest(w).length > 0);
 }
 
-/** Árbol Módulo → (Suite) → Caso, con el descriptor `run` de cada nodo. */
+/**
+ * Metadata de organización del módulo (Sección/Categoría/Descripción por
+ * caso) — `<modulo>/data/organizacion-tests.js`. Opcional: un módulo sin este
+ * archivo simplemente no agrupa nada (mismo criterio tolerante que el resto
+ * del descubridor).
+ *
+ * Se invalida el cache de `require` ANTES de cada carga: el anfitrión es un
+ * proceso long-lived (no se reinicia por request), así que sin esto Node
+ * serviría para siempre la primera versión leída del archivo, contradiciendo
+ * el descubrimiento "en vivo" del resto de este módulo (ver comentario de
+ * `archivosTest`) — un test/sección/descripción nueva no aparecería en el
+ * Panel hasta reiniciar el servidor.
+ */
+function cargarOrganizacion(modulo) {
+  const ruta = path.join(RAIZ, modulo, 'data', 'organizacion-tests.js');
+  try {
+    const resuelta = require.resolve(ruta);
+    delete require.cache[resuelta];
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    return require(resuelta);
+  } catch (e) {
+    return {};
+  }
+}
+
+/** Árbol Módulo → Sección → Categoría → Caso, con el descriptor `run` de cada nodo. */
 function arbol() {
   return { modulos: modulos().map(nodoModulo) };
 }
 
 function nodoModulo(modulo) {
   const estados = reportes.estadosPorCaso(modulo);
+  const organizacion = cargarOrganizacion(modulo);
   const casos = archivosTest(modulo).map((rel) => {
     const nombre = path.basename(rel).replace(/\.test\.js$/, '');
+    const meta = organizacion[nombre];
     return {
       id: nombre,
       nombre,
@@ -69,35 +96,69 @@ function nodoModulo(modulo) {
       ruta: `${modulo}/${rel}`,
       run: { tipo: 'caso', modulo, target: rel },
       estado: (estados[nombre] || {}).estado || 'sin-ejecutar',
+      seccion: meta ? meta.seccion : null,
+      categoria: meta ? meta.categoria : null,
+      descripcion: meta ? meta.descripcion : null,
     };
   });
 
-  // Agrupación DERIVADA por primer segmento del nombre (solo comodidad visual):
-  // si ≥2 casos comparten prefijo, se agrupan en una "suite"; los demás quedan
-  // sueltos. No es registro manual: se deriva del nombre.
-  const grupos = {};
-  for (const c of casos) {
-    const seg = c.nombre.split('-')[0];
-    (grupos[seg] = grupos[seg] || []).push(c);
+  // Agrupación por SECCIÓN de la app (Requisiciones, Solicitudes, …) y luego
+  // por CATEGORÍA (Agregar, Crear, Compartir, Consultar, Editar, Otros) —
+  // declarada en `organizacion-tests.js`, no derivada del nombre. Un caso SIN
+  // esa metadata es un test de FLUJO (login, navegación, etc.): queda fuera
+  // del árbol del Panel a propósito, sigue existiendo y siendo ejecutable.
+  const conSeccion = casos.filter((c) => c.seccion && c.categoria);
+
+  const secciones = {};
+  for (const c of conSeccion) {
+    secciones[c.seccion] = secciones[c.seccion] || {};
+    secciones[c.seccion][c.categoria] = secciones[c.seccion][c.categoria] || [];
+    secciones[c.seccion][c.categoria].push(c);
   }
-  const hijos = [];
-  for (const c of casos) {
-    const seg = c.nombre.split('-')[0];
-    if (grupos[seg].length >= 2) continue; // va dentro de su suite
-    hijos.push(c);
-  }
-  for (const seg of Object.keys(grupos)) {
-    if (grupos[seg].length < 2) continue;
-    hijos.push({
-      id: `${modulo}/${seg}`,
-      nombre: seg,
-      tipo: 'suite',
-      modulo,
-      run: { tipo: 'carpeta', modulo, target: `tests/${seg}-*.test.js` },
-      hijos: grupos[seg],
+
+  const hijos = Object.keys(secciones)
+    .sort()
+    .map((nombreSeccion) => {
+      const categorias = secciones[nombreSeccion];
+      const hijosCategoria = Object.keys(categorias)
+        .sort()
+        .map((nombreCategoria) => {
+          const casosCategoria = categorias[nombreCategoria];
+          const runCategoria = {
+            tipo: 'carpeta',
+            modulo,
+            target: `tests/{${casosCategoria.map((c) => c.nombre).join(',')}}.test.js`,
+          };
+          // Cada caso conoce el `run` de SU categoría (para el botón
+          // "Ejecutar carpeta" del detalle: ya no se puede recomputar por
+          // prefijo del nombre, la agrupación es explícita).
+          for (const c of casosCategoria) {
+            c.grupoRun = runCategoria;
+            c.grupoNombre = nombreCategoria;
+          }
+          return {
+            id: `${modulo}/${nombreSeccion}/${nombreCategoria}`,
+            nombre: nombreCategoria,
+            tipo: 'categoria',
+            modulo,
+            run: runCategoria,
+            hijos: casosCategoria,
+          };
+        });
+      const casosSeccion = Object.values(categorias).flat();
+      return {
+        id: `${modulo}/${nombreSeccion}`,
+        nombre: nombreSeccion,
+        tipo: 'seccion',
+        modulo,
+        run: {
+          tipo: 'carpeta',
+          modulo,
+          target: `tests/{${casosSeccion.map((c) => c.nombre).join(',')}}.test.js`,
+        },
+        hijos: hijosCategoria,
+      };
     });
-  }
-  hijos.sort((a, b) => (a.tipo === b.tipo ? a.nombre.localeCompare(b.nombre) : a.tipo === 'suite' ? -1 : 1));
 
   return {
     id: modulo,

@@ -3,7 +3,7 @@ import * as arbol from "./arbol.js";
 import * as detalle from "./detalle.js";
 import * as consola from "./consola.js";
 import * as historial from "./historial.js";
-import { vacio } from "./componentes.js";
+import { pantallaInicio } from "./componentes.js";
 
 const treeCont = document.getElementById("tree");
 const detCont = document.getElementById("detalle");
@@ -71,5 +71,5 @@ document.getElementById("ind-corrida").addEventListener("click", () => {
   c.scrollIntoView();
 });
 
-detCont.append(vacio("Elegí un test del árbol para empezar."));
+detCont.append(pantallaInicio());
 cargarArbol();

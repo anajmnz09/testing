@@ -31,10 +31,39 @@ class DataGrid extends BaseComponent {
     this.filterButton = By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Filtro']");
   }
 
-  /** Espera a que el grid esté visible y devuelve el componente (encadenable). */
+  /**
+   * Espera a que el grid esté visible Y que termine de cargar sus datos
+   * (devuelve el componente, encadenable). El contenedor `.dx-datagrid` se
+   * monta ANTES de poblarse — sin esperar el loader, una lectura inmediata de
+   * `filasPorColumnas()` podía devolver 0 filas aunque el grid sí tuviera
+   * datos (confirmado: listado de Empleados recién abierto vía navbar).
+   */
   async listo() {
     await this.waitVisible(this.grid);
+    await this.esperarSinLoader();
     return this;
+  }
+
+  /**
+   * Algunos listados (verificado: Empleados) alternan entre "Modo tarjeta"
+   * (vista por defecto, tarjetas — este componente NO la puede leer) y "Modo
+   * lista" (un `.dx-datagrid` real, sí legible con `filasPorColumnas`/
+   * `buscar`/`existeFila`) mediante 2 íconos junto al buscador,
+   * identificables por su atributo `title` exacto. Tolerante: si el listado
+   * no tiene ese toggle (la mayoría no lo tiene, ya están en modo lista/tabla
+   * de por sí), no hace nada y no falla.
+   */
+  async asegurarModoLista() {
+    const botones = await this.driver.findElements(By.css('[title="Modo lista"]'));
+    for (const b of botones) {
+      if (await b.isDisplayed().catch(() => false)) {
+        logger.info('DataGrid: cambiar a "Modo lista"');
+        await this.driver.executeScript('arguments[0].click()', b);
+        await this.listo();
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Localizador de una fila que contenga `texto` en alguna celda. */
@@ -100,6 +129,27 @@ class DataGrid extends BaseComponent {
         return resultado;
       });
     });
+  }
+
+  /**
+   * Repite `buscar(textoBuscar)` + `filasPorColumnas()` hasta que alguna fila
+   * cumpla `predicado`, o se agote `timeout`. Pensado para datos que tardan
+   * en propagarse ENTRE módulos (confirmado con evidencia real: un empleado
+   * recién creado desde una Solicitud de Empleo no aparece de inmediato en el
+   * listado de Empleados — ni el registro ni el filtro lo reflejan al toque).
+   * Sin este poll, una sola lectura inmediata podía dar falso negativo.
+   * Devuelve la fila encontrada o `null` si nunca apareció.
+   */
+  async esperarFila(textoBuscar, predicado, timeout = 60000, intervalo = 2000) {
+    const fin = Date.now() + timeout;
+    do {
+      await this.buscar(textoBuscar);
+      const filas = await this.filasPorColumnas();
+      const encontrada = filas.find(predicado);
+      if (encontrada) return encontrada;
+      await this.driver.sleep(intervalo);
+    } while (Date.now() < fin);
+    return null;
   }
 
   /**

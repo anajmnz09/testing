@@ -216,6 +216,20 @@
   color: var(--magenta-600);
   font-weight: 500;
 }
+.caso-descripcion {
+  margin: var(--s3) 0;
+}
+.caso-descripcion p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.caso-descripcion p:last-child {
+  margin-bottom: 0;
+}
+.caso-descripcion-generica {
+  color: var(--g-500);
+}
 .caso-acciones {
   display: flex;
   gap: var(--s2);
@@ -475,14 +489,35 @@
   color: var(--g-500);
   padding: var(--s8);
 }
-.vacio-ico {
-  font-size: 28px;
-  color: var(--g-300);
-  margin-bottom: var(--s2);
-}
 .vacio-min {
   color: var(--g-500);
   font-size: 12px;
+}
+
+/* --- Pantalla de inicio (sin test seleccionado) --- */
+.inicio {
+  height: 100%;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--s4);
+}
+.inicio-logo {
+  width: 96px;
+  height: auto;
+}
+.inicio-marca {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--indigo-900);
+}
+.inicio-sub {
+  font-size: 15px;
+  color: var(--g-500);
 }
 .cargando {
   color: var(--g-500);

@@ -30,12 +30,27 @@ export async function abrir(cont, nodo, onRun) {
     )
   );
 
+  // Descripción del caso: qué hace puntualmente (declarado en
+  // organizacion-tests.js del módulo) + un párrafo FIJO, igual en todos los
+  // tests, que explica el comportamiento automático vs. dirigido por Panel.
+  cont.append(
+    el(
+      "div",
+      { class: "caso-descripcion" },
+      nodo.descripcion ? el("p", {}, nodo.descripcion) : null,
+      el(
+        "p",
+        { class: "caso-descripcion-generica" },
+        'Si lo ejecuta sin completar nada, el test corre en modo automático: el framework elige por su cuenta datos válidos para completarlo. Si desea dirigir la prueba con valores específicos, despliegue la sección "Parámetros (Execution Context)". Para ver el resultado de la corrida, revise la sección "Screenshots".'
+      )
+    )
+  );
+
   // Parámetros: se construyen ya (para poder persistirlos al ejecutar).
   const ctxHandle = ctx.crear(nodo, data.contexto);
 
   // Acciones. Ejecutar es el ÚNICO primario (magenta). Al ejecutar: primero
   // persiste automáticamente los valores del Execution Context, luego corre.
-  const seg = nodo.id.split("-")[0];
   const ejecutar = boton("Ejecutar", {
     variante: "primario",
     icono: "▷",
@@ -45,8 +60,11 @@ export async function abrir(cont, nodo, onRun) {
       onRun(nodo.run, nodo.nombre);
     },
   });
-  const ejecutarCarpeta = boton("Ejecutar carpeta", {
-    onClick: () => onRun({ tipo: "carpeta", modulo: nodo.modulo, target: `tests/${seg}-*.test.js` }, capitalizar(seg)),
+  // "Ejecutar carpeta" corre todos los casos de la MISMA categoría que este
+  // (ej. "Agregar" dentro de "Requisiciones") — el `run`/nombre ya vienen
+  // resueltos desde el árbol (organizacion-tests.js), no se recomputan acá.
+  const ejecutarCarpeta = boton(`Ejecutar carpeta${nodo.grupoNombre ? ` (${capitalizar(nodo.grupoNombre)})` : ""}`, {
+    onClick: () => onRun(nodo.grupoRun, capitalizar(nodo.grupoNombre || nodo.modulo)),
   });
   // Ejecutar módulo: deshabilitado por ahora, reservado para una próxima fase.
   // (La lógica de ejecución del módulo sigue existiendo en el backend/comando.)

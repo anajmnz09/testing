@@ -109,7 +109,7 @@
     "idRequisicion": "",
     "estado": ""
   },
-  "importar-archivos-requisicion": {
+  "agregar-archivos-requisicion": {
     "nombreRequisicion": "",
     "idRequisicion": "",
     "estado": "",
@@ -201,6 +201,32 @@
     "estadoLaboral": "empleado",
     "ultimoSalario": "45000",
     "beneficios": "viaticos"
+  },
+  "cambiar-solicitud-primera-entrevista": {
+    "codigo": ""
+  },
+  "cambiar-solicitud-segunda-entrevista": {
+    "codigo": "1816"
+  },
+  "cambiar-solicitud-tercera-entrevista": {
+    "codigo": ""
+  },
+  "cambiar-solicitud-oferta-empleo": {
+    "codigo": ""
+  },
+  "cambiar-solicitud-crear-empleado": {
+    "codigo": "1812",
+    "salario": "40000"
+  },
+  "agregar-otros-beneficios-solicitud-empleo": {
+    "codigo": "1817",
+    "salario": "",
+    "beneficios": "bono desempeño anual | Transporte",
+    "montos": "1000 | 800"
+  },
+  "agregar-comentario-solicitud-empleo": {
+    "codigo": "1817",
+    "comentario": "Hola como esta pt 2"
   },
   "validacion-solicitud-empleo": {
     "Primer Nombre": "",
