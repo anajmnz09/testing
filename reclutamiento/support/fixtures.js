@@ -1,6 +1,8 @@
 const { createDriver, authFlow, navigationFlow, testContext } = require('@triple/core');
+const SRHHNavBar = require('@triple/core/components/SRHHNavBar');
 const RequisicionesPage = require('../pages/RequisicionesPage');
 const SolicitudEmpleoPage = require('../pages/SolicitudEmpleoPage');
+const BancoCandidatosPage = require('../pages/BancoCandidatosPage');
 
 /**
  * Fixtures compartidos por los casos del módulo.
@@ -37,6 +39,20 @@ function usarListadoSolicitudesEmpleo() {
     await authFlow.login(ctx.driver);
     await navigationFlow.abrirModulo(ctx.driver, 'Reclutamiento');
     ctx.lista = await SolicitudEmpleoPage.ir(ctx.driver);
+  });
+  return ctx;
+}
+
+/** Igual que `usarListadoRequisiciones`, pero deja cargado el listado "Banco de candidatos". */
+function usarListadoBancoCandidatos() {
+  const ctx = {};
+  beforeEach(async function () {
+    ctx.driver = await createDriver();
+    await authFlow.login(ctx.driver);
+    await navigationFlow.abrirModulo(ctx.driver, 'Reclutamiento');
+    const navBar = new SRHHNavBar(ctx.driver);
+    await navBar.ir('Banco de candidatos');
+    ctx.lista = await new BancoCandidatosPage(ctx.driver).estaCargado();
   });
   return ctx;
 }
@@ -103,6 +119,7 @@ async function abrirRequisicionExistente(ctx, caso) {
 module.exports = {
   usarListadoRequisiciones,
   usarListadoSolicitudesEmpleo,
+  usarListadoBancoCandidatos,
   iniciarColectorErroresJs,
   erroresJs,
   abrirRequisicionExistente,

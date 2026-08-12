@@ -70,6 +70,22 @@ const CATALOGO_RUTAS = {
       tipoNavegacion: 'dropdown',
       tituloEsperado: null,
     },
+    {
+      // NO tiene trigger propio en el navbar: vive DENTRO del overlay que
+      // abre el trigger "Solicitudes de Empleo" (verificado en el DOM real:
+      // el dropdown de "Solicitudes de Empleo" lista dos opciones,
+      // "Solicitudes de Empleo" y "Banco de candidatos"). Por eso declara
+      // `triggerTexto` distinto de `texto` — ver `_clickConDropdown`.
+      // `tituloEsperado: null` es DELIBERADO (no un hueco pendiente): esta
+      // pantalla usa una barra de título distinta (`SrhhGenericBar_title`,
+      // confirmado con evidencia real), no la que lee `estaEn()` — su
+      // llegada se confirma aparte, no con la evidencia oficial de esta
+      // clase.
+      texto: 'Banco de candidatos',
+      triggerTexto: 'Solicitudes de Empleo',
+      tipoNavegacion: 'dropdown',
+      tituloEsperado: null,
+    },
   ],
 };
 
@@ -294,14 +310,23 @@ class SRHHNavBar extends BaseComponent {
    * DropDownButton/ButtonGroup, contenedor `NavRoute`). Click en el trigger →
    * esperar a que el dropdown abra → elegir la opción real dentro de él (por
    * texto exacto; si no aparece con ese texto, el primer item visible).
+   *
+   * `triggerTexto`: por defecto, el trigger NavRoute a clickear tiene el
+   * MISMO texto que `nombreOpcion` (caso normal: "Solicitudes de Empleo"
+   * abre su propio dropdown). Pero algunas opciones NO tienen trigger
+   * propio — viven DENTRO del overlay de OTRO trigger (verificado:
+   * "Banco de candidatos" está dentro del dropdown de "Solicitudes de
+   * Empleo") — para esos casos `CATALOGO_RUTAS` declara `triggerTexto`
+   * distinto de `texto`, y acá se clickea ESE trigger pero se elige
+   * `nombreOpcion` dentro del overlay que abre.
    */
-  async _clickConDropdown(nombreOpcion, intentos = 3) {
+  async _clickConDropdown(nombreOpcion, { triggerTexto = nombreOpcion, intentos = 3 } = {}) {
     for (let intento = 1; intento <= intentos; intento++) {
       const candidatos = await this.driver.findElements(By.css('[class*="NavRoute" i] *'));
       let trigger = null;
       for (const el of candidatos) {
         try {
-          if ((await el.isDisplayed()) && (await el.getText()).trim() === nombreOpcion) {
+          if ((await el.isDisplayed()) && (await el.getText()).trim() === triggerTexto) {
             trigger = el;
             break;
           }
@@ -310,7 +335,7 @@ class SRHHNavBar extends BaseComponent {
         }
       }
       if (!trigger) {
-        throw new Error(`SRHHNavBar: no se encontró el trigger NavRoute de "${nombreOpcion}".`);
+        throw new Error(`SRHHNavBar: no se encontró el trigger NavRoute de "${triggerTexto}".`);
       }
 
       await trigger.click();
@@ -326,7 +351,7 @@ class SRHHNavBar extends BaseComponent {
         .catch(() => {});
 
       if (opciones.length > 0) {
-        logger.info(`SRHHNavBar: dropdown de "${nombreOpcion}" abierto, opciones: ${JSON.stringify(opciones)}`);
+        logger.info(`SRHHNavBar: dropdown de "${triggerTexto}" abierto, opciones: ${JSON.stringify(opciones)}`);
         if (opciones.includes(nombreOpcion)) {
           await this._elegirEnOverlay(nombreOpcion);
         } else {
@@ -336,14 +361,14 @@ class SRHHNavBar extends BaseComponent {
       }
 
       logger.info(
-        `SRHHNavBar: dropdown de "${nombreOpcion}" sin opciones (intento ${intento}/${intentos}), reintentando el click`
+        `SRHHNavBar: dropdown de "${triggerTexto}" sin opciones (intento ${intento}/${intentos}), reintentando el click`
       );
       // Recuperar el estado antes de reintentar: cerrar cualquier overlay que
       // haya quedado a medio abrir, para que el próximo click parta limpio.
       await this._cerrarOverlay();
     }
     throw new Error(
-      `SRHHNavBar: el dropdown de "${nombreOpcion}" nunca mostró opciones tras ${intentos} intento(s) de click.`
+      `SRHHNavBar: el dropdown de "${triggerTexto}" nunca mostró opciones tras ${intentos} intento(s) de click.`
     );
   }
 
@@ -377,7 +402,7 @@ class SRHHNavBar extends BaseComponent {
         await this._clickDirecto(nombreOpcion);
         break;
       case 'dropdown':
-        await this._clickConDropdown(nombreOpcion);
+        await this._clickConDropdown(nombreOpcion, { triggerTexto: ruta.triggerTexto });
         break;
       default:
         throw new Error(

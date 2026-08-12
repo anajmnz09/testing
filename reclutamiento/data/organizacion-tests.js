@@ -2,8 +2,8 @@
  * Organización de los tests de este módulo para el Panel de Control:
  * agrupa cada CASO (nombre = archivo `tests/<nombre>.test.js`, sin la
  * extensión) por Sección de la app (como está organizada la app real:
- * Requisiciones, Solicitudes, más adelante Banco de candidatos) y luego por
- * Categoría (qué hace: Agregar, Crear, Compartir, Consultar, Editar, Otros).
+ * Requisiciones, Solicitudes, Banco de candidatos) y luego por Categoría (qué
+ * hace: Agregar, Crear, Compartir, Consultar, Editar, Otros).
  *
  * Reemplaza la agrupación anterior (derivada del primer segmento del nombre
  * del archivo, ej. "agregar-x" -> carpeta "agregar") por una agrupación
@@ -66,6 +66,12 @@ module.exports = {
     categoria: 'Otros',
     descripcion: 'Publica una requisición autorizada para generar su vacante pública.',
   },
+  'cerrar-requisicion': {
+    seccion: 'Requisiciones',
+    categoria: 'Otros',
+    descripcion:
+      'Cierra una requisición desde el header; si tiene solicitantes pendientes, resuelve "Envío de candidatos" (Elegibles/Descartados al azar) y lo confirma en Banco de candidatos.',
+  },
 
   // --- Solicitudes -------------------------------------------------------
   'agregar-foto-solicitud-empleo': {
@@ -83,6 +89,27 @@ module.exports = {
     categoria: 'Consultar',
     descripcion:
       'Desde el detalle de una requisición, abre el listado de Solicitudes de Empleo ya filtrado por esa requisición.',
+  },
+  'consultar-banco-elegibles-desde-requisicion': {
+    seccion: 'Banco de candidatos',
+    categoria: 'Consultar',
+    descripcion: 'Desde el detalle de una requisición, abre "Banco de candidatos" mediante el botón "B. Elegibles" del header.',
+  },
+  'agregar-candidato-banco': {
+    seccion: 'Banco de candidatos',
+    categoria: 'Agregar',
+    descripcion:
+      'Agrega un candidato nuevo directamente desde "Banco de candidatos" (modal "Agregar Nuevo Candidato"), incluyendo Etiquetas y Apreciación.',
+  },
+  'enviar-candidato-elegibles': {
+    seccion: 'Banco de candidatos',
+    categoria: 'Otros',
+    descripcion: 'Envía un candidato de la tab "Descartados" a "Elegibles" y confirma que aparece en el destino.',
+  },
+  'enviar-candidato-descartados': {
+    seccion: 'Banco de candidatos',
+    categoria: 'Otros',
+    descripcion: 'Envía un candidato de la tab "Elegibles" a "Descartados" y confirma que aparece en el destino.',
   },
   'crear-solicitud-empleo': {
     seccion: 'Solicitudes',

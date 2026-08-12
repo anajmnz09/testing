@@ -787,6 +787,32 @@ class Form extends BaseComponent {
     }
     throw ultimoError;
   }
+
+  /**
+   * Espera (poll) hasta que `getValor(label)` coincida con `valorEsperado`
+   * (case-insensitive; `contains` por defecto, comparación exacta si se pasa
+   * `contains: false`). El notify de éxito de una acción del header (ej.
+   * cambiar Estado/Etapa desde un botón, sin pasar por "Guardar") puede
+   * llegar un instante ANTES de que el campo termine de re-renderizar con el
+   * valor nuevo — confirmado con evidencia real en más de un módulo (Estado
+   * de Requisición al cerrarla, Etapa de Solicitud de Empleo). Una sola
+   * lectura inmediata con `getValor` podía devolver el valor ANTERIOR
+   * todavía. Devuelve el último valor leído (coincida o no, tras agotar el
+   * timeout), para poder incluirlo en el mensaje de assert del caso que lo
+   * use.
+   */
+  async esperarValor(label, valorEsperado, { timeout = this._timeout(), contains = true } = {}) {
+    let actual = '';
+    await this.driver
+      .wait(async () => {
+        actual = await this.getValor(label);
+        const a = actual.trim().toLowerCase();
+        const e = String(valorEsperado).trim().toLowerCase();
+        return contains ? a.includes(e) : a === e;
+      }, timeout)
+      .catch(() => {});
+    return actual;
+  }
 }
 
 module.exports = Form;

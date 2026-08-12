@@ -32,6 +32,35 @@ class DataGrid extends BaseComponent {
   }
 
   /**
+   * Como `waitVisible`, pero tolerante a que `locator` matchee VARIOS
+   * elementos a la vez en el DOM y solo uno esté visible — confirmado con
+   * evidencia real: pantallas con más de un `.dx-datagrid`/buscador montado
+   * simultáneamente (ej. "Banco de candidatos", un grid POR TAB, uno oculto).
+   * `waitVisible` normal ubica el PRIMERO en orden de DOM y espera a que ESE
+   * puntual sea visible — si el primero no es el visible, cuelga el timeout
+   * completo aunque otro match sí lo esté. Acá se hace poll sobre TODOS los
+   * matches hasta que alguno esté visible.
+   */
+  async _primerVisible(locator, timeout = config.timeouts.explicitWaitMs) {
+    let encontrado = null;
+    await this.driver.wait(async () => {
+      const els = await this.driver.findElements(locator);
+      for (const el of els) {
+        try {
+          if (await el.isDisplayed()) {
+            encontrado = el;
+            return true;
+          }
+        } catch (e) {
+          /* stale */
+        }
+      }
+      return false;
+    }, timeout);
+    return encontrado;
+  }
+
+  /**
    * Espera a que el grid esté visible Y que termine de cargar sus datos
    * (devuelve el componente, encadenable). El contenedor `.dx-datagrid` se
    * monta ANTES de poblarse — sin esperar el loader, una lectura inmediata de
@@ -39,7 +68,7 @@ class DataGrid extends BaseComponent {
    * datos (confirmado: listado de Empleados recién abierto vía navbar).
    */
   async listo() {
-    await this.waitVisible(this.grid);
+    await this._primerVisible(this.grid);
     await this.esperarSinLoader();
     return this;
   }
@@ -73,10 +102,14 @@ class DataGrid extends BaseComponent {
     );
   }
 
-  /** Escribe en el buscador (el grid filtra en vivo). */
+  /**
+   * Escribe en el buscador (el grid filtra en vivo). Usa `_primerVisible`
+   * (no `waitVisible`): mismo motivo que en `listo()` — puede haber más de
+   * un `input[placeholder="Buscar"]` montado a la vez (uno por tab).
+   */
   async buscar(texto) {
     logger.info(`DataGrid: buscar "${texto}"`);
-    const input = await this.waitVisible(this.searchInput);
+    const input = await this._primerVisible(this.searchInput);
     await input.clear();
     await input.sendKeys(texto, Key.ENTER);
   }
@@ -101,6 +134,50 @@ class DataGrid extends BaseComponent {
     await this.click(this._filaLocator(texto));
   }
 
+  /**
+   * Selecciona (checkbox) la fila que contiene `texto`, o la PRIMERA fila real
+   * del grid si no se pasa `texto`. El checkbox de selección (columna
+   * `dx-command-select`) está oculto por CSS hasta que se interactúa con la
+   * fila — confirmado con evidencia real: el ícono `.dx-checkbox` en sí tiene
+   * `display:none`, pero su CELDA contenedora (`td.dx-command-select`,
+   * `aria-label="Seleccionar fila"`) sí es interactiva y dispara la selección
+   * al clickearla (un click nativo sobre el ícono oculto tira
+   * `element not interactable`). Mismo criterio de grid VISIBLE que
+   * `filasPorColumnas` (puede haber más de un `.dx-datagrid` montado, uno por
+   * tab, ej. "Banco de candidatos").
+   * @returns {Promise<boolean>} true si encontró y clickeó la fila.
+   */
+  async seleccionarFila(texto) {
+    logger.info(`DataGrid: seleccionar fila ${texto ? `"${texto}"` : '(primera)'}`);
+    const marcado = await this.driver.executeScript((buscado) => {
+      const esVisible = (el) => {
+        const estilo = window.getComputedStyle(el);
+        if (estilo.display === 'none' || estilo.visibility === 'hidden' || parseFloat(estilo.opacity) === 0) {
+          return false;
+        }
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      };
+      const grid = Array.from(document.querySelectorAll('.dx-datagrid')).find(esVisible);
+      if (!grid) return false;
+      const filas = Array.from(grid.querySelectorAll('.dx-data-row'));
+      const fila = buscado ? filas.find((f) => (f.textContent || '').includes(buscado)) : filas[0];
+      if (!fila) return false;
+      const celda = fila.querySelector('.dx-command-select');
+      if (!celda) return false;
+      const prev = document.querySelector('[data-qa="seleccionar-fila"]');
+      if (prev) prev.removeAttribute('data-qa');
+      celda.setAttribute('data-qa', 'seleccionar-fila');
+      return true;
+    }, texto || null);
+
+    if (!marcado) return false;
+    const celda = await this.driver.findElement(By.css('[data-qa="seleccionar-fila"]'));
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', celda);
+    await celda.click();
+    return true;
+  }
+
   /** Cantidad de filas visibles en la página actual del grid. */
   async contarFilas() {
     const filas = await this.driver.findElements(this.dataRow);
@@ -113,14 +190,40 @@ class DataGrid extends BaseComponent {
    * Reutilizable por cualquier caso que necesite verificar/filtrar datos de
    * una fila SIN abrir el detalle (muchos listados del módulo ya exponen
    * columnas de estado/etapa/etc. directamente en el grid).
+   *
+   * Encabezados y filas se leen DENTRO del `.dx-datagrid` VISIBLE (no de
+   * `document` entero): confirmado con evidencia real que una pantalla puede
+   * tener MÁS DE UN `.dx-datagrid` montado a la vez aunque solo uno esté
+   * visible (ej. "Banco de candidatos", un grid por tab "Elegibles"/
+   * "Descartados") — sin este scope, los headers de ambos grids se
+   * mezclaban y el mapeo header->celda quedaba desalineado (una columna
+   * real, ej. "Nombre", terminaba `undefined`).
+   *
+   * La visibilidad se determina con estilo computado (`display`/`visibility`/
+   * `opacity` + tamaño real), NO con `offsetParent !== null`: confirmado con
+   * evidencia real que ese chequeo detecta `display:none` pero NO
+   * `visibility:hidden` — un tab inactivo del TabPanel oculto así seguía
+   * "encontrado" como si fuera el visible (la búsqueda en pantalla filtraba
+   * bien, en el tab correcto, pero esta función seguía leyendo el grid
+   * equivocado y nunca encontraba la fila ya filtrada).
    */
   async filasPorColumnas() {
     return this.driver.executeScript(() => {
       const norm = (e) => (e && e.textContent || '').replace(/\s+/g, ' ').trim();
+      const esVisible = (el) => {
+        const estilo = window.getComputedStyle(el);
+        if (estilo.display === 'none' || estilo.visibility === 'hidden' || parseFloat(estilo.opacity) === 0) {
+          return false;
+        }
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      };
+      const grid = Array.from(document.querySelectorAll('.dx-datagrid')).find(esVisible);
+      if (!grid) return [];
       const headers = Array.from(
-        document.querySelectorAll('.dx-datagrid-headers .dx-header-row td, .dx-datagrid-headers .dx-header-row th')
+        grid.querySelectorAll('.dx-datagrid-headers .dx-header-row td, .dx-datagrid-headers .dx-header-row th')
       ).map(norm);
-      return Array.from(document.querySelectorAll('.dx-data-row')).map((fila) => {
+      return Array.from(grid.querySelectorAll('.dx-data-row')).map((fila) => {
         const celdas = Array.from(fila.querySelectorAll('td')).map(norm);
         const resultado = {};
         headers.forEach((h, i) => {

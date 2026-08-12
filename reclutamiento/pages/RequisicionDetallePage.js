@@ -1,4 +1,4 @@
-const { By } = require('selenium-webdriver');
+const { By, until } = require('selenium-webdriver');
 const { BasePage } = require('@triple/core');
 const Form = require('@triple/core/components/Form');
 const Notify = require('@triple/core/components/Notify');
@@ -35,6 +35,33 @@ const SEL_COMPARTIR = {
   titulo: 'Compartir enlace público de la vacante',
   enlace: '[class*="link_input_field"]',
   copiar: '[class*="copy_badge_btn"]',
+};
+
+// "Cerrar" (header) — verificado en el DOM real: el header tiene DOS
+// elementos cuyo nombre accesible contiene "Cerrar" (uno decorativo/inerte,
+// confirmado con evidencia real: clickearlo no abre ningún popup), así que
+// NO se localiza con `FormsHeader.clickBoton` (que toma el primer match por
+// nombre accesible) sino por `[title="Cerrar"]` EXACTO, el único
+// inequívoco. Popup de confirmación ("Cerrar Solicitud de Puesto de
+// Trabajo"): botón "Sí" envuelto en `div.rojo` (vs. "No" en `div.blanco`).
+const SEL_CERRAR = {
+  boton: '[title="Cerrar"]',
+  popupBtnSi: "//div[contains(@class,'dx-overlay-content')]//div[contains(@class,'rojo')]//div[@aria-label='Sí']",
+};
+
+// Segundo popup ("Envío de candidatos") — SOLO aparece si la requisición
+// tiene al menos un solicitante pendiente de acción (confirmado: una
+// requisición sin solicitantes cierra directo con el popup anterior, sin
+// este). Tabla real (`.dx-datagrid`), columnas verificadas: "Acción" (2
+// radio buttons por fila, "B. Elegibles"/"B. Descartados" — "B.
+// Descartados" viene marcado por defecto), "Nombre", "Estado",
+// "Apreciación", "Reclutador".
+const SEL_ENVIO_CANDIDATOS = {
+  overlay: "//div[contains(@class,'dx-overlay-content')][.//*[contains(normalize-space(.),'Envío de candidatos')]]",
+  filas:
+    "//div[contains(@class,'dx-overlay-content')][.//*[contains(normalize-space(.),'Envío de candidatos')]]//tr[contains(@class,'dx-data-row')]",
+  btnConfirmar:
+    "//div[contains(@class,'dx-overlay-content')]//div[contains(@class,'dx-button')][.//span[contains(normalize-space(.),'Confirmar acciones y cerrar')]]",
 };
 
 /**
@@ -377,6 +404,142 @@ class RequisicionDetallePage extends BasePage {
     // tras el click puede leer 0 aunque sí existan solicitudes.
     await this.esperarSinLoader(timeout);
     return new SolicitudEmpleoPage(this.driver).listo();
+  }
+
+  /**
+   * Abre "Banco de Elegibles" desde el header de la requisición (misma fila
+   * de botones que "Solicitudes de Empleo"/"Editar" — botón con
+   * `title="B. Elegibles"`, mismo mecanismo `FormsHeader.clickBoton` por
+   * nombre accesible, no produce notify). Navega a la pantalla "Banco de
+   * candidatos" (título real de destino, confirmado — distinto del texto del
+   * botón, mismo criterio ya documentado en `SRHHNavBar`). No hay Page
+   * Object propio todavía para esa pantalla: quien llame valida la llegada
+   * con `SRHHNavBar.estaEn('Banco de candidatos')` (evidencia oficial de
+   * navegación de la app, ya reutilizable).
+   *
+   * Lanza si el botón no aparece o está deshabilitado: el propósito del
+   * método es navegar, así que no encontrarlo es una falla real.
+   */
+  async irABancoElegibles(timeout = config.timeouts.explicitWaitMs) {
+    logger.info('RequisicionDetallePage: ir a "Banco de Elegibles" (header)');
+    const info = await this.acciones.clickBoton('elegibles', {
+      etiqueta: 'B. Elegibles',
+      timeout,
+      dataQa: 'boton-banco-elegibles',
+    });
+    if (!info.accionado) {
+      throw new Error(
+        `RequisicionDetallePage: no se pudo abrir "Banco de Elegibles" desde el header ` +
+          `(${info.encontrado ? 'deshabilitado' : 'no encontrado'}). Botones: ${JSON.stringify(info.botones)}`
+      );
+    }
+    await this.esperarSinLoader(timeout);
+  }
+
+  /**
+   * Resuelve el popup "Envío de candidatos" (ver `SEL_ENVIO_CANDIDATOS`): por
+   * cada fila de la tabla, decide el destino con `asignarDestino(nombre)` y
+   * clickea el radio button correspondiente ("B. Elegibles"/"B.
+   * Descartados") dentro de la columna "Acción", y al final clickea
+   * "Confirmar acciones y cerrar requisición". Devuelve `[{nombre, destino}]`
+   * en el mismo orden de la tabla — quien llame lo usa para verificar después
+   * en Banco de candidatos.
+   */
+  async _resolverEnvioCandidatos(asignarDestino, timeout) {
+    await this.waitVisible(By.xpath(SEL_ENVIO_CANDIDATOS.overlay), timeout);
+
+    // 1) Plan completo ANTES de clickear nada: nombre + destino de cada fila,
+    // por índice. Decidir el destino acá (no dentro del loop de clicks)
+    // evita que un reintento por "stale" vuelva a llamar `asignarDestino`
+    // (aleatorio por defecto) y cambie el destino ya decidido para esa fila.
+    const filasIniciales = await this.driver.findElements(By.xpath(SEL_ENVIO_CANDIDATOS.filas));
+    const plan = [];
+    for (const fila of filasIniciales) {
+      const celdas = await fila.findElements(By.css('td'));
+      const nombre = (await celdas[1].getText()).trim();
+      plan.push({ nombre, destino: asignarDestino(nombre) });
+    }
+
+    // 2) Clickear cada radio button, por ÍNDICE, re-consultando la fila
+    // fresca en cada intento: clickear el radio de una fila re-renderiza la
+    // TABLA completa (confirmado con evidencia real: StaleElementReferenceError
+    // procesando la fila siguiente con handles obtenidos antes del click).
+    const envios = [];
+    for (let i = 0; i < plan.length; i++) {
+      const { nombre, destino } = plan[i];
+      let hecho = false;
+      for (let intento = 1; intento <= 3 && !hecho; intento++) {
+        try {
+          const filas = await this.driver.findElements(By.xpath(SEL_ENVIO_CANDIDATOS.filas));
+          const celdas = await filas[i].findElements(By.css('td'));
+          const opciones = await celdas[0].findElements(By.css('.dx-radiobutton'));
+          let clickeado = false;
+          for (const opcion of opciones) {
+            const textoOpcion = (await opcion.getText()).trim();
+            if (textoOpcion === destino) {
+              await this.driver.executeScript('arguments[0].click()', opcion);
+              clickeado = true;
+              break;
+            }
+          }
+          if (!clickeado) {
+            const disponibles = await Promise.all(opciones.map((o) => o.getText()));
+            throw new Error(
+              `RequisicionDetallePage: no se encontró la opción "${destino}" para "${nombre}" en "Envío de candidatos" ` +
+                `(disponibles: ${disponibles.join(', ')}).`
+            );
+          }
+          hecho = true;
+        } catch (e) {
+          if (e.name !== 'StaleElementReferenceError' || intento === 3) throw e;
+          logger.info(`RequisicionDetallePage: fila de "${nombre}" en "Envío de candidatos" "stale" (intento ${intento}/3), reintentando`);
+        }
+      }
+      logger.info(`RequisicionDetallePage: "Envío de candidatos" -> "${nombre}" a "${destino}"`);
+      envios.push({ nombre, destino });
+    }
+
+    const btnConfirmar = await this.waitVisible(By.xpath(SEL_ENVIO_CANDIDATOS.btnConfirmar), timeout);
+    await this.driver.executeScript('arguments[0].click()', btnConfirmar);
+    return envios;
+  }
+
+  /**
+   * Cierra la requisición (botón "Cerrar" del header, ver `SEL_CERRAR`):
+   * confirma el popup "Cerrar Solicitud de Puesto de Trabajo" (botón rojo
+   * "Sí") y, SI aparece el segundo popup "Envío de candidatos" (requisición
+   * con al menos un solicitante pendiente), lo resuelve con
+   * `asignarDestino` (por defecto, 50/50 aleatorio entre "B. Elegibles" y
+   * "B. Descartados" por candidato — repartir manualmente sería excesivo
+   * para este caso, ver `_resolverEnvioCandidatos`).
+   *
+   * Devuelve `{ notify, exito, invalido, errorSistema, envios }`: `envios`
+   * es `null` si la requisición no tenía solicitantes pendientes (no
+   * apareció el segundo popup), o `[{nombre, destino}]` si sí.
+   */
+  async cerrar(asignarDestino = () => (Math.random() < 0.5 ? 'B. Elegibles' : 'B. Descartados'), timeout = config.timeouts.explicitWaitMs) {
+    logger.info('RequisicionDetallePage: Cerrar (header)');
+    const btnCerrar = await this.waitVisible(By.css(SEL_CERRAR.boton), timeout);
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', btnCerrar);
+    await this.driver.executeScript('arguments[0].click()', btnCerrar);
+
+    const btnSi = await this.waitVisible(By.xpath(SEL_CERRAR.popupBtnSi), timeout);
+    await this.driver.executeScript('arguments[0].click()', btnSi);
+
+    // ¿Aparece "Envío de candidatos"? Espera corta y tolerante: si no
+    // aparece, el cierre ya quedó confirmado con el popup anterior
+    // (requisición sin solicitantes pendientes) — no es un error.
+    const apareceEnvio = await this.driver
+      .wait(until.elementLocated(By.xpath(SEL_ENVIO_CANDIDATOS.overlay)), 4000)
+      .catch(() => null);
+
+    let envios = null;
+    if (apareceEnvio) {
+      envios = await this._resolverEnvioCandidatos(asignarDestino, timeout);
+    }
+
+    const resultado = await this.notify.esperarResultado(timeout);
+    return { ...resultado, envios };
   }
 
   /**

@@ -22,24 +22,48 @@ class UiContext {
     return waitForElementVisible(this.driver, locator, timeout);
   }
 
-  /** Espera el elemento visible y hace click. Devuelve el elemento. */
-  async click(locator, timeout) {
-    const el = await this.waitVisible(locator, timeout);
-    await el.click();
-    return el;
+  /**
+   * Espera el elemento visible y hace click. Reintenta ante
+   * `StaleElementReferenceError`: confirmado con evidencia real en varios
+   * puntos del framework que el nodo puede re-renderizarse justo en el
+   * instante entre `waitVisible` (que YA reintenta su propia carrera
+   * interna, ver `waitForElementVisible`) y el click nativo — una carrera
+   * distinta, un paso más adelante. Como `click()` es la interacción más
+   * usada de todo el framework (heredada por cada Page Object/Componente),
+   * endurecerla acá cubre esa carrera en un solo lugar. Devuelve el elemento
+   * (del intento que tuvo éxito).
+   */
+  async click(locator, timeout, intentos = 3) {
+    for (let intento = 1; intento <= intentos; intento++) {
+      try {
+        const el = await this.waitVisible(locator, timeout);
+        await el.click();
+        return el;
+      } catch (e) {
+        if (e.name !== 'StaleElementReferenceError' || intento === intentos) throw e;
+      }
+    }
   }
 
   /**
-   * Espera el input visible y escribe `text`. Por defecto limpia el campo antes.
+   * Espera el input visible y escribe `text`. Por defecto limpia el campo
+   * antes. Mismo reintento ante `StaleElementReferenceError` que `click()`
+   * (misma clase de carrera, un paso más adelante que `waitVisible`).
    * Devuelve el elemento.
    */
-  async type(locator, text, { clear = true, timeout } = {}) {
-    const el = await this.waitVisible(locator, timeout);
-    if (clear) {
-      await el.clear();
+  async type(locator, text, { clear = true, timeout, intentos = 3 } = {}) {
+    for (let intento = 1; intento <= intentos; intento++) {
+      try {
+        const el = await this.waitVisible(locator, timeout);
+        if (clear) {
+          await el.clear();
+        }
+        await el.sendKeys(text);
+        return el;
+      } catch (e) {
+        if (e.name !== 'StaleElementReferenceError' || intento === intentos) throw e;
+      }
     }
-    await el.sendKeys(text);
-    return el;
   }
 
   /**

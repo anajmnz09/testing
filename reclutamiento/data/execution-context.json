@@ -104,6 +104,9 @@
     "nombreRequisicion": "QA-crear-req-pregunta-personalizada-1785368652224",
     "estado": ""
   },
+  "cerrar-requisicion": {
+    "codigo": ""
+  },
   "pausar-requisicion": {
     "nombreRequisicion": "QA-crear-req-sustitucion-requeridos-1785368792392",
     "idRequisicion": "",
@@ -143,7 +146,7 @@
     "Responsabilidades": "",
     "Descripción": "",
     "Comentario": "",
-    "Cantidad de empleado": "",
+    "Cantidad de empleado": "4",
     "Rotativo": ""
   },
   "crear-req-sustitucion": {
@@ -186,6 +189,11 @@
   "consultar-solicitudes-desde-requisicion": {
     "codigo": "",
     "nombre": "ADMINISTRADOR DE REDES2",
+    "estado": ""
+  },
+  "consultar-banco-elegibles-desde-requisicion": {
+    "codigo": "1166",
+    "nombre": "",
     "estado": ""
   },
   "agregar-valoracion-solicitud-empleo": {
@@ -237,18 +245,37 @@
     "Etiquetas": ""
   },
   "crear-solicitud-empleo": {
-    "Tipo ID": "cedula",
-    "Identificación": "40200624078",
-    "Primer Nombre": "Matias",
-    "Segundo Nombre": "Ramon",
-    "Primer Apellido": "Mella",
-    "Segundo Apellido": "Sanchez",
+    "Tipo ID": "",
+    "Identificación": "",
+    "Primer Nombre": "",
+    "Segundo Nombre": "",
+    "Primer Apellido": "",
+    "Segundo Apellido": "",
     "Grado académico": "",
-    "Celular": "8097655432",
-    "Correo": "correo@gmail.com",
-    "Requisición": "REQ DESDE PANEL SUST pt 3",
+    "Celular": "",
+    "Correo": "",
+    "Requisición": "",
     "Fecha Ingreso": "",
-    "Etiquetas": "hola| admin| redes",
-    "Comentario": "comento"
+    "Etiquetas": "",
+    "Comentario": ""
+  },
+  "agregar-candidato-banco": {
+    "Tipo ID": "",
+    "Identificación": "",
+    "Primer Nombre": "",
+    "Segundo Nombre": "",
+    "Primer Apellido": "",
+    "Segundo Apellido": "",
+    "Correo": "",
+    "Teléfono": "",
+    "Grado académico": "",
+    "Etiquetas": "",
+    "Apreciación": ""
+  },
+  "enviar-candidato-elegibles": {
+    "nombre": "Aderlin Rosario"
+  },
+  "enviar-candidato-descartados": {
+    "nombre": "Aderlin Rosario"
   }
 }
