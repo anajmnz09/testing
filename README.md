@@ -12,6 +12,7 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 
 - [Estructura del monorepo](#estructura-del-monorepo)
 - [Requisitos e instalación](#requisitos-e-instalación)
+- [Panel de control web](#panel-de-control-web)
 - [Cómo correr las pruebas](#cómo-correr-las-pruebas)
 - [Arquitectura de capas](#arquitectura-de-capas)
 - [Configuración (`.env` + framework)](#configuración)
@@ -166,6 +167,23 @@ npm install
 ```
 
 Esto instala todas las dependencias de todos los workspaces y enlaza `@triple/core` dentro de `node_modules` para que los módulos lo importen por nombre.
+
+---
+
+## Panel de control web
+
+Interfaz web para ejecutar y visualizar las pruebas sin usar la terminal para cada caso. Pasos:
+
+1. Abre una terminal en la carpeta del proyecto (la raíz del monorepo).
+2. Ejecuta el comando necesario para iniciar el panel:
+   ```bash
+   node panel/anfitrion/servidor.js
+   ```
+3. La terminal mostrará un enlace: `Panel de control en http://127.0.0.1:4599`.
+4. Haz clic en ese enlace (o pégalo en el navegador) para abrir el panel.
+5. Desde el panel puedes ejecutar las pruebas automatizadas.
+
+> El puerto por defecto es `4599`; es configurable con la variable de entorno `PANEL_PORT` si hiciera falta. Más detalle en [`panel/README.md`](panel/README.md).
 
 ---
 
