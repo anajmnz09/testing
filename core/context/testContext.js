@@ -47,6 +47,22 @@ function _vacio(valor) {
   return false;
 }
 
+/**
+ * Normaliza un valor de texto del Execution Context ANTES de devolverlo:
+ * recorta espacios al inicio/final (`trim`), nunca espacios internos. Un
+ * usuario tipeando en el Panel deja fácilmente un espacio de sobra al final
+ * ("DEPARTAMENTO QA ") — la app lo recorta al guardar, así que el valor real
+ * de la UI nunca lo tiene; sin esta normalización, cualquier assert que
+ * compare el valor "tal cual" del contexto contra el valor leído de la UI
+ * falla por un espacio invisible, no por una diferencia real. Vive ACÁ (el
+ * único punto de lectura del contexto, `get()`) para que TODO el framework
+ * lo herede gratis, sin que cada test tenga que acordarse de hacer
+ * `.trim()` a mano. Tipos no-string (arrays, etc.) pasan sin tocar.
+ */
+function _normalizar(valor) {
+  return typeof valor === 'string' ? valor.trim() : valor;
+}
+
 function _leerArchivo() {
   if (!fs.existsSync(CONTEXT_FILE)) return {};
   try {
@@ -90,12 +106,15 @@ function getCaso(caso) {
  *
  * Este `undefined` es la señal para que el test siga con su descubrimiento
  * automático: es el corazón del "si existe úsalo, si no comportate igual que hoy".
+ *
+ * El valor devuelto siempre está normalizado (`_normalizar`: trim de
+ * extremos, nunca de espacios internos) — ver esa función para el porqué.
  */
 function get(caso, clave) {
   const delCaso = getCaso(caso)[clave];
-  if (!_vacio(delCaso)) return delCaso;
+  if (!_vacio(delCaso)) return _normalizar(delCaso);
   const global = (_datos()[SECCION_GLOBAL] || {})[clave];
-  if (!_vacio(global)) return global;
+  if (!_vacio(global)) return _normalizar(global);
   return undefined;
 }
 

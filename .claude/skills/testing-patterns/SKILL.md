@@ -473,6 +473,31 @@ Every test should verify: expected UI state, expected notifications, expected pe
 expected navigation, expected business behavior. Whenever possible verify both positive and
 negative scenarios.
 
+### Text comparisons: leading/trailing whitespace is never significant
+
+In assertions of text values, leading/trailing whitespace must never affect the result.
+Normalize with `trim()` before comparing — this applies to BOTH sides: the value coming
+from the Execution Context/Panel and the real value read from the UI. `"DEPARTAMENTO QA "`
+and `"DEPARTAMENTO QA"` must be treated as equivalent; so must `"  Transporte  "` and
+`"Transporte"`. Never strip INTERNAL whitespace — `"DEPARTAMENTO QA"` must never become
+`"DEPARTAMENTOQA"`; only the two ends are trimmed.
+
+Root cause this fixes: a user typing a value into the Panel easily leaves a trailing space
+("DEPARTAMENTO QA "); the app itself trims it on save, so the real UI value never has it —
+without this normalization, an assert comparing the raw Execution Context value against the
+UI value fails on an invisible character, not a real difference.
+
+Enforced centrally, once, in `testContext.get()` (`core/context/testContext.js`): every
+value read from the Execution Context is already `trim()`-ed before it's returned, so
+Page Objects and tests do NOT need to call `.trim()` on values obtained via
+`testContext.get()`/`testContext.getODescubrir()` — reading it is already the normalized
+value. Do not re-implement this per test or per Page Object; if a new central read path is
+ever added (bypassing `get()`), normalize there the same way instead of patching call sites.
+Values actually read FROM the DOM (`Form.getValor()`, a Page Object's own `getNombre()`/
+`getValor()`/`esperarValor()`, etc.) still need their own `.trim()` at the read point, same
+as before — this rule doesn't change that side, it fixes the Execution Context side, which
+was the actual gap.
+
 ## Evidence
 
 Always reuse Evidence, Problem Log, Screen Inspector, Screenshots, Execution Context. Never

@@ -4,6 +4,9 @@
   "description": "Framework core reutilizable de automatización (Selenium + Mochawesome) para el sistema Triple",
   "main": "index.js",
   "type": "commonjs",
+  "engines": {
+    "node": "^24.14.0"
+  },
   "bin": {
     "triple-run-tests": "scripts/run-tests.js",
     "triple-report-generate": "scripts/generate-report.js",

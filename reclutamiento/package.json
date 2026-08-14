@@ -4,6 +4,9 @@
   "description": "Pruebas automatizadas del módulo Reclutamiento (consume @triple/core)",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": "^24.14.0"
+  },
   "scripts": {
     "test": "triple-run-tests",
     "report:generate": "triple-report-generate",

@@ -1,0 +1,208 @@
+{
+  "crear-sucursal": {
+    "Nombre Sucursal": "Guayiga",
+    "Nombre/Referencia": "gy",
+    "Compañía": "",
+    "Correo": "",
+    "Teléfono": "",
+    "RNL": "",
+    "Latitud": "",
+    "Longitud": "",
+    "Estado": "",
+    "Dirección": ""
+  },
+  "consultar-sucursal": {
+    "nombre": ""
+  },
+  "editar-sucursal": {
+    "Nombre de Sucursal a editar": "SUCURSAL QA 541771",
+    "Nombre Sucursal": "",
+    "Nombre/Referencia": "",
+    "Compañía": "",
+    "Correo": "",
+    "Teléfono": "",
+    "RNL": "",
+    "Latitud": "",
+    "Longitud": "",
+    "Estado": "",
+    "Dirección": ""
+  },
+  "crear-departamento": {
+    "Departamento": "",
+    "Clasificación 1": "",
+    "Departamento Padre": "",
+    "Clasificación 2": "",
+    "Gerente Departamento": "",
+    "Clasificación 3": ""
+  },
+  "consultar-departamento": {
+    "nombre": ""
+  },
+  "editar-departamento": {
+    "Nombre de Departamento a editar": "DEPARTAMENTO QA TRIM",
+    "Departamento": "",
+    "Clasificación 1": "",
+    "Departamento Padre": "",
+    "Clasificación 2": "",
+    "Gerente Departamento": "",
+    "Clasificación 3": ""
+  },
+  "crear-puesto": {
+    "Nombre": "",
+    "Descripción": "",
+    "Clasificación 1": "",
+    "Límite de personas": "",
+    "Monto tope de comisión": "",
+    "Requisitos": "",
+    "Clasificación 2": "",
+    "Referencia (MT)": "",
+    "Rango salarial mínimo": "",
+    "Rango salarial máximo": "",
+    "Responsabilidades": "",
+    "Clasificación 3": "",
+    "Nivel del puesto": ""
+  },
+  "consultar-puesto": {
+    "nombre": ""
+  },
+  "editar-puesto": {
+    "Nombre de Puesto a editar": "PUESTO QA 161944",
+    "Nombre": "",
+    "Descripción": "",
+    "Clasificación 1": "",
+    "Límite de personas": "",
+    "Monto tope de comisión": "",
+    "Requisitos": "",
+    "Clasificación 2": "",
+    "Referencia (MT)": "",
+    "Rango salarial mínimo": "",
+    "Rango salarial máximo": "",
+    "Responsabilidades": "",
+    "Clasificación 3": "",
+    "Nivel del puesto": ""
+  },
+  "crear-horario": {
+    "Referencia": "",
+    "Hora Inicial": "",
+    "Hora final": "",
+    "Descripción": "",
+    "Estado": ""
+  },
+  "consultar-horario": {
+    "nombre": ""
+  },
+  "editar-horario": {
+    "Referencia": "",
+    "Hora Inicial": "",
+    "Hora final": "",
+    "Descripción": "",
+    "Estado": "",
+    "Descripción de Horario a editar": ""
+  },
+  "crear-grado-academico": {
+    "Nombre": "",
+    "Estado": "",
+    "Referencia MT": ""
+  },
+  "editar-grado-academico": {
+    "Nombre": "",
+    "Estado": "",
+    "Referencia MT": "",
+    "Grado Académico a editar": ""
+  },
+  "crear-beneficio": {
+    "Beneficio": "",
+    "Concepto de nómina": "",
+    "Estado": ""
+  },
+  "consultar-beneficio": {
+    "nombre": ""
+  },
+  "editar-beneficio": {
+    "Beneficio": "",
+    "Concepto de nómina": "",
+    "Estado": "",
+    "Nombre de Beneficio a editar": ""
+  },
+  "consultar-grado-academico": {
+    "nombre": ""
+  },
+  "crear-habilidad": {
+    "Habilidad": "",
+    "Estado": ""
+  },
+  "consultar-habilidad": {
+    "nombre": ""
+  },
+  "editar-habilidad": {
+    "Habilidad": "",
+    "Estado": "",
+    "Habilidad a editar": ""
+  },
+  "crear-plan-de-seguro": {
+    "Nombre Proveedor": "",
+    "Estado": "",
+    "Nombre Plan de seguro": "",
+    "Tarifa": "",
+    "% Empresa": "",
+    "% Empleado": "",
+    "Concepto de nómina": ""
+  },
+  "consultar-plan-de-seguro": {
+    "nombre": ""
+  },
+  "editar-plan-de-seguro": {
+    "Nombre Proveedor": "",
+    "Estado": "",
+    "Nombre Plan de seguro": "",
+    "Tarifa": "",
+    "% Empresa": "",
+    "% Empleado": "",
+    "Concepto de nómina": "",
+    "Nombre de Plan de seguro a editar": ""
+  },
+  "crear-razon-salida": {
+    "Razón": "",
+    "Estado": ""
+  },
+  "consultar-razon-salida": {
+    "nombre": ""
+  },
+  "editar-razon-salida": {
+    "Razón": "",
+    "Estado": "",
+    "Razón de Salida a editar": ""
+  },
+  "crear-proveedor-seguro": {
+    "Proveedor": "",
+    "Estado": ""
+  },
+  "consultar-proveedor-seguro": {
+    "nombre": ""
+  },
+  "editar-proveedor-seguro": {
+    "Proveedor": "",
+    "Estado": "",
+    "Proveedor de seguros a editar": ""
+  },
+  "crear-banco": {
+    "País": "",
+    "Nombre": "",
+    "Referencia": "",
+    "Código": "",
+    "Dígito verificador": "",
+    "Estado": ""
+  },
+  "consultar-banco": {
+    "nombre": ""
+  },
+  "editar-banco": {
+    "País": "",
+    "Nombre": "",
+    "Referencia": "",
+    "Código": "",
+    "Dígito verificador": "",
+    "Estado": "",
+    "Nombre de Banco a editar": ""
+  }
+}

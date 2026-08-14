@@ -4,6 +4,9 @@
   "private": true,
   "type": "commonjs",
   "description": "Panel de control web del framework de automatización (interfaz gráfica aditiva; consume lo que el framework ya genera)",
+  "engines": {
+    "node": "^24.14.0"
+  },
   "scripts": {
     "start": "node anfitrion/servidor.js"
   },

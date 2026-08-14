@@ -61,6 +61,31 @@ describe('testContext / Execution Context (unitario)', function () {
       });
     });
 
+    it('recorta espacios al inicio/final del valor (el usuario los deja fácil al tipear en el Panel)', function () {
+      const ctx = conContexto({
+        caso: {
+          finalConEspacio: 'DEPARTAMENTO QA ',
+          ambosLados: '  Transporte  ',
+          soloInterno: 'DEPARTAMENTO QA',
+        },
+      });
+
+      // Un espacio de sobra al final/inicio no debe distinguirse del valor limpio.
+      expect(ctx.get('caso', 'finalConEspacio')).to.equal('DEPARTAMENTO QA');
+      expect(ctx.get('caso', 'ambosLados')).to.equal('Transporte');
+      // El espacio INTERNO (entre palabras) nunca se toca.
+      expect(ctx.get('caso', 'soloInterno')).to.equal('DEPARTAMENTO QA');
+      expect(ctx.get('caso', 'soloInterno')).to.not.equal('DEPARTAMENTOQA');
+      // Una diferencia REAL (no solo de espacios en los extremos) sigue siendo una diferencia.
+      expect(ctx.get('caso', 'finalConEspacio')).to.not.equal('DEPARTAMENTO RRHH');
+    });
+
+    it('recorta también el valor tomado de `global`', function () {
+      const ctx = conContexto({ global: { empresa: '  Camsoft  ' } });
+
+      expect(ctx.get('caso-sin-dato', 'empresa')).to.equal('Camsoft');
+    });
+
     it('devuelve undefined —la señal de descubrimiento automático— si no hay nada', function () {
       const ctx = conContexto({});
 

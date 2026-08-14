@@ -40,6 +40,9 @@ module.exports = {
   // páginas app-global (compartidas por todos los módulos)
   LoginPage: require('./pages/LoginPage'),
   DashboardPage: require('./pages/DashboardPage'),
+  ConfiguracionesPage: require('./pages/ConfiguracionesPage'),
+  ConfiguracionEntidadListadoPage: require('./pages/ConfiguracionEntidadListadoPage'),
+  ConfiguracionEntidadDetallePage: require('./pages/ConfiguracionEntidadDetallePage'),
   // componentes reutilizables (registro en components/index.js)
   SRHHNavBar: components.SRHHNavBar,
   // alias de compatibilidad (ver components/index.js)

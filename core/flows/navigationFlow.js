@@ -1,4 +1,5 @@
 const DashboardPage = require('../pages/DashboardPage');
+const ConfiguracionesPage = require('../pages/ConfiguracionesPage');
 const SRHHNavBar = require('../components/SRHHNavBar');
 const logger = require('../utils/logger');
 
@@ -31,4 +32,22 @@ async function volverAlDashboard(driver) {
   return dashboard;
 }
 
-module.exports = { abrirModulo, volverAlDashboard };
+/**
+ * Entra a "Configuraciones" desde CUALQUIER pantalla (el ícono de
+ * configuración está siempre presente en el navbar, `navConfigItems`): abre
+ * su dropdown y elige la opción "Configuraciones" (distinta de "Acerca de",
+ * la otra opción del mismo dropdown — se reutiliza
+ * `SRHHNavBar.abrirOpcionConfiguracion`, sin lógica propia acá).
+ * @returns {ConfiguracionesPage} la pantalla ya cargada.
+ */
+async function abrirConfiguracion(driver) {
+  logger.info('navigationFlow: entrar a Configuraciones');
+  const navbar = new SRHHNavBar(driver);
+  await navbar.abrirOpcionConfiguracion('Configuraciones');
+
+  const configuraciones = new ConfiguracionesPage(driver);
+  await configuraciones.estaCargado();
+  return configuraciones;
+}
+
+module.exports = { abrirModulo, volverAlDashboard, abrirConfiguracion };

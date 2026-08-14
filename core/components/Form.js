@@ -53,8 +53,34 @@ class Form extends BaseComponent {
     return By.xpath(`//*[${condicion} and not(.//*[${condicion}])]`);
   }
 
+  /**
+   * TERCERA convención de formulario (verificada en "Razones de Salidas",
+   * Configuración > Empleados): ni `group-field` ni `dx-field-item` — un
+   * `<label>` suelto (sin clase distintiva en su contenedor, ej.
+   * `<div class="pt-15"><label>Razón: *</label>...`) seguido de su editor
+   * como hermano. Se localiza por "el padre de un `<label>` cuyo texto
+   * matchea", con la misma exclusión anti-colisión (quedarse con el más
+   * interno) que `_campo`.
+   */
+  _campoGenerico(label) {
+    const condicion = `label[contains(normalize-space(.), '${label}')]`;
+    return By.xpath(`//*[${condicion} and not(.//*[${condicion}])]`);
+  }
+
+  /**
+   * Localiza el contenedor de un campo. Intenta primero las DOS
+   * convenciones conocidas (`_campo`); si ninguna aparece dentro del
+   * timeout, cae a `_campoGenerico` (tercera convención) como ÚLTIMO
+   * recurso — así una pantalla que ya funciona con las dos primeras nunca
+   * paga el costo ni el riesgo de la tercera (nunca llega a intentarla), y
+   * solo una pantalla que realmente la necesita la usa.
+   */
   async _elemCampo(label) {
-    return this.driver.wait(until.elementLocated(this._campo(label)), this._timeout());
+    try {
+      return await this.driver.wait(until.elementLocated(this._campo(label)), this._timeout());
+    } catch (e) {
+      return this.driver.wait(until.elementLocated(this._campoGenerico(label)), this._timeout());
+    }
   }
 
   _opcionLocator() {
@@ -522,7 +548,20 @@ class Form extends BaseComponent {
         if (clear) {
           await input.clear();
         } else {
+          // Evita el `.clear()` nativo (confirmado con evidencia real: tira
+          // `invalid element state` en algunos campos puntuales, ej.
+          // "Referencia MT" de Grados Académicos, "Identificación" de
+          // Solicitud de Empleo) — pero el contenido previo SÍ debe
+          // reemplazarse, nunca acumularse: sin esto, correr el mismo test
+          // varias veces sobre el mismo registro va concatenando texto hasta
+          // superar el límite del campo (confirmado con evidencia real,
+          // "Referencia MT" terminó en "123456123456" e inválido tras 2
+          // corridas). Selecciona todo (Ctrl+A) y borra por teclado — no
+          // dispara el mismo `invalid element state` porque no es la llamada
+          // nativa `.clear()` de Selenium.
           await input.click();
+          await input.sendKeys(Key.chord(Key.CONTROL, 'a'));
+          await input.sendKeys(Key.BACK_SPACE);
         }
         await input.sendKeys(texto, Key.TAB);
         return;

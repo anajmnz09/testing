@@ -1,0 +1,21 @@
+{
+  "name": "configuracion-tests",
+  "version": "1.0.0",
+  "description": "Pruebas automatizadas del módulo Configuración (consume @triple/core)",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": "^24.14.0"
+  },
+  "scripts": {
+    "test": "triple-run-tests",
+    "report:generate": "triple-report-generate",
+    "report:open": "triple-report-open",
+    "report:clean": "triple-report-clean"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@triple/core": "*",
+    "selenium-webdriver": "^4.46.0"
+  }
+}
