@@ -2,6 +2,7 @@ const { By, Key, until } = require('selenium-webdriver');
 const BaseComponent = require('./BaseComponent');
 const logger = require('../utils/logger');
 const config = require('../config');
+const { containsTextoIgnoreCase } = require('../utils/xpath');
 
 /**
  * Componente reutilizable para los formularios de la app Triple. Los formularios
@@ -49,7 +50,7 @@ class Form extends BaseComponent {
     const condicion =
       `(contains(@class,'group-field') or ` +
       `contains(concat(' ', normalize-space(@class), ' '), ' dx-field-item ')) ` +
-      `and .//label[contains(normalize-space(.), '${label}')]`;
+      `and .//label[${containsTextoIgnoreCase(label)}]`;
     return By.xpath(`//*[${condicion} and not(.//*[${condicion}])]`);
   }
 
@@ -63,7 +64,7 @@ class Form extends BaseComponent {
    * interno) que `_campo`.
    */
   _campoGenerico(label) {
-    const condicion = `label[contains(normalize-space(.), '${label}')]`;
+    const condicion = `label[${containsTextoIgnoreCase(label)}]`;
     return By.xpath(`//*[${condicion} and not(.//*[${condicion}])]`);
   }
 

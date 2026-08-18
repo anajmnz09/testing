@@ -426,6 +426,58 @@ override autofill. Concretely: seed with `registrarCasoDesdeFormulario(CASO, EST
 fill with a Page Object method that composes `Form.completarDesde()` (e.g.
 `completarRequeridosConContexto`), and validate the map with `validarControlesDeclarados()`.
 
+## Automatic-mode default rename in "editar-*" tests: bounded "QA-N", never random/growing
+
+Some `editar-*` tests rename the record's own identifier field (the one text field with no
+other "safe" free-text field to touch, e.g. "Beneficio", "Departamento", "Habilidad",
+"Nombre Plan de seguro", "Proveedor", "Razón") as their fallback default — but ONLY when the
+Panel did not direct ANY field for that case (`Object.keys(cambios).length === 0`). This
+fallback must use `siguienteNombreQA(nombreUsado)` (`configuracion/support/nombresQA.js`):
+`"QA-1"`, `"QA-2"`, … — never `` `${nombreUsado} EDITADO ${Date.now()...}` `` or any other
+random/timestamp suffix concatenated onto the current name.
+
+**Why:** the old pattern concatenated onto whatever name the record ALREADY had. The
+automatic fallback (`abrirPrimero()`/first row, no Panel-directed search) re-edits the SAME
+record every run with no Panel involved, so the name grew by a random suffix every single
+run — confirmed with real evidence on "Nombre Plan de seguro" (`maxlength` 50): after enough
+automatic runs the name exceeded the field's max length, the app silently truncated what got
+typed, and the final assert correctly failed against the truncated value (a real bug, not a
+flaky assert). `siguienteNombreQA` fixes this by reading the CURRENT name: if it already
+matches `QA-N`, the next run is `QA-N+1`; otherwise it starts over at `QA-1` — the name never
+grows past a couple of characters per run, so it takes thousands of unattended runs on the
+same record to approach any realistic `maxlength`. It also means a record left with a
+corrupted/truncated name from a past failure self-heals on its next automatic run (it won't
+match `QA-N`, so it resets to `QA-1`).
+
+**Scope — automatic mode ONLY, never touches Panel-directed fields:** this rename applies
+strictly to the `if (!Object.keys(cambios).length)` fallback branch — i.e., only when the
+Panel did not direct a single field for that case. The moment the Panel directs ANY field
+(including the identifier field itself), `cambios` is built entirely from
+`testContext.get(CASO, label)` and the fallback branch never runs — a Panel-directed value is
+used exactly as typed, verbatim, with NO suffix, NO random number, and NO call to
+`siguienteNombreQA` appended to it. Never wrap or append anything to a Panel-directed value;
+never call `siguienteNombreQA` outside that one `if` branch.
+
+## Automatic-mode default name in "crear-*" tests: Panel-directed values are never suffixed
+
+Some `crear-*` tests need the identifier field to be unique on every run (the app rejects
+duplicate names), so the automatic fallback appends a short unique suffix (timestamp) to a
+base QA name. That suffix must ONLY apply to the automatic fallback — it must NEVER be
+appended to a value the Panel directed. Use `nombreUnicoQA(dirigido, base)`
+(`configuracion/support/nombresQA.js`): if `dirigido` (`testContext.get(CASO, label)`) has a
+value, it's returned EXACTLY as given, with no suffix; only when nothing was directed does it
+build `` `${base} ${timestamp}` ``. Do not hand-roll a local `sufijoUnico()` + string
+concatenation that appends to `dirigido || base` — that always suffixes, directed or not,
+which was the actual bug (fixed across all 11 `configuracion/tests/crear-*.test.js`).
+
+**Why:** the old per-file pattern was `` `${testContext.get(CASO, label) || BASE_QA}
+${sufijo}` `` — the suffix landed on the RESULT of the fallback, not on the fallback branch
+itself, so it applied unconditionally. A Panel-directed name like "Banco Popular" was saved
+as "Banco Popular 293688" — a different value than what was actually asked for, silently.
+`nombreUnicoQA` fixes this the same way `siguienteNombreQA` (see above) fixes the analogous
+`editar-*` bug: the random/timestamp part is confined strictly to the "nothing was directed"
+branch.
+
 ## Non-form Tests
 
 Examples: publish requisition, pause requisition, share requisition, import documents, and
@@ -449,7 +501,47 @@ does NOT require opening each record's detail view. Reuse `DataGrid.filasPorColu
 `core/components/DataGrid.js`. Do not re-implement header/row scraping per test; if a case
 needs "find the first row matching some criteria" or "verify a column value before/without
 opening the record", filter/read from these first. Comparisons against grid text should be
-case-insensitive (`.trim().toLowerCase()`), matching how the app renders these columns.
+case-insensitive — see "Text comparisons must be case-insensitive" below.
+
+## Text comparisons must be case-insensitive
+
+Any comparison against text rendered by the app — DataGrid cell, form field, detail-page
+field, screen/popup title, notify text, anything read back from the UI — must be
+case-insensitive. The app (or a value typed from the Panel/Execution Context) may render the
+same value with different casing (`"Inactivo"` vs `"inactivo"`, `"EMPLEADO"` vs `"Empleado"`);
+that difference is NOT a real failure and must never fail a test.
+
+Use the shared helper for this — do not write `.trim().toLowerCase()` by hand in a test or
+Page Object:
+
+```js
+const { assertTextoIgual } = require('@triple/core'); // or require('@triple/core/utils/assert')
+
+assertTextoIgual(actual, esperado, `"${label}" no quedó en "${esperado}" (quedó "${actual}").`);
+```
+
+`assertTextoIgual` (`core/utils/assert.js`) trims and lower-cases both sides before comparing,
+throws `AssertionError` with your message on mismatch (same assertion semantics as
+`assert.strictEqual`), and requires both arguments to be `string` — it does NOT coerce
+numbers/booleans/other types to text. Numeric or non-text comparisons (e.g. a formatted
+salary, a star rating) keep using `assert.strictEqual`/`assert.equal` directly with their own
+normalization (e.g. `parseFloat`), never this helper.
+
+If you find yourself writing `.trim().toLowerCase()` (or any other manual case-normalization)
+directly in a test, that is a sign it should be `assertTextoIgual` instead — the manual form
+duplicates the rule and can drift (e.g. only trimming, or forgetting the case-fold on one
+side).
+
+The same rule applies to LOCATORS, not just assertions. A hand-rolled XPath like
+`` `//tr[.//td[contains(normalize-space(.), '${texto}')]]` `` is case-sensitive (XPath 1.0 has
+no case-insensitive `contains()`), even when the grid's own live search box already filters
+case-insensitively on the client — the row visibly appears, but the locator built from the
+same search text times out because it can't match it. Use
+`containsTextoIgnoreCase(texto, expresionXPath)` (`core/utils/xpath.js`) to build that
+condition instead of writing `contains(normalize-space(...), '${...}')` by hand — it wraps the
+DOM side in `translate()` and lower-cases the searched value, so both sides compare
+case-insensitively. `DataGrid._filaLocator()` already uses it; reuse `grid._filaLocator(texto)`
+from a Page Object's `abrirDetalle`/row-matching method instead of duplicating the XPath.
 
 ## Repeatable "add via popup" widgets (multi-value, optional catalog match)
 

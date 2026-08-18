@@ -3,16 +3,12 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const PlanDeSeguroDetallePage = require('../pages/PlanDeSeguroDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-plan-de-seguro';
 testContext.registrarCasoDesdeFormulario(CASO, PlanDeSeguroDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'PLAN QA';
-
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
 
 // Defaults QA para los numberbox REQUERIDOS que la app rechaza en "0"
 // (confirmado con evidencia real: "0.00"/"0" no cuentan como vacíos para
@@ -32,9 +28,9 @@ const DEFAULTS_QA = {
  * default QA). "Estado" nace deshabilitado y queda protegido solo. Si el
  * Panel dirige "Concepto de nómina" (opcional), también se completa.
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (mismo criterio que el
- * resto de entidades de Configuración).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Plan de seguro', function () {
   this.timeout(300000);
@@ -43,9 +39,7 @@ describe('Configuración - Crear Plan de seguro', function () {
   it(`${CASO}: crea un Plan de seguro nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Nombre Plan de seguro') || NOMBRE_BASE_QA;
-    const nombrePlan = `${nombreBase} ${sufijo}`;
+    const nombrePlan = nombreUnicoQA(testContext.get(CASO, 'Nombre Plan de seguro'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombrePlan}"`);
 
     // El identificador se completa PRIMERO (con el sufijo único) para que

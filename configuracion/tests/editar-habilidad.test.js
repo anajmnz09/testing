@@ -1,8 +1,9 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const HabilidadesPage = require('../pages/HabilidadesPage');
 const fixtures = require('../support/fixtures');
+const { siguienteNombreQA } = require('../support/nombresQA');
 
 const CASO = 'editar-habilidad';
 // Clave de BÚSQUEDA (identifica la Habilidad EXISTENTE a abrir), separada a
@@ -21,7 +22,8 @@ testContext.registrarCasoDesdeFormulario(CASO, HabilidadesPage.ESTRATEGIAS, [CLA
  * Edita el popup de una Habilidad: si el Panel dirige la clave de búsqueda,
  * la busca (`consultarPorNombre`/`editarPorNombre`); si no, usa la PRIMERA
  * del listado. Cambia los campos que el Panel dirija (o, si no dirige
- * ninguno, renombra "Habilidad" con un sufijo único — a diferencia de
+ * ninguno, renombra "Habilidad" con `siguienteNombreQA` (`support/nombresQA.js`:
+ * "QA-1", "QA-2"… nunca concatena sobre el nombre actual — a diferencia de
  * Grados Académicos, acá no hay otro campo de texto libre seguro como
  * default), Guarda. Como evidencia, adjunta el popup de CONSULTA antes y
  * después del cambio.
@@ -69,7 +71,7 @@ describe('Configuración - Editar Habilidad', function () {
       }
     }
     if (!Object.keys(cambios).length) {
-      cambios['Habilidad'] = `${nombreUsado} EDITADO ${Date.now().toString().slice(-6)}`;
+      cambios['Habilidad'] = siguienteNombreQA(nombreUsado);
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
@@ -93,7 +95,7 @@ describe('Configuración - Editar Habilidad', function () {
     await evidence.attachScreenshot(ctx.driver, this, { label: `Consulta DESPUÉS de editar - "${nombreUsado}"` });
 
     for (const label of Object.keys(cambios)) {
-      assert.strictEqual(
+      assertTextoIgual(
         finales[label],
         cambios[label],
         `"${label}" no quedó en "${cambios[label]}" (quedó "${finales[label]}").`

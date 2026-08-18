@@ -3,6 +3,7 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const HorarioDetallePage = require('../pages/HorarioDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-horario';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -16,11 +17,6 @@ const DESCRIPCION_BASE_QA = 'HORARIO QA';
 const HORA_INICIAL_QA = '08:00 AM';
 const HORA_FINAL_QA = '05:00 PM';
 
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
  * Crea un Horario nuevo desde Configuración > Administración > Horarios,
  * completando los 3 campos requeridos ("Descripción", "Hora Inicial", "Hora
@@ -31,9 +27,9 @@ function sufijoUnico() {
  * en ESTRATEGIAS — se calcula sola a partir de Hora Inicial/Hora final, ver
  * mapeo de `HorarioDetallePage`).
  *
- * La DESCRIPCIÓN siempre lleva un sufijo único (timestamp): reutilizar el
- * mismo texto en corridas sucesivas rompería la creación (mismo criterio que
- * `crear-sucursal`/`crear-departamento`/`crear-puesto`).
+ * La DESCRIPCIÓN, si el Panel la dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Horario', function () {
   this.timeout(300000);
@@ -42,9 +38,7 @@ describe('Configuración - Crear Horario', function () {
   it(`${CASO}: crea un Horario nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const descripcionBase = testContext.get(CASO, 'Descripción') || DESCRIPCION_BASE_QA;
-    const descripcion = `${descripcionBase} ${sufijo}`;
+    const descripcion = nombreUnicoQA(testContext.get(CASO, 'Descripción'), DESCRIPCION_BASE_QA);
     logger.info(`${CASO}: descripción elegida -> "${descripcion}"`);
     await form.setCampo('Descripción', descripcion);
 

@@ -72,9 +72,7 @@ class ConfiguracionEntidadListadoPage extends BasePage {
   async abrirDetalle(nombre) {
     const timeout = config.timeouts.explicitWaitMs;
     await this.grid.buscar(nombre);
-    const filaLoc = By.xpath(
-      `//tr[contains(@class,'dx-data-row')][.//td[contains(normalize-space(.), '${nombre}')]]`
-    );
+    const filaLoc = this.grid._filaLocator(nombre);
     const headerDetalle = By.css('[class*="forms-header"]');
     const DetallePage = this.constructor.DetallePageClass;
 

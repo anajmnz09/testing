@@ -3,6 +3,7 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const GradosAcademicosPage = require('../pages/GradosAcademicosPage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-grado-academico';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -13,20 +14,15 @@ testContext.registrarCasoDesdeFormulario(CASO, GradosAcademicosPage.ESTRATEGIAS)
 
 const NOMBRE_BASE_QA = 'GRADO QA';
 
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
  * Crea un Grado Académico nuevo desde Configuración > Administración >
  * Grados Académicos, mediante el popup "Crear" (botón de la barra),
  * completando "Nombre" (único requerido) y, si el Panel dirige
  * "Referencia MT", ese también.
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (mismo criterio que el
- * resto de entidades de Configuración).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  *
  * La confirmación de persistencia NO usa `grid.buscar()`/`esperarFila` (el
  * buscador de esta pantalla está roto, ver mapeo de `GradosAcademicosPage`)
@@ -39,8 +35,7 @@ describe('Configuración - Crear Grado Académico', function () {
   it(`${CASO}: crea un Grado Académico nuevo completando su popup`, async function () {
     const modal = await ctx.lista.crear();
 
-    const nombreBase = testContext.get(CASO, 'Nombre') || NOMBRE_BASE_QA;
-    const nombre = `${nombreBase} ${sufijoUnico()}`;
+    const nombre = nombreUnicoQA(testContext.get(CASO, 'Nombre'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombre}"`);
     await modal.setCampo('Nombre', nombre);
 

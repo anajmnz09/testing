@@ -1,8 +1,9 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const DepartamentoDetallePage = require('../pages/DepartamentoDetallePage');
 const fixtures = require('../support/fixtures');
+const { siguienteNombreQA } = require('../support/nombresQA');
 
 const CASO = 'editar-departamento';
 // Clave de BÚSQUEDA (identifica el departamento EXISTENTE a abrir), separada
@@ -24,10 +25,11 @@ testContext.registrarCasoDesdeFormulario(CASO, DepartamentoDetallePage.ESTRATEGI
  * tiene UN campo de texto libre ("Departamento", el nombre) — el resto son
  * selectbox de catálogo (Clasificación 1/2/3, Departamento Padre, Gerente
  * Departamento) sin un valor QA "seguro" inventable. Por eso, si el Panel no
- * dirige NINGÚN campo, el default automático es renombrar "Departamento"
- * (con un sufijo único, mismo criterio que `crear-departamento`); cualquier
- * otro campo declarado se suma al cambio SOLO si el Panel lo dirige
- * explícitamente.
+ * dirige NINGÚN campo, el default automático es renombrar "Departamento" con
+ * `siguienteNombreQA` (`support/nombresQA.js`: "QA-1", "QA-2"… nunca
+ * concatena sobre el nombre actual, así no crece sin límite en corridas
+ * repetidas sobre el mismo registro); cualquier otro campo declarado se suma
+ * al cambio SOLO si el Panel lo dirige explícitamente.
  */
 describe('Configuración - Editar Departamento', function () {
   this.timeout(300000);
@@ -64,7 +66,7 @@ describe('Configuración - Editar Departamento', function () {
       }
     }
     if (!Object.keys(cambios).length) {
-      cambios['Departamento'] = `${nombreUsado} EDITADO ${Date.now().toString().slice(-6)}`;
+      cambios['Departamento'] = siguienteNombreQA(nombreUsado);
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
@@ -86,7 +88,7 @@ describe('Configuración - Editar Departamento', function () {
     await evidence.attachScreenshot(ctx.driver, this, { label: `Consulta DESPUÉS de editar - "${nombreUsado}"` });
 
     for (const label of Object.keys(cambios)) {
-      assert.strictEqual(
+      assertTextoIgual(
         finales[label],
         cambios[label],
         `"${label}" no quedó en "${cambios[label]}" (quedó "${finales[label]}").`

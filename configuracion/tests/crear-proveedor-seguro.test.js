@@ -3,25 +3,21 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const ProveedorSeguroDetallePage = require('../pages/ProveedorSeguroDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-proveedor-seguro';
 testContext.registrarCasoDesdeFormulario(CASO, ProveedorSeguroDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'PROVEEDOR SEGURO QA';
 
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
  * Crea un Proveedor de seguros nuevo desde Configuración > Empleados >
  * Proveedores de seguros, completando "Proveedor" (único campo de texto
  * requerido).
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (mismo criterio que el
- * resto de entidades de Configuración).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Proveedor de seguros', function () {
   this.timeout(300000);
@@ -30,9 +26,7 @@ describe('Configuración - Crear Proveedor de seguros', function () {
   it(`${CASO}: crea un Proveedor de seguros nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Proveedor') || NOMBRE_BASE_QA;
-    const nombreProveedor = `${nombreBase} ${sufijo}`;
+    const nombreProveedor = nombreUnicoQA(testContext.get(CASO, 'Proveedor'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombreProveedor}"`);
     await form.setCampo('Proveedor', nombreProveedor);
 

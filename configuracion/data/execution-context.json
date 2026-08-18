@@ -111,18 +111,18 @@
     "Grado Académico a editar": ""
   },
   "crear-beneficio": {
-    "Beneficio": "",
-    "Concepto de nómina": "",
-    "Estado": ""
+    "Beneficio": "Compras",
+    "Concepto de nómina": "comisiones por cobro",
+    "Estado": "activo"
   },
   "consultar-beneficio": {
     "nombre": ""
   },
   "editar-beneficio": {
-    "Beneficio": "",
+    "Beneficio": "Compras 2",
     "Concepto de nómina": "",
-    "Estado": "",
-    "Nombre de Beneficio a editar": ""
+    "Estado": "activO",
+    "Nombre de Beneficio a editar": "Compras "
   },
   "consultar-grado-academico": {
     "nombre": ""
@@ -174,7 +174,7 @@
     "Razón de Salida a editar": ""
   },
   "crear-proveedor-seguro": {
-    "Proveedor": "",
+    "Proveedor": "Human Health co",
     "Estado": ""
   },
   "consultar-proveedor-seguro": {
@@ -194,7 +194,7 @@
     "Estado": ""
   },
   "consultar-banco": {
-    "nombre": ""
+    "nombre": "popular"
   },
   "editar-banco": {
     "País": "",

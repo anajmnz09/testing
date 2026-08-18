@@ -15,6 +15,9 @@ module.exports = {
   logger: require('./utils/logger'),
   evidence: require('./utils/evidence'),
   paths: require('./utils/paths'),
+  // aserciones compartidas (ver utils/assert.js): comparación de texto
+  // renderizado por la app, siempre case-insensitive
+  assertTextoIgual: require('./utils/assert').assertTextoIgual,
   executionContext: require('./utils/executionContext'),
   // política de ejecución (recuperación de estado, registro de bloqueos, reintentos)
   recovery: require('./utils/recovery'),

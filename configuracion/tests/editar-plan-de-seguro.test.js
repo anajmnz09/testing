@@ -1,8 +1,9 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const PlanDeSeguroDetallePage = require('../pages/PlanDeSeguroDetallePage');
 const fixtures = require('../support/fixtures');
+const { siguienteNombreQA } = require('../support/nombresQA');
 
 const CASO = 'editar-plan-de-seguro';
 // Clave de BÚSQUEDA (identifica el plan de seguro EXISTENTE a abrir),
@@ -26,9 +27,16 @@ testContext.registrarCasoDesdeFormulario(CASO, PlanDeSeguroDetallePage.ESTRATEGI
  * texto libre seguro como default automático — el resto son selectbox/
  * numberbox sin un valor QA "seguro" inventable. Por eso, si el Panel no
  * dirige NINGÚN campo, el default automático es renombrar "Nombre Plan de
- * seguro" (con un sufijo único, mismo criterio que `crear-plan-de-seguro`);
- * cualquier otro campo declarado se suma al cambio SOLO si el Panel lo
- * dirige explícitamente.
+ * seguro" con `siguienteNombreQA` (`support/nombresQA.js`: "QA-1", "QA-2"…
+ * nunca concatena sobre el nombre actual); cualquier otro campo declarado se
+ * suma al cambio SOLO si el Panel lo dirige explícitamente.
+ *
+ * Nota de causa raíz (evidencia real, "Nombre Plan de seguro" tiene
+ * `maxlength` 50): el criterio anterior (`"${nombreUsado} EDITADO
+ * ${timestamp}"`) concatenaba sobre el nombre YA editado — como el fallback
+ * automático (`abrirPrimero()`) siempre reedita el MISMO registro, el nombre
+ * creció en cada corrida hasta truncarse en la app, y el assert final
+ * fallaba contra el valor truncado, no por un error real del campo.
  */
 describe('Configuración - Editar Plan de seguro', function () {
   this.timeout(300000);
@@ -65,7 +73,7 @@ describe('Configuración - Editar Plan de seguro', function () {
       }
     }
     if (!Object.keys(cambios).length) {
-      cambios['Nombre Plan de seguro'] = `${nombreUsado} EDITADO ${Date.now().toString().slice(-6)}`;
+      cambios['Nombre Plan de seguro'] = siguienteNombreQA(nombreUsado);
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
@@ -84,7 +92,7 @@ describe('Configuración - Editar Plan de seguro', function () {
     await evidence.attachScreenshot(ctx.driver, this, { label: `Consulta DESPUÉS de editar - "${nombreUsado}"` });
 
     for (const label of Object.keys(cambios)) {
-      assert.strictEqual(
+      assertTextoIgual(
         finales[label],
         cambios[label],
         `"${label}" no quedó en "${cambios[label]}" (quedó "${finales[label]}").`

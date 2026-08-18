@@ -3,16 +3,12 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const HabilidadesPage = require('../pages/HabilidadesPage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-habilidad';
 testContext.registrarCasoDesdeFormulario(CASO, HabilidadesPage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'HABILIDAD QA';
-
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
 
 /**
  * Crea una Habilidad nueva mediante el popup "Crear" en Configuración >
@@ -20,9 +16,9 @@ function sufijoUnico() {
  * requerido). "Estado" nace deshabilitado ("Activo" fijo), mismo patrón que
  * Grados Académicos.
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (validación de
- * duplicados de la app, mismo criterio que `crear-grado-academico`).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  *
  * La confirmación de persistencia NO usa `grid.buscar()`/`esperarFila` — el
  * buscador de esta pantalla está roto en el ambiente actual (confirmado con
@@ -38,9 +34,7 @@ describe('Configuración - Crear Habilidad', function () {
   it(`${CASO}: crea una Habilidad nueva mediante el popup "Crear"`, async function () {
     const modal = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Habilidad') || NOMBRE_BASE_QA;
-    const nombreHabilidad = `${nombreBase} ${sufijo}`;
+    const nombreHabilidad = nombreUnicoQA(testContext.get(CASO, 'Habilidad'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombreHabilidad}"`);
     await modal.setCampo('Habilidad', nombreHabilidad);
 

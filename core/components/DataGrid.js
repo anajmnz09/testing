@@ -2,6 +2,7 @@ const { By, Key, until } = require('selenium-webdriver');
 const BaseComponent = require('./BaseComponent');
 const logger = require('../utils/logger');
 const config = require('../config');
+const { containsTextoIgnoreCase } = require('../utils/xpath');
 
 /**
  * Componente del DataGrid de DevExtreme. Es el widget que MÁS se repite en la
@@ -98,7 +99,7 @@ class DataGrid extends BaseComponent {
   /** Localizador de una fila que contenga `texto` en alguna celda. */
   _filaLocator(texto) {
     return By.xpath(
-      `//tr[contains(@class,'dx-data-row')][.//td[contains(normalize-space(.), '${texto}')]]`
+      `//tr[contains(@class,'dx-data-row')][.//td[${containsTextoIgnoreCase(texto)}]]`
     );
   }
 

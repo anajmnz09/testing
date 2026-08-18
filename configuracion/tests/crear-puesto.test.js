@@ -3,6 +3,7 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const PuestoDetallePage = require('../pages/PuestoDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-puesto';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -18,11 +19,6 @@ const DESCRIPCION_QA = 'Descripción de prueba automatizada QA.';
 const REQUISITOS_QA = 'Requisitos de prueba automatizada QA.';
 const RESPONSABILIDADES_QA = 'Responsabilidades de prueba automatizada QA.';
 
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
  * Crea un Puesto nuevo desde Configuración > Administración > Puestos,
  * completando los 4 campos requeridos ("Nombre", "Descripción",
@@ -32,9 +28,9 @@ function sufijoUnico() {
  * El tabview "Beneficios"/"Documentos" NUNCA se toca (a pedido explícito, ni
  * siquiera declarado en ESTRATEGIAS — ver mapeo de `PuestoDetallePage`).
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (validación de
- * duplicados de la app, mismo criterio que `crear-sucursal`/`crear-departamento`).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Puesto', function () {
   this.timeout(300000);
@@ -43,9 +39,7 @@ describe('Configuración - Crear Puesto', function () {
   it(`${CASO}: crea un Puesto nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Nombre') || NOMBRE_BASE_QA;
-    const nombrePuesto = `${nombreBase} ${sufijo}`;
+    const nombrePuesto = nombreUnicoQA(testContext.get(CASO, 'Nombre'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombrePuesto}"`);
     await form.setCampo('Nombre', nombrePuesto);
 

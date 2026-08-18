@@ -3,6 +3,7 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const DepartamentoDetallePage = require('../pages/DepartamentoDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-departamento';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -12,11 +13,6 @@ const CASO = 'crear-departamento';
 testContext.registrarCasoDesdeFormulario(CASO, DepartamentoDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'DEPARTAMENTO QA';
-
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
 
 /**
  * Crea un Departamento nuevo desde Configuración > Administración >
@@ -40,9 +36,7 @@ describe('Configuración - Crear Departamento', function () {
   it(`${CASO}: crea un Departamento nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Departamento') || NOMBRE_BASE_QA;
-    const nombreDepartamento = `${nombreBase} ${sufijo}`;
+    const nombreDepartamento = nombreUnicoQA(testContext.get(CASO, 'Departamento'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombreDepartamento}"`);
     await form.setCampo('Departamento', nombreDepartamento);
 

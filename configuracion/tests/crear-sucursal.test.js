@@ -3,6 +3,7 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const SucursalDetallePage = require('../pages/SucursalDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-sucursal';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -16,11 +17,6 @@ const CORREO_QA = 'sucursal.qa.automatizado@example.com';
 const TELEFONO_QA = '8095551234';
 const DIRECCION_QA = 'Dirección de prueba automatizada QA.';
 
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
  * Crea una Sucursal nueva desde Configuración > Administración > Sucursales,
  * completando "Nombre Sucursal"/"Nombre/Referencia" (requeridos) y
@@ -31,9 +27,10 @@ function sufijoUnico() {
  * deshabilitados al crear, ya vienen con un valor — ver mapeo de
  * `SucursalDetallePage`).
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (validación de
- * duplicados de la app).
+ * "Nombre Sucursal"/"Nombre/Referencia", si el Panel los dirige, se usan TAL
+ * CUAL (sin sufijo); si no, cada uno lleva su propio sufijo único (timestamp)
+ * para no chocar con una corrida anterior — ver `nombreUnicoQA`
+ * (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Sucursal', function () {
   this.timeout(300000);
@@ -42,11 +39,8 @@ describe('Configuración - Crear Sucursal', function () {
   it(`${CASO}: crea una Sucursal nueva completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Nombre Sucursal') || NOMBRE_BASE_QA;
-    const nombreSucursal = `${nombreBase} ${sufijo}`;
-    const referenciaBase = testContext.get(CASO, 'Nombre/Referencia') || 'REF QA';
-    const referencia = `${referenciaBase} ${sufijo}`;
+    const nombreSucursal = nombreUnicoQA(testContext.get(CASO, 'Nombre Sucursal'), NOMBRE_BASE_QA);
+    const referencia = nombreUnicoQA(testContext.get(CASO, 'Nombre/Referencia'), 'REF QA');
     logger.info(`${CASO}: nombre elegido -> "${nombreSucursal}" (referencia "${referencia}")`);
 
     await form.setCampo('Nombre Sucursal', nombreSucursal);

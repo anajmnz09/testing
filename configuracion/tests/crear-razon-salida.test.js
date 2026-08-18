@@ -3,16 +3,12 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const RazonSalidaDetallePage = require('../pages/RazonSalidaDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-razon-salida';
 testContext.registrarCasoDesdeFormulario(CASO, RazonSalidaDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'RAZON SALIDA QA';
-
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
 
 /**
  * Crea una Razón de Salida nueva desde Configuración > Empleados > Razones
@@ -21,9 +17,9 @@ function sufijoUnico() {
  * siquiera está declarada en ESTRATEGIAS — ver mapeo de
  * `RazonSalidaDetallePage`).
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (mismo criterio que el
- * resto de entidades de Configuración).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Razón de Salida', function () {
   this.timeout(300000);
@@ -32,9 +28,7 @@ describe('Configuración - Crear Razón de Salida', function () {
   it(`${CASO}: crea una Razón de Salida nueva completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Razón') || NOMBRE_BASE_QA;
-    const nombreRazon = `${nombreBase} ${sufijo}`;
+    const nombreRazon = nombreUnicoQA(testContext.get(CASO, 'Razón'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombreRazon}"`);
     await form.setCampo('Razón', nombreRazon);
 

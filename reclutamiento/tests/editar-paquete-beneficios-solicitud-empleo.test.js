@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
 
@@ -103,9 +103,9 @@ describe('Reclutamiento - Editar Paquete Actual de Beneficios de Solicitud de Em
     // comparación case-insensitive, mismo criterio tolerante ya establecido
     // para el resto de las selecciones por texto del framework (el usuario
     // puede escribir "empleado" desde el Panel sin que sea un fallo).
-    assert.strictEqual(
-      valorEstado.trim().toLowerCase(),
-      estadoLaboral.trim().toLowerCase(),
+    assertTextoIgual(
+      valorEstado,
+      estadoLaboral,
       `"Estado laboral" no quedó en "${estadoLaboral}" (quedó "${valorEstado}")`
     );
     // "Último salario" es un numberbox: la app lo muestra formateado (ej.

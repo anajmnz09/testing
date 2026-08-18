@@ -64,9 +64,7 @@ class SolicitudEmpleoPage extends BasePage {
   async abrirDetalle(codigo) {
     const timeout = config.timeouts.explicitWaitMs;
     await this.grid.buscar(codigo);
-    const filaLoc = By.xpath(
-      `//tr[contains(@class,'dx-data-row')][.//td[contains(normalize-space(.), '${codigo}')]]`
-    );
+    const filaLoc = this.grid._filaLocator(codigo);
     const headerDetalle = By.css('[class*="forms-header"]');
 
     let ultimoError;

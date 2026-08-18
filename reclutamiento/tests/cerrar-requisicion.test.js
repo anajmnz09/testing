@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const SRHHNavBar = require('@triple/core/components/SRHHNavBar');
 const BancoCandidatosPage = require('../pages/BancoCandidatosPage');
@@ -74,9 +74,9 @@ describe('Reclutamiento - Cerrar Requisición', function () {
 
     const estadoConsulta = await detalle.form.esperarValor('Estado', 'Cerrada');
     await evidence.attachScreenshot(ctx.driver, this, { label: 'Requisición cerrada (consulta)' });
-    assert.strictEqual(
-      estadoConsulta.trim().toLowerCase(),
-      'cerrada',
+    assertTextoIgual(
+      estadoConsulta,
+      'Cerrada',
       `El campo "Estado" de "${codigoUsado}" no quedó en "Cerrada" (quedó "${estadoConsulta}").`
     );
 
@@ -86,9 +86,9 @@ describe('Reclutamiento - Cerrar Requisición', function () {
     await ctx.lista.navBar.ir('Requisiciones');
     await ctx.lista.esperarFilas();
     const filaListado = await ctx.lista.grid.esperarFila(codigoUsado, (f) => f['Código'] === codigoUsado);
-    assert.strictEqual(
-      (filaListado && filaListado['Estado'] || '').trim().toLowerCase(),
-      'cerrada',
+    assertTextoIgual(
+      (filaListado && filaListado['Estado']) || '',
+      'Cerrada',
       `El listado de Requisiciones no muestra "${codigoUsado}" en Estado="Cerrada" (fila: ${JSON.stringify(filaListado)}).`
     );
 

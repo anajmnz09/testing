@@ -83,9 +83,7 @@ class RequisicionesPage extends BasePage {
   async abrirDetalle(texto) {
     const timeout = config.timeouts.explicitWaitMs;
     await this.buscarRequisicion(texto);
-    const filaLoc = By.xpath(
-      `//tr[contains(@class,'dx-data-row')][.//td[contains(normalize-space(.), '${texto}')]]`
-    );
+    const filaLoc = this.grid._filaLocator(texto);
     const labelDetalle = By.xpath("//label[contains(normalize-space(.),'Nombre de requisición')]");
 
     // El doble-click a veces entra en edición inline en vez de abrir el detalle:

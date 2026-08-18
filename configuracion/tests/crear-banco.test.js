@@ -3,16 +3,12 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const BancoDetallePage = require('../pages/BancoDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-banco';
 testContext.registrarCasoDesdeFormulario(CASO, BancoDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'BANCO QA';
-
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
 
 /**
  * Crea un Banco nuevo desde Configuración > Empleados > Bancos, completando
@@ -20,9 +16,9 @@ function sufijoUnico() {
  * el Panel dirige "Referencia"/"Código"/"Dígito verificador" (opcionales),
  * también se completan.
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (mismo criterio que el
- * resto de entidades de Configuración).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Banco', function () {
   this.timeout(300000);
@@ -31,9 +27,7 @@ describe('Configuración - Crear Banco', function () {
   it(`${CASO}: crea un Banco nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Nombre') || NOMBRE_BASE_QA;
-    const nombreBanco = `${nombreBase} ${sufijo}`;
+    const nombreBanco = nombreUnicoQA(testContext.get(CASO, 'Nombre'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombreBanco}"`);
     await form.setCampo('Nombre', nombreBanco);
 

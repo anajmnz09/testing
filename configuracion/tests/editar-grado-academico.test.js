@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const GradosAcademicosPage = require('../pages/GradosAcademicosPage');
 const fixtures = require('../support/fixtures');
@@ -98,7 +98,7 @@ describe('Configuración - Editar Grado Académico', function () {
     await evidence.attachScreenshot(ctx.driver, this, { label: `Consulta DESPUÉS de editar - "${nombreUsado}"` });
 
     for (const label of Object.keys(cambios)) {
-      assert.strictEqual(
+      assertTextoIgual(
         finales[label],
         cambios[label],
         `"${label}" no quedó en "${cambios[label]}" (quedó "${finales[label]}").`

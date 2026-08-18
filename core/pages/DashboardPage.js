@@ -1,6 +1,7 @@
 const { By } = require('selenium-webdriver');
 const BasePage = require('./base/BasePage');
 const logger = require('../utils/logger');
+const { containsTextoIgnoreCase } = require('../utils/xpath');
 
 /**
  * Pantalla principal posterior al login (tarjetas de módulos: Reclutamiento,
@@ -35,7 +36,7 @@ class DashboardPage extends BasePage {
   async abrirModulo(nombre) {
     logger.info(`Abriendo módulo: ${nombre}`);
     const card = By.xpath(
-      `//a[contains(@class,'ModuleCard')][contains(normalize-space(.), '${nombre}')]`
+      `//a[contains(@class,'ModuleCard')][${containsTextoIgnoreCase(nombre)}]`
     );
     await this.click(card);
   }

@@ -3,6 +3,7 @@ const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const BeneficioDetallePage = require('../pages/BeneficioDetallePage');
 const fixtures = require('../support/fixtures');
+const { nombreUnicoQA } = require('../support/nombresQA');
 
 const CASO = 'crear-beneficio';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -13,11 +14,6 @@ testContext.registrarCasoDesdeFormulario(CASO, BeneficioDetallePage.ESTRATEGIAS)
 
 const NOMBRE_BASE_QA = 'BENEFICIO QA';
 
-/** Sufijo corto y siempre distinto (evita choque con el nombre de una corrida anterior). */
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
  * Crea un Beneficio nuevo desde Configuración > Administración > Beneficios,
  * completando "Beneficio" (único campo de texto requerido) y "Estado"
@@ -26,9 +22,9 @@ function sufijoUnico() {
  * (`searchAndSelect`, elige la primera opción disponible si no se dirige
  * ningún valor).
  *
- * El NOMBRE siempre lleva un sufijo único (timestamp): reutilizar el mismo
- * nombre en corridas sucesivas rompería la creación (validación de
- * duplicados de la app, mismo criterio que `crear-sucursal`/`crear-departamento`).
+ * El NOMBRE, si el Panel lo dirige, se usa TAL CUAL (sin sufijo); si no,
+ * lleva un sufijo único (timestamp) para no chocar con una corrida anterior
+ * — ver `nombreUnicoQA` (`support/nombresQA.js`).
  */
 describe('Configuración - Crear Beneficio', function () {
   this.timeout(300000);
@@ -37,9 +33,7 @@ describe('Configuración - Crear Beneficio', function () {
   it(`${CASO}: crea un Beneficio nuevo completando su formulario`, async function () {
     const form = await ctx.lista.crear();
 
-    const sufijo = sufijoUnico();
-    const nombreBase = testContext.get(CASO, 'Beneficio') || NOMBRE_BASE_QA;
-    const nombreBeneficio = `${nombreBase} ${sufijo}`;
+    const nombreBeneficio = nombreUnicoQA(testContext.get(CASO, 'Beneficio'), NOMBRE_BASE_QA);
     logger.info(`${CASO}: nombre elegido -> "${nombreBeneficio}"`);
     await form.setCampo('Beneficio', nombreBeneficio);
 
