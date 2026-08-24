@@ -12,6 +12,19 @@ const assert = require('assert');
  */
 
 /**
+ * Versión BOOLEANA (no lanza) del mismo criterio que `assertTextoIgual`: para
+ * cuando hace falta USAR la comparación en un predicado (ej. `Array.find`
+ * sobre filas de un grid) en vez de afirmarla. Exige `string` en ambos lados
+ * por la misma razón: no inventar coerciones de tipo silenciosas.
+ */
+function textoIgual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    throw new TypeError(`textoIgual espera dos strings (a=${typeof a}, b=${typeof b}).`);
+  }
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+/**
  * Compara dos STRINGS ignorando mayúsculas/minúsculas y espacios al borde
  * (`trim`). Lanza `AssertionError` (igual que cualquier `assert.*`) si no
  * coinciden, con `mensaje` como descripción del fallo.
@@ -21,15 +34,10 @@ const assert = require('assert');
  * otro tipo deben seguir usando `assert.strictEqual`/`assert.equal` directo.
  */
 function assertTextoIgual(actual, esperado, mensaje) {
-  if (typeof actual !== 'string' || typeof esperado !== 'string') {
-    throw new TypeError(
-      `assertTextoIgual espera dos strings (actual=${typeof actual}, esperado=${typeof esperado}). ` +
-        'Para comparar otros tipos, usar assert.strictEqual/assert.equal directamente.'
-    );
-  }
-  const a = actual.trim().toLowerCase();
-  const e = esperado.trim().toLowerCase();
-  assert.ok(a === e, mensaje || `Se esperaba "${esperado}" (case-insensitive) y quedó en "${actual}".`);
+  assert.ok(
+    textoIgual(actual, esperado),
+    mensaje || `Se esperaba "${esperado}" (case-insensitive) y quedó en "${actual}".`
+  );
 }
 
-module.exports = { assertTextoIgual };
+module.exports = { assertTextoIgual, textoIgual };

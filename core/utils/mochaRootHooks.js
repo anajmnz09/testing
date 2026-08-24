@@ -109,10 +109,14 @@ exports.mochaHooks = {
         }
       }
 
-      try {
-        await quitDriver(driver);
-      } catch (err) {
-        logger.error('No se pudo cerrar el driver', err);
+      if (config.panel.mantenerNavegadorAbierto) {
+        logger.info('KEEP_BROWSER_OPEN activo: el navegador queda abierto, no se cierra el driver.');
+      } else {
+        try {
+          await quitDriver(driver);
+        } catch (err) {
+          logger.error('No se pudo cerrar el driver', err);
+        }
       }
     }
   },

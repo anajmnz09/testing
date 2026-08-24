@@ -1,0 +1,441 @@
+{
+  "pantalla": "categoria-actividades-crear",
+  "capturadoEn": "2026-08-18T17:00:26.838Z",
+  "baseUrl": "https://test.triple.com.do/",
+  "inspector": {
+    "version": 2,
+    "firma": "f8f84161d5d0"
+  },
+  "botones": [
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": "SyncCacheButton",
+      "nombreAccesible": "Actualizar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Cia_0042025",
+      "soloIcono": false,
+      "texto": "Cia_0042025"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "ANABEL   HINOJOSA JIMENEZ",
+      "soloIcono": false,
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-icon SrhhSidebar_collapse_btn__KAjWX",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Contraer | SRH-Fecha-Izquierda",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "up-btn right-2",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Ir arriba",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon main-btn dx-state-hover",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Guardar",
+      "soloIcono": false,
+      "texto": "Guardar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Descartar",
+      "soloIcono": false,
+      "texto": "Descartar"
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    }
+  ],
+  "controles": [
+    {
+      "claseContenedor": "dx-first-row dx-first-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-h-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": "dx_dx-143221eb-5b24-d896-89bd-c472a3a7333a_descripcion",
+      "label": "Categorías:",
+      "name": "descripcion",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "activo dx-first-row dx-last-col dx-field-item dx-col-1 dx-field-item-required dx-flex-layout dx-label-h-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Estado:",
+      "name": "estado",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "1"
+    },
+    {
+      "claseContenedor": "dx-first-col dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-h-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Precio Hora:",
+      "name": "precio_Hora",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "numberbox",
+      "valor": "0"
+    },
+    {
+      "claseContenedor": "dx-last-col dx-field-item dx-col-1 dx-field-item-optional dx-flex-layout dx-label-h-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": "false",
+      "id": null,
+      "label": "Usar Rate:",
+      "name": "usar_Rate",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "switch",
+      "valor": "false"
+    },
+    {
+      "claseContenedor": "dx-first-col dx-last-row dx-field-item dx-col-0 dx-field-item-required dx-flex-layout dx-label-h-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Hora Jornada:",
+      "name": "jornada_Diaria",
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "numberbox",
+      "valor": "0"
+    },
+    {
+      "claseContenedor": "dx-last-col dx-last-row dx-field-item dx-col-1 dx-field-item-optional dx-flex-layout dx-label-h-align",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Rate:",
+      "name": "rate",
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "numberbox",
+      "valor": "0"
+    }
+  ],
+  "grids": [],
+  "headers": [
+    {
+      "acciones": [],
+      "botones": [],
+      "clase": "SrhhSidebarMenu_sidebar_menu_header__hpsR9",
+      "labels": [
+        "Usuario"
+      ],
+      "switches": [],
+      "texto": "ConfiguracionesUsuario ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "acciones": [
+        {
+          "deshabilitado": false,
+          "nombre": "Guardar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Descartar",
+          "soloIcono": false
+        }
+      ],
+      "botones": [
+        "Guardar",
+        "Descartar"
+      ],
+      "clase": "forms-header in-sidebar",
+      "labels": [
+        "Guardar",
+        "Descartar"
+      ],
+      "switches": [],
+      "texto": "Categoría de actividadesCrear Categoría actividadGuardarDescartar"
+    }
+  ],
+  "identificadores": [
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "viewport",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "theme-color",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "description",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "rootBody",
+      "name": null,
+      "tag": "body",
+      "texto": "You need to enable JavaScript to run this app.Generación de "
+    },
+    {
+      "dataTestId": null,
+      "id": "root",
+      "name": null,
+      "tag": "div",
+      "texto": "Generación de nóminaVerificando proceso de generación de nóm"
+    },
+    {
+      "dataTestId": null,
+      "id": "Layer_1",
+      "name": null,
+      "tag": "svg",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "selectModulos",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "SyncCacheButton",
+      "name": null,
+      "tag": "button",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "NotificationDropDown",
+      "name": null,
+      "tag": "a",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "ConfiguracionDropdown",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-6bb6a453-af36-3dfc-2c18-718f4d45613e",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-da246876-b25e-4f54-36b6-4dc837622e68",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "CompanyDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cia_0042025"
+    },
+    {
+      "dataTestId": null,
+      "id": "userDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-143221eb-5b24-d896-89bd-c472a3a7333a_descripcion",
+      "name": "descripcion",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "estado",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-143221eb-5b24-d896-89bd-c472a3a7333a_estado",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "precio_Hora",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-143221eb-5b24-d896-89bd-c472a3a7333a_precio_Hora",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-label-ad779c66-2992-ef73-5b06-1a993b74c2ca",
+      "name": null,
+      "tag": "label",
+      "texto": "Usar Rate:"
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "usar_Rate",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "jornada_Diaria",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-143221eb-5b24-d896-89bd-c472a3a7333a_jornada_Diaria",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "rate",
+      "tag": "input",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "dx_dx-143221eb-5b24-d896-89bd-c472a3a7333a_rate",
+      "name": null,
+      "tag": "input",
+      "texto": ""
+    }
+  ],
+  "navegacion": [
+    {
+      "clase": "text-dark text-decoration-none",
+      "href": "/srhh/config/perfil",
+      "id": null,
+      "texto": "Configuraciones"
+    },
+    {
+      "clase": "text-dark text-decoration-none",
+      "href": "/srhh",
+      "id": null,
+      "texto": "Acerca de"
+    }
+  ],
+  "switchesSueltos": [
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": "dx-field-item-content dx-field-item-content-location-right",
+      "etiqueta": "Usar Rate:"
+    }
+  ],
+  "titulo": "Triple",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19aJ-2Hw_FvZ-1QWxZIuN_E06dtlnweY6eFwteSUn6woPQxD5ECaTPL0RY_x-5-VD7p4PpacVjIWA",
+  "validaciones": {
+    "camposInvalidos": [],
+    "notifyVisible": "Generación de nóminaVerificando proceso de generación de nóminaNómina:Cargando Nómina...Período:Cargando Períodos...Usuario:Lyanne"
+  },
+  "origen": "reconocimiento-nomina"
+}

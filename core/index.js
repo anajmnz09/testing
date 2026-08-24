@@ -18,6 +18,7 @@ module.exports = {
   // aserciones compartidas (ver utils/assert.js): comparación de texto
   // renderizado por la app, siempre case-insensitive
   assertTextoIgual: require('./utils/assert').assertTextoIgual,
+  textoIgual: require('./utils/assert').textoIgual,
   executionContext: require('./utils/executionContext'),
   // política de ejecución (recuperación de estado, registro de bloqueos, reintentos)
   recovery: require('./utils/recovery'),

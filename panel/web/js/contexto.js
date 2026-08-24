@@ -12,6 +12,17 @@ import * as api from "./api.js";
 //
 // `crear` devuelve un handle { nodo, valores } para que el detalle lea el estado
 // actual del formulario al ejecutar.
+
+// Presentación pura: labels multi-valor conocidos (separador "|" del
+// framework, ver `parsearValoresMultiples` en
+// core/strategies/builtinStrategies.js) muestran un placeholder con ejemplo,
+// para que quien completa el Panel sepa el formato esperado sin tener que
+// consultar el código del test. Agregar acá cualquier campo nuevo que use
+// ese mismo separador — no hace falta tocar nada más del Panel.
+const PLACEHOLDER_MULTIVALOR = {
+  "Compañías permitidas": "Cia_001 | Cia_002",
+};
+
 export function crear(nodo, contexto) {
   const claves = contexto.claves || [];
   const wrap = el("div", {});
@@ -33,7 +44,7 @@ export function crear(nodo, contexto) {
       control = el("input", {
         type: "text",
         value: k.valor == null ? "" : String(k.valor),
-        placeholder: "(vacío ⇒ automático)",
+        placeholder: PLACEHOLDER_MULTIVALOR[k.nombre] || "(vacío ⇒ automático)",
       });
       lectores[k.nombre] = () => control.value;
     }

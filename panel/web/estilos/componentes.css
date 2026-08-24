@@ -292,7 +292,10 @@
   color: var(--g-500);
   font-family: var(--mono);
 }
-.campo input[type="text"] {
+.campo input[type="text"],
+.campo input[type="password"],
+.campo input[type="number"],
+.campo select {
   height: 32px;
   border: 1px solid var(--g-200);
   border-radius: var(--r-s);
@@ -300,6 +303,10 @@
   font-family: var(--mono);
   font-size: 12px;
   background: var(--surface);
+}
+.campo input[type="checkbox"] {
+  align-self: flex-start;
+  margin: 0;
 }
 .campo input:focus-visible {
   outline: 2px solid var(--magenta-600);

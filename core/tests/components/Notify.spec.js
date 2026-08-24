@@ -85,5 +85,64 @@ describe('Notify (unitario)', function () {
       expect(resultado.notify).to.equal('');
       expect(resultado.exito).to.equal(false);
     });
+
+    it('ignora el toast ambiental "Generación de nómina" (misma clase notify_record, proceso ajeno)', async function () {
+      const driver = crearDriver(
+        '<div class="notify_record">Generación de nóminaVerificando proceso de generación de nóminaNómina:Cargando Nómina...Período:Cargando Períodos...Usuario:Lyanne</div>'
+      );
+
+      expect(await new Notify(driver).getTexto()).to.equal('');
+    });
+
+    it('con el toast ambiental Y un notify real presentes, devuelve el real', async function () {
+      const driver = crearDriver(
+        '<div class="notify_record">Nómina:Cargando Nómina...Período:Cargando Períodos...Usuario:Lyanne</div>' +
+          '<div class="notify_record">Operación Exitosa</div>'
+      );
+
+      expect(await new Notify(driver).getTexto()).to.equal('Operación Exitosa');
+    });
+  });
+
+  describe('filtro del toast ambiental — configurable (IGNORAR_TOAST_NOMINA)', function () {
+    const RUTA_CONFIG = require.resolve('../../config');
+    const RUTA_NOTIFY = require.resolve('../../components/Notify');
+    let previo;
+
+    beforeEach(function () {
+      previo = process.env.IGNORAR_TOAST_NOMINA;
+    });
+
+    afterEach(function () {
+      if (previo === undefined) delete process.env.IGNORAR_TOAST_NOMINA;
+      else process.env.IGNORAR_TOAST_NOMINA = previo;
+      delete require.cache[RUTA_CONFIG];
+      delete require.cache[RUTA_NOTIFY];
+    });
+
+    /** Re-importa Notify EN FRÍO, ya con `IGNORAR_TOAST_NOMINA` aplicado (config lo lee una sola vez, al cargarse). */
+    function notifyConFiltro(valor) {
+      process.env.IGNORAR_TOAST_NOMINA = valor;
+      delete require.cache[RUTA_CONFIG];
+      delete require.cache[RUTA_NOTIFY];
+      return require('../../components/Notify');
+    }
+
+    it('por defecto (sin la env var) el filtro sigue activo', async function () {
+      delete process.env.IGNORAR_TOAST_NOMINA; // simula "no seteada" de verdad
+      delete require.cache[RUTA_CONFIG];
+      delete require.cache[RUTA_NOTIFY];
+      const NotifyDefault = require('../../components/Notify');
+      const driver = crearDriver('<div class="notify_record">Nómina:Cargando Nómina...</div>');
+
+      expect(await new NotifyDefault(driver).getTexto()).to.equal('');
+    });
+
+    it('con IGNORAR_TOAST_NOMINA=false, deja de filtrarlo (para probar la propia feature de Generación de Nómina)', async function () {
+      const NotifySinFiltro = notifyConFiltro('false');
+      const driver = crearDriver('<div class="notify_record">Nómina:Cargando Nómina...</div>');
+
+      expect(await new NotifySinFiltro(driver).getTexto()).to.equal('Nómina:Cargando Nómina...');
+    });
   });
 });

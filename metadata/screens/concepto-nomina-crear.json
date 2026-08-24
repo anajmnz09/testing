@@ -1,0 +1,691 @@
+{
+  "pantalla": "concepto-nomina-crear",
+  "capturadoEn": "2026-08-18T16:55:10.944Z",
+  "baseUrl": "https://test.triple.com.do/",
+  "inspector": {
+    "version": 2,
+    "firma": "f8f84161d5d0"
+  },
+  "botones": [
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": "SyncCacheButton",
+      "nombreAccesible": "Actualizar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Cia_0042025",
+      "soloIcono": false,
+      "texto": "Cia_0042025"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "ANABEL   HINOJOSA JIMENEZ",
+      "soloIcono": false,
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-icon SrhhSidebar_collapse_btn__KAjWX",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Contraer | SRH-Fecha-Izquierda",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "up-btn right-2",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Ir arriba",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Guardar",
+      "soloIcono": false,
+      "texto": "Guardar"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-text dx-button-has-icon main-btn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Descartar",
+      "soloIcono": false,
+      "texto": "Descartar"
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-text inputlikeBtn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "...",
+      "soloIcono": false,
+      "texto": "..."
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": " ",
+      "soloIcono": false,
+      "texto": ""
+    }
+  ],
+  "controles": [
+    {
+      "claseContenedor": "group-field header item",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Nombre:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Tipo concepto:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Clase:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Código Alterno:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "textbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Origen:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Tipo Ingreso:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "% Pago Horas:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "numberbox",
+      "valor": "0"
+    },
+    {
+      "claseContenedor": "group-field estado-cc",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Estado:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": "1"
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "Tipo Valor:",
+      "name": null,
+      "placeholder": null,
+      "requerido": true,
+      "tipo": "selectbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "estadoCheckbox": null,
+      "estadoSwitch": null,
+      "id": null,
+      "label": "% Incluye:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "tagbox",
+      "valor": null
+    },
+    {
+      "claseContenedor": "group-field",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "estadoCheckbox": null,
+      "estadoSwitch": "false",
+      "id": null,
+      "label": "Aplica para AFP:",
+      "name": null,
+      "placeholder": null,
+      "requerido": false,
+      "tipo": "switch",
+      "valor": "false"
+    }
+  ],
+  "grids": [],
+  "headers": [
+    {
+      "acciones": [],
+      "botones": [],
+      "clase": "SrhhSidebarMenu_sidebar_menu_header__hpsR9",
+      "labels": [
+        "Usuario"
+      ],
+      "switches": [],
+      "texto": "ConfiguracionesUsuario ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "acciones": [
+        {
+          "deshabilitado": false,
+          "nombre": "Guardar",
+          "soloIcono": false
+        },
+        {
+          "deshabilitado": false,
+          "nombre": "Descartar",
+          "soloIcono": false
+        }
+      ],
+      "botones": [
+        "Guardar",
+        "Descartar"
+      ],
+      "clase": "forms-header",
+      "labels": [
+        "Guardar",
+        "Descartar"
+      ],
+      "switches": [],
+      "texto": "Concepto de nóminaCrear Concepto de nóminaGuardarDescartar"
+    },
+    {
+      "acciones": [],
+      "botones": [],
+      "clase": "group-field header item",
+      "labels": [
+        "Nombre: *",
+        "*"
+      ],
+      "switches": [],
+      "texto": "Nombre: *"
+    }
+  ],
+  "identificadores": [
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "viewport",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "theme-color",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "description",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "rootBody",
+      "name": null,
+      "tag": "body",
+      "texto": "You need to enable JavaScript to run this app.Generación de "
+    },
+    {
+      "dataTestId": null,
+      "id": "root",
+      "name": null,
+      "tag": "div",
+      "texto": "Generación de nóminaVerificando proceso de generación de nóm"
+    },
+    {
+      "dataTestId": null,
+      "id": "Layer_1",
+      "name": null,
+      "tag": "svg",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "selectModulos",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "SyncCacheButton",
+      "name": null,
+      "tag": "button",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "NotificationDropDown",
+      "name": null,
+      "tag": "a",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "ConfiguracionDropdown",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-3c9112c6-2e6b-efe8-e6b9-58fb7dc1d399",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-13903201-b3b5-27bc-5887-6c93988b4b87",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "CompanyDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cia_0042025"
+    },
+    {
+      "dataTestId": null,
+      "id": "userDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    }
+  ],
+  "navegacion": [
+    {
+      "clase": "text-dark text-decoration-none",
+      "href": "/srhh/config/perfil",
+      "id": null,
+      "texto": "Configuraciones"
+    },
+    {
+      "clase": "text-dark text-decoration-none",
+      "href": "/srhh",
+      "id": null,
+      "texto": "Acerca de"
+    }
+  ],
+  "switchesSueltos": [
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para AFP:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para ARS:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para ISR:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para INFOTEP:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para Riesgos Laboral:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para Autodeterminación:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Descontar Antes de ISR:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para Regalía:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para Bonificación:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para Prestaciones:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Aplica para Provisión:"
+    },
+    {
+      "ariaPressed": "false",
+      "clase": "dx-show-invalid-badge dx-switch dx-swipeable dx-widget dx-visibility-change-handler",
+      "contenedor": null,
+      "etiqueta": "Acumulado:"
+    }
+  ],
+  "titulo": "Triple",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX19DvdHRAkV0syqAJ_GcrVXB7LbtsRH8z3n-YW52qejz5CC4qmL6ZosrTzeNjES2MZMqHFnmGpsaxQ",
+  "validaciones": {
+    "camposInvalidos": [],
+    "notifyVisible": "Generación de nóminaVerificando proceso de generación de nóminaNómina:Cargando Nómina...Período:Cargando Períodos...Usuario:Lyanne"
+  },
+  "origen": "reconocimiento-nomina"
+}

@@ -257,6 +257,37 @@ class DataGrid extends BaseComponent {
   }
 
   /**
+   * Como `esperarFila`, pero SIN pasar por el buscador global (`buscar()`):
+   * escanea directamente las filas de la página actual (`filasPorColumnas()`)
+   * contra `predicado`, sin filtrar nada en la UI.
+   *
+   * Usar cuando el buscador global de DevExtreme NO indexa la columna que hace
+   * falta consultar — confirmado con evidencia real en al menos 2 grids: la
+   * columna "Concepto" de Comportamiento concepto Nómina (tipo catálogo/lookup;
+   * `buscar()` devuelve 0 filas aunque el registro exista y sea visible sin
+   * filtrar — `aria-rowcount="0"` real, no un problema de lectura de Selenium)
+   * y "No. Cuenta Contable" de Cuentas Contables (el buscador global solo
+   * indexa "Descripción"). El síntoma es idéntico en ambos casos: `esperarFila`
+   * da un falso negativo ("no existe") sobre un registro que SÍ está, lo que
+   * hace que un caso "crear" idempotente reintente crear un duplicado y la app
+   * lo rechace.
+   *
+   * Solo confiable en grids ACOTADOS (fixtures QA, no todo el dataset de
+   * producción): lee la página actual tal cual está, no pagina para buscar en
+   * todo el listado ni cambia el tamaño de página.
+   */
+  async esperarFilaSinFiltro(predicado, timeout = 60000, intervalo = 2000) {
+    const fin = Date.now() + timeout;
+    do {
+      const filas = await this.filasPorColumnas();
+      const encontrada = filas.find(predicado);
+      if (encontrada) return encontrada;
+      await this.driver.sleep(intervalo);
+    } while (Date.now() < fin);
+    return null;
+  }
+
+  /**
    * Como `filasPorColumnas`, pero devuelve solo la fila que contiene `texto`
    * en alguna celda (o `null` si no hay ninguna).
    */

@@ -78,10 +78,31 @@ class SearchAndSelectStrategy extends SelectionStrategy {
         await input.sendKeys(Key.chord(Key.CONTROL, 'a'), String(v));
       }
 
-      // 3) esperar el filtrado (si hubo) + 4) seleccionar explícitamente el item
-      const item = await form._itemVisiblePorTexto(opciones.textoEsperado || v);
-      textos.push((await item.getText()).trim());
-      await item.click();
+      // 3) esperar el filtrado + 4) seleccionar explícitamente el item, CON
+      // reintento ante stale element (mismo criterio que `Form.seleccionar`).
+      // Confirmado con evidencia real (Concepto/Tipo Nómina de "Comportamiento
+      // concepto Nómina"): la lista virtualizada de DevExtreme puede
+      // re-renderizar justo después de que `_itemVisiblePorTexto` encuentra el
+      // item (el filtrado sigue asentándose), dejando la referencia obtenida
+      // stale antes de leer su texto o clickearlo — sin reintento, esto tira
+      // `StaleElementReferenceError` y aborta todo el llenado del formulario.
+      let texto;
+      let ultimoError;
+      for (let intento = 1; intento <= 3; intento++) {
+        try {
+          const item = await form._itemVisiblePorTexto(opciones.textoEsperado || v);
+          texto = (await item.getText()).trim();
+          await item.click();
+          ultimoError = null;
+          break;
+        } catch (err) {
+          ultimoError = err;
+          if (!/stale element/i.test(err.message)) throw err;
+          logger.info(`SearchAndSelect: reintentando "${v}" en "${label}" tras stale element (intento ${intento}/3)`);
+        }
+      }
+      if (ultimoError) throw ultimoError;
+      textos.push(texto);
     }
 
     if (opciones.multiple) {
@@ -114,9 +135,23 @@ class TextInputStrategy extends SelectionStrategy {
   }
 }
 
-/** Switch on/off. Acepta booleano o los strings 'true'/'si'/'1'. */
+/**
+ * Switch on/off. Acepta booleano o los strings 'true'/'si'/'1'.
+ *
+ * `opciones.soloSiDirigido`: si no hay valor (undefined — nadie lo dirigió
+ * desde el Panel) y esta opción está activa, el switch se deja INTACTO en su
+ * estado actual en vez de forzarlo a apagado. Existe para switches que la
+ * app trae ENCENDIDOS por defecto (ej. "Todos los intervalos" de
+ * Comportamiento Concepto Nómina): sin esta opción, el autofill genérico
+ * (`completarConContexto` con `incluirOpcionales:true`, o cualquier
+ * `setCampo(label)` sin valor) los apaga SIEMPRE que el Panel no dirija un
+ * valor — aunque su estado por defecto ya sea el correcto y apagarlo pueda
+ * habilitar otro campo requerido que rompa el Guardar. Confirmado con
+ * evidencia real (ver `ComportamientoConceptoNominaDetallePage`).
+ */
 class SwitchStrategy extends SelectionStrategy {
-  async aplicar(form, label, valor) {
+  async aplicar(form, label, valor, opciones = {}) {
+    if (valor === undefined && opciones.soloSiDirigido) return undefined;
     const encendido =
       valor === true || /^(true|s[ií]|1|on)$/i.test(String(valor === undefined ? '' : valor));
     await form.setSwitch(label, encendido);

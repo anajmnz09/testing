@@ -190,4 +190,117 @@ module.exports = {
     categoria: 'Bancos',
     descripcion: 'Edita un Banco ya existente y confirma el cambio consultándolo antes y después.',
   },
+  'consultar-cuenta-contable': {
+    seccion: 'Nómina',
+    categoria: 'Cuentas Contables',
+    descripcion: 'Abre el detalle de una Cuenta Contable ya existente desde Configuración > Nómina > Cuentas Contables.',
+  },
+  'crear-cuenta-contable': {
+    seccion: 'Nómina',
+    categoria: 'Cuentas Contables',
+    descripcion: 'Crea una Cuenta Contable nueva completando su formulario en Configuración > Nómina > Cuentas Contables.',
+  },
+  'editar-cuenta-contable': {
+    seccion: 'Nómina',
+    categoria: 'Cuentas Contables',
+    descripcion:
+      'Edita una Cuenta Contable ya existente y confirma el cambio consultándola antes y después (bug de app conocido: Guardar falla siempre con "Ya existe un fila con este campo", ver CuentaContableDetallePage).',
+  },
+  'consultar-tipo-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Tipo Nómina',
+    descripcion: 'Abre el detalle de un Tipo Nómina ya existente desde Configuración > Nómina > Tipo Nómina.',
+  },
+  'crear-tipo-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Tipo Nómina',
+    descripcion:
+      'Crea un Tipo Nómina nuevo completando su formulario en Configuración > Nómina > Tipo Nómina, incluida la sección obligatoria "Distribución de Pago".',
+  },
+  'editar-tipo-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Tipo Nómina',
+    descripcion:
+      'Edita un Tipo Nómina ya existente y confirma el cambio consultándolo antes y después (bug de app conocido: "Distribución de Pago" queda cargando indefinidamente al Editar, ver TipoNominaDetallePage).',
+  },
+  'consultar-categoria-actividad': {
+    seccion: 'Nómina',
+    categoria: 'Categoría Actividades',
+    descripcion: 'Abre el detalle de una Categoría de actividad ya existente desde Configuración > Nómina > Categoría de actividades.',
+  },
+  'crear-categoria-actividad': {
+    seccion: 'Nómina',
+    categoria: 'Categoría Actividades',
+    descripcion: 'Crea una Categoría de actividad nueva completando su formulario en Configuración > Nómina > Categoría de actividades.',
+  },
+  'editar-categoria-actividad': {
+    seccion: 'Nómina',
+    categoria: 'Categoría Actividades',
+    descripcion: 'Edita una Categoría de actividad ya existente y confirma el cambio consultándola antes y después.',
+  },
+  'consultar-concepto-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Concepto de Nómina',
+    descripcion: 'Abre el detalle de un Concepto de nómina ya existente desde Configuración > Nómina > Concepto de nómina.',
+  },
+  'crear-concepto-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Concepto de Nómina',
+    descripcion:
+      'Crea un Concepto de nómina nuevo completando su formulario en Configuración > Nómina > Concepto de nómina (sin los tabs "Indicadores"/"Datos Contables e Integración"/"Configuración Horas"/"Otros").',
+  },
+  'editar-concepto-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Concepto de Nómina',
+    descripcion: 'Edita un Concepto de nómina ya existente y confirma el cambio consultándolo antes y después.',
+  },
+  'consultar-comportamiento-concepto-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Comportamiento Concepto Nómina',
+    descripcion: 'Abre el detalle de un Comportamiento concepto Nómina ya existente desde Configuración > Nómina > Comportamiento concepto Nómina.',
+  },
+  'crear-comportamiento-concepto-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Comportamiento Concepto Nómina',
+    descripcion:
+      'Crea un Comportamiento concepto Nómina nuevo usando los fixtures fijos "Concepto QA"/"Tipo Nómina QA" (los crea si todavía no existen; ver support/catalogosQA.js).',
+  },
+  'editar-comportamiento-concepto-nomina': {
+    seccion: 'Nómina',
+    categoria: 'Comportamiento Concepto Nómina',
+    descripcion:
+      'Edita un Comportamiento concepto Nómina ya existente y confirma el cambio (solo si el Panel dirige algún campo; sin dirección no hay default automático seguro para esta entidad).',
+  },
+  'consultar-usuario': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Usuarios',
+    descripcion: 'Abre el detalle de un Usuario ya existente desde Configuración > Usuarios y permisos > Usuarios.',
+  },
+  'crear-usuario': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Usuarios',
+    descripcion:
+      'Crea un Usuario nuevo completando su formulario en Configuración > Usuarios y permisos > Usuarios (queda en estado Pendiente, requiere validación por correo). Nunca activa "Es administrador"/"Tiene acceso a RRHH" — ver los tests dedicados a esos switches.',
+  },
+  'editar-usuario': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Usuarios',
+    descripcion:
+      'Edita un Usuario ya existente y confirma el cambio (incluye "Compañías permitidas", multi-select, sin tocar los switches "Es administrador"/"Tiene acceso a RRHH" ni la sección "Grupos").',
+  },
+  'agregar-foto-usuario': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Usuarios',
+    descripcion: 'Sube una foto a un Usuario ya existente (vía modo Editar) y confirma que quedó aplicada.',
+  },
+  'marcar-usuario-administrador': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Usuarios',
+    descripcion: 'Activa el switch "Es administrador" de un Usuario ya existente y confirma el cambio.',
+  },
+  'dar-acceso-rrhh-usuario': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Usuarios',
+    descripcion: 'Activa el switch "Tiene acceso a RRHH" de un Usuario ya existente y confirma el cambio.',
+  },
 };

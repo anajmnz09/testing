@@ -198,8 +198,26 @@ describe('testContext / Execution Context (unitario)', function () {
       expect(ctx.getCaso('crear-req')).to.deep.equal({
         'Nombre de requisición': '',
         Puesto: '',
-        Rotativo: '',
+        Rotativo: false,
       });
+    });
+
+    it('siembra un control "switch" con `false` (no \'\'), para que el Panel lo detecte como checkbox', function () {
+      const ctx = conContexto({});
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
+
+      expect(ctx.getCaso('crear-req').Rotativo).to.equal(false);
+      // El seed `false` sigue sin dirigir la prueba (mismo criterio que '' para texto).
+      expect(ctx.get('crear-req', 'Rotativo')).to.equal(undefined);
+      expect(ctx.tiene('crear-req', 'Rotativo')).to.equal(false);
+    });
+
+    it('un `true` explícito en un control "switch" SÍ dirige la prueba', function () {
+      const ctx = conContexto({ 'crear-req': { Rotativo: true } });
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
+
+      expect(ctx.get('crear-req', 'Rotativo')).to.equal(true);
+      expect(ctx.tiene('crear-req', 'Rotativo')).to.equal(true);
     });
 
     it('agrega las claves extra que no son del formulario', function () {
@@ -218,7 +236,7 @@ describe('testContext / Execution Context (unitario)', function () {
     });
 
     it('es idempotente: no reescribe si ya están todas las claves', function () {
-      const ctx = conContexto({ 'crear-req': { 'Nombre de requisición': '', Puesto: '', Rotativo: '' } });
+      const ctx = conContexto({ 'crear-req': { 'Nombre de requisición': '', Puesto: '', Rotativo: false } });
 
       expect(ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES)).to.equal(false);
     });

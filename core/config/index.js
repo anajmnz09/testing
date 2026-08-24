@@ -36,6 +36,23 @@ const config = {
   },
   reporter: process.env.REPORTER || 'mochawesome',
   retries: parseIntEnv(process.env.TEST_RETRIES, 0),
+  // Ruido AMBIENTAL conocido del ambiente QA compartido: el toast "Generación
+  // de nómina" (proceso de OTRO usuario/sesión, ver `Notify.js#getTexto`) usa
+  // la MISMA clase `notify_record` que el toast real de la app y se ignora
+  // por defecto para que nunca se confunda con el resultado de una acción.
+  // Excepción GENERAL (no hardcodeada por test): `IGNORAR_TOAST_NOMINA=false`
+  // en `.env` desactiva el filtro — usarlo solo cuando se esté probando la
+  // propia feature de "Generación de Nómina" y haga falta leer ESE toast
+  // como notify real.
+  ruido: {
+    ignorarToastNomina: parseBool(process.env.IGNORAR_TOAST_NOMINA, true),
+  },
+  // Panel: si está encendido, el navegador NO se cierra al terminar una
+  // prueba (`mochaRootHooks.js#afterEach`) — para inspeccionar el estado
+  // final a mano. Administrado desde la pantalla "Configuración" del Panel.
+  panel: {
+    mantenerNavegadorAbierto: parseBool(process.env.KEEP_BROWSER_OPEN, false),
+  },
 };
 
 module.exports = Object.freeze({
@@ -45,4 +62,6 @@ module.exports = Object.freeze({
   reports: Object.freeze(config.reports),
   reporter: config.reporter,
   retries: config.retries,
+  ruido: Object.freeze(config.ruido),
+  panel: Object.freeze(config.panel),
 });

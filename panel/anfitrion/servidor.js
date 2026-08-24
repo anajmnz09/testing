@@ -9,6 +9,7 @@ const reportes = require('./reportes');
 const codigo = require('./codigo');
 const contexto = require('./contexto');
 const lanzador = require('./lanzador');
+const configuracion = require('./configuracion');
 
 const WEB = path.join(__dirname, '..', 'web');
 // Assets compartidos del framework (ej. el logo de Triple) — se sirven desde
@@ -84,6 +85,11 @@ const server = http.createServer(async (req, res) => {
       return json(res, lanzador.ejecutar(b.run));
     }
     if (ruta === '/api/cancelar' && req.method === 'POST') return json(res, lanzador.cancelar());
+    if (ruta === '/api/configuracion' && req.method === 'GET') return json(res, configuracion.leer());
+    if (ruta === '/api/configuracion' && req.method === 'POST') {
+      const b = await cuerpo(req);
+      return json(res, configuracion.guardar(b.valores || {}));
+    }
     if (ruta === '/api/vivo') {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream; charset=utf-8',

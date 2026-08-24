@@ -204,5 +204,139 @@
     "Dígito verificador": "",
     "Estado": "",
     "Nombre de Banco a editar": ""
+  },
+  "crear-cuenta-contable": {
+    "No. cuenta": "666",
+    "Estado": "",
+    "Descripción": "qa"
+  },
+  "consultar-cuenta-contable": {
+    "nombre": ""
+  },
+  "editar-cuenta-contable": {
+    "No. cuenta": "657",
+    "Estado": "",
+    "Descripción": "hola",
+    "No. de Cuenta Contable a editar": "666"
+  },
+  "crear-tipo-nomina": {
+    "Nombre": "",
+    "Código nómina": "",
+    "Forma Cálculo": "salario",
+    "Frecuencia salarial": "mensual",
+    "Tipo Empleados": "todos",
+    "Intervalo de pago": "1",
+    "TSS Tipo nómina": "",
+    "Moneda": "peso dominicano",
+    "Permite reapertura": true,
+    "Estado": ""
+  },
+  "consultar-tipo-nomina": {
+    "nombre": ""
+  },
+  "editar-tipo-nomina": {
+    "Nombre": "",
+    "Código nómina": "",
+    "Forma Cálculo": "",
+    "Frecuencia salarial": "",
+    "Tipo Empleados": "contratados",
+    "Intervalo de pago": "",
+    "TSS Tipo nómina": "",
+    "Moneda": "",
+    "Permite reapertura": false,
+    "Estado": "",
+    "Nombre de Tipo Nómina a editar": "Tipo Nomina QA-panel"
+  },
+  "crear-categoria-actividad": {
+    "Categorías": "parking",
+    "Estado": "",
+    "Precio Hora": "100",
+    "Usar Rate": true,
+    "Hora Jornada": "98",
+    "Rate": "98"
+  },
+  "consultar-categoria-actividad": {
+    "nombre": ""
+  },
+  "editar-categoria-actividad": {
+    "Categorías": "parking edit",
+    "Estado": "",
+    "Precio Hora": "",
+    "Usar Rate": false,
+    "Hora Jornada": "",
+    "Rate": "",
+    "Categoría de actividad a editar": "parking"
+  },
+  "crear-concepto-nomina": {
+    "Nombre": "Pago casa",
+    "Tipo concepto": "Otro Desc.",
+    "Clase": "Descuento",
+    "Código Alterno": "",
+    "Origen": "Descuento",
+    "Tipo Ingreso": "",
+    "% Pago Horas": "12",
+    "Estado": "",
+    "Tipo Valor": "Porcentual"
+  },
+  "consultar-concepto-nomina": {
+    "nombre": ""
+  },
+  "editar-concepto-nomina": {
+    "Nombre": "",
+    "Tipo concepto": "",
+    "Clase": "",
+    "Código Alterno": "",
+    "Origen": "",
+    "Tipo Ingreso": "",
+    "% Pago Horas": "",
+    "Estado": "",
+    "Tipo Valor": "",
+    "Nombre de Concepto de nómina a editar": ""
+  },
+  "crear-comportamiento-concepto-nomina": {
+    "Concepto": "vacaciones",
+    "Tipo Nómina": "tipo nómina qa",
+    "Todos los intervalos": false,
+    "Intervalo": "semanal"
+  },
+  "consultar-comportamiento-concepto-nomina": {
+    "nombre": ""
+  },
+  "editar-comportamiento-concepto-nomina": {
+    "Concepto": "",
+    "Tipo Nómina": "",
+    "Comportamiento (Concepto) a editar": ""
+  },
+  "crear-usuario": {
+    "Nombre Completo": "",
+    "Compañía": "",
+    "Código de usuario": "",
+    "Correo": "",
+    "Idioma": "",
+    "Es administrador": false,
+    "Tiene acceso a RRHH": false
+  },
+  "consultar-usuario": {
+    "nombre": "petronila",
+    "Código de usuario": ""
+  },
+  "editar-usuario": {
+    "Nombre Completo": "",
+    "Correo": "",
+    "Código de usuario": "",
+    "Compañías permitidas": "",
+    "Es administrador": false,
+    "Tiene acceso a RRHH": false,
+    "Nombre de Usuario a editar": ""
+  },
+  "agregar-foto-usuario": {
+    "nombre": "petronila",
+    "archivo": ""
+  },
+  "marcar-usuario-administrador": {
+    "nombre": ""
+  },
+  "dar-acceso-rrhh-usuario": {
+    "nombre": "ptronila"
   }
 }

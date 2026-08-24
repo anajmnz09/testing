@@ -39,10 +39,19 @@ const SECCION_GLOBAL = 'global';
 
 let _cache = null;
 
-/** Un valor "vacío" (no definido por el usuario) no dirige la prueba. */
+/**
+ * Un valor "vacío" (no definido por el usuario) no dirige la prueba.
+ *
+ * `false` cuenta como vacío: es el valor semilla que `registrarCasoDesdeFormulario`
+ * usa para un control `switch` (para que el Panel lo infiera y lo pinte como
+ * checkbox — ver `panel/anfitrion/contexto.js#inferirTipo`), mismo criterio que
+ * `''` para texto o `[]` para listas: el DEFAULT sin tocar no dirige nada: solo
+ * un `true` explícito (el usuario tildó el checkbox) cuenta como dirigido.
+ */
 function _vacio(valor) {
   if (valor === null || valor === undefined) return true;
   if (typeof valor === 'string') return valor.trim() === '';
+  if (typeof valor === 'boolean') return valor === false;
   if (Array.isArray(valor)) return valor.length === 0;
   return false;
 }
@@ -148,6 +157,12 @@ async function getODescubrir(caso, clave, descubrir) {
  * lo complete si quiere dirigir la prueba. NO pisa valores ya cargados ni borra
  * claves que el usuario haya agregado.
  *
+ * Cada entrada de `claves` es normalmente un string (semilla `''`, el caso de
+ * siempre). También acepta `{ clave, vacio }` para sembrar un valor semilla
+ * distinto de `''` — hoy lo usa `registrarCasoDesdeFormulario` para los
+ * controles `switch` (semilla `false`, no `''`), así el Panel los infiere como
+ * checkbox (`panel/anfitrion/contexto.js#inferirTipo` detecta `boolean`).
+ *
  * @returns {boolean} true si el archivo cambió
  */
 function registrarCaso(caso, claves = []) {
@@ -156,9 +171,11 @@ function registrarCaso(caso, claves = []) {
   let cambio = false;
 
   if (!datos[caso]) cambio = true;
-  claves.forEach((clave) => {
+  claves.forEach((entrada) => {
+    const clave = typeof entrada === 'string' ? entrada : entrada.clave;
+    const vacio = typeof entrada === 'string' ? '' : entrada.vacio;
     if (!(clave in seccion)) {
-      seccion[clave] = '';
+      seccion[clave] = vacio !== undefined ? vacio : '';
       cambio = true;
     }
   });
@@ -182,13 +199,22 @@ function registrarCaso(caso, claves = []) {
  * ni crea claves. Es puramente ADITIVO: `registrarCaso` queda intacto y los casos
  * que no usan formularios siguen registrando sólo sus parámetros.
  *
+ * Un control declarado con estrategia `'switch'` se siembra con `false` (no
+ * `''`): es la única forma de que el Panel lo detecte como boolean y lo pinte
+ * como checkbox en vez de un input de texto (ver `_vacio`/`inferirTipo`).
+ *
  * @param caso        nombre descriptivo del caso
  * @param controles   mapa `label -> 'estrategia' | { estrategia, ... }` (ESTRATEGIAS del Page Object)
  * @param clavesExtra claves adicionales no derivadas del formulario
  * @returns {boolean} true si el archivo cambió
  */
 function registrarCasoDesdeFormulario(caso, controles = {}, clavesExtra = []) {
-  const claves = [...formInputModel.labels(controles), ...clavesExtra];
+  const claves = [
+    ...formInputModel
+      .desdeControles(controles)
+      .map(({ label, estrategia }) => (estrategia === 'switch' ? { clave: label, vacio: false } : label)),
+    ...clavesExtra,
+  ];
   return registrarCaso(caso, claves);
 }
 

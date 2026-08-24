@@ -48,4 +48,21 @@ function nombreUnicoQA(dirigido, base) {
   return `${base} ${Date.now().toString().slice(-6)}`;
 }
 
-module.exports = { siguienteNombreQA, nombreUnicoQA };
+/**
+ * Deriva un "código" (username-like) a partir de un nombre: sin acentos, sin
+ * espacios, en minúsculas (ej. "QA Usuario 293688" -> "qausuario293688").
+ * Pensado para "Código de usuario" de Usuarios — a pedido explícito del
+ * usuario, el código debe estar relacionado al nombre y no llevar espacios,
+ * en vez de ser un valor arbitrario sin relación. Como el nombre QA ya trae
+ * un sufijo único (`nombreUnicoQA`), el código derivado hereda esa unicidad
+ * sin necesidad de otro sufijo aparte.
+ */
+function codigoDesdeNombre(nombre) {
+  return String(nombre || '')
+    .normalize('NFD')
+    .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+module.exports = { siguienteNombreQA, nombreUnicoQA, codigoDesdeNombre };

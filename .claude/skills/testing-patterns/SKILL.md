@@ -122,272 +122,34 @@ política del skill; simplemente fortalecen el proceso de validación y reporte 
 
 ---
 
-# Política de uso eficiente del contexto
-
-El objetivo es minimizar el consumo de contexto y tokens sin perder calidad técnica.
-La prioridad es: **leer menos, razonar más, reutilizar el conocimiento ya obtenido.**
-Estas reglas son obligatorias en toda tarea.
-
-- **No releer para recordar.** Si ya analizaste un archivo en la sesión (README,
-  GUIDELINES, SKILL.md, docs de arquitectura, execution-context, logs, reportes,
-  screenshots), asúmelo válido y reutiliza lo aprendido. Solo se relee si: el usuario
-  dice que cambió, lo modificaste tú, necesitas verificar una línea específica, o hay
-  evidencia de que quedó desactualizado.
-- **Nunca leer logs/reportes completos.** Prohibido `cat`, `sed`/`tail` amplios o
-  volcados enteros. Usar búsqueda acotada (`grep`, `rg`, `Select-String`, `findstr`) y
-  recuperar solo las líneas necesarias para la pregunta actual.
-- **No listar directorios completos** (`ls -R`, `tree`, `find .`, `Get-ChildItem`
-  recursivo) salvo que el usuario lo pida. Reutiliza la estructura ya conocida.
-- **No abrir archivos ajenos al cambio.** Si se modifica un helper, no abras README,
-  SKILL, GUIDELINES ni otros módulos "por contexto". Lee solo lo necesario.
-- **Preguntas de estado/seguimiento** ("¿qué hicimos?", "¿qué falta?", "¿cuál fue el
-  último cambio?", "¿qué sigue?") se responden **con la memoria de la conversación**,
-  sin inspeccionar archivos.
-- **Reportes ya procesados no se reabren**; se consulta la información ya extraída.
-- **Mantén un resumen interno** de pocas líneas al terminar una tarea importante, y úsalo
-  en tareas futuras antes de reinspeccionar.
-- **Al ejecutar tests:** no leas logs antiguos; primero ejecuta el test, y solo si falla
-  analiza exclusivamente el reporte de ESA corrida. Nunca reportes históricos salvo que
-  el usuario lo pida.
-- **Antes de cualquier lectura grande** pregúntate: "¿puedo responder con lo que ya
-  tengo?". Si sí, no leas nada. Más contexto no significa mejor respuesta.
-
-Estas reglas complementan (no reemplazan) las demás políticas del skill.
-
----
-
-# Política permanente de eficiencia de contexto
-
-Estas reglas son obligatorias para todas las tareas.
-
-## Lectura de archivos
-
-Antes de leer cualquier archivo determina si realmente es necesario. Orden obligatorio:
-
-1. Buscar primero el símbolo, método o clase mediante grep/find.
-2. Leer únicamente el rango mínimo necesario alrededor del resultado.
-3. Leer el archivo completo solamente cuando sea estrictamente indispensable.
-
-Está prohibido leer Page Objects completos para modificar un único método. Está
-prohibido reconstruir el proyecto completo cuando la tarea afecta únicamente unos
-pocos archivos.
-
-## Reconstrucción del contexto
-
-No reconstruyas el framework completo. Trabaja únicamente con los archivos
-involucrados en la tarea actual. Si la tarea afecta menos de tres archivos, trabaja
-únicamente sobre esos archivos. No releas archivos que ya fueron analizados durante
-la misma sesión salvo que hayan cambiado.
-
-## Logs
-
-Nunca leas logs completos. Utiliza búsquedas específicas. Extrae únicamente: el
-test, la excepción, el stack relevante. Está prohibido mantener en contexto dumps
-enormes, JSON extensos o información repetida una vez identificada la causa.
-
-## Selenium
-
-Mientras el cambio aún esté en desarrollo: NO ejecutar Selenium. Solo verificar
-sintaxis cuando sea necesario. La ejecución E2E deberá realizarse únicamente cuando
-el cambio esté terminado o cuando el usuario la solicite explícitamente. Evita
-múltiples corridas de validación cuando una sola sea suficiente.
-
-## Informes
-
-Los informes deberán ser breves. Informar únicamente: archivos modificados,
-resultado, bloqueos, siguiente paso. No repetir contexto ya informado anteriormente.
-No generar narrativas largas salvo que el usuario las solicite.
-
-## Diagnóstico
-
-Cuando sea necesario investigar un problema: primero recopilar evidencia mínima,
-después formular la hipótesis, después validar únicamente esa hipótesis. Evitar
-abrir archivos adicionales que no aporten evidencia.
-
-## Optimización continua
-
-Si detectas que una acción consumiría una cantidad importante de contexto:
-detente, explica por qué, y propone una alternativa más eficiente antes de
-continuar.
-
-## Modelo recomendado
-
-Sonnet 5 es el modelo recomendado para desarrollo cotidiano (refactors, Page
-Objects, Selenium, helpers, tests). Opus se reserva para arquitectura compleja,
-investigaciones profundas o decisiones difíciles.
-
-## 1. Lectura mínima obligatoria
-
-Antes de abrir cualquier archivo debes decidir si realmente es necesario. Está
-prohibido leer archivos completos por defecto. Orden obligatorio:
-
-1. Buscar el símbolo, método o clase mediante grep/find.
-2. Leer únicamente el rango mínimo necesario alrededor del resultado.
-3. Leer el archivo completo solamente cuando exista una necesidad demostrable de
-   comprender la estructura global del archivo.
-
-Si el cambio afecta únicamente un método, queda prohibido leer el archivo completo.
-
-## 2. Prohibición de reconstrucción innecesaria
-
-No reconstruyas mentalmente el framework completo para tareas locales. Si la tarea
-afecta únicamente unos pocos archivos, trabaja exclusivamente sobre esos archivos.
-Nunca releas archivos ya analizados durante la misma sesión salvo que hayan cambiado.
-
-## 3. Política estricta para comandos de consola
-
-Está prohibido ejecutar comandos cuya salida sea mayor de la necesaria. Priorizar
-siempre grep/rg/findstr. Evitar `cat` de archivos completos, `sed` sobre cientos de
-líneas, `tail` extensos y dumps completos. Solo podrán utilizarse cuando exista una
-justificación técnica clara.
-
-## 4. Política para logs
-
-Nunca leer logs completos. Extraer únicamente: nombre del test, excepción, stack
-relevante, líneas necesarias para identificar la causa. Una vez identificada la
-causa raíz queda prohibido volver a leer el mismo bloque del log. No mantener dumps
-grandes dentro del contexto.
-
-## 5. Política para Selenium
-
-Durante el desarrollo: no ejecutar Selenium después de cada modificación. Agrupar
-todos los cambios compatibles y realizar una única validación E2E al finalizar.
-Solo ejecutar Selenium antes si el usuario lo solicita expresamente, o si un
-bloqueo impide continuar sin evidencia E2E.
-
-## 6. Política para investigaciones
-
-Antes de abrir archivos adicionales: 1) formular una hipótesis, 2) identificar la
-evidencia mínima necesaria, 3) obtener únicamente esa evidencia, 4) confirmar o
-descartar la hipótesis. Está prohibido explorar archivos "por si acaso".
-
-## 7. Política para informes
-
-Los informes deben contener únicamente: archivos modificados, resultado, bloqueos,
-próximo paso. No repetir contexto previamente informado. No generar narrativas
-largas salvo que el usuario las solicite.
-
-## 8. Autoevaluación de costo
-
-Antes de una acción que pueda consumir mucho contexto (lecturas masivas, múltiples
-comandos, varias corridas) debes estimar internamente su costo. Si existe una
-alternativa significativamente más eficiente, úsala automáticamente. Si ninguna
-alternativa es suficiente, informa el motivo antes de continuar.
-
-## 9. Objetivo permanente
-
-El objetivo no es trabajar más rápido: es minimizar el consumo de contexto y
-tokens manteniendo exactamente la misma calidad técnica y rigurosidad. Nunca
-sacrificar evidencia técnica para ahorrar contexto. Pero tampoco consumir contexto
-que no aporte información nueva.
-
----
-
-# Disciplina de trabajo y control de contexto
-
-Estas reglas son obligatorias para todas las tareas y complementan (no reemplazan)
-la política de eficiencia de contexto anterior.
-
-## 1. Planificación obligatoria antes de actuar
-
-Antes de leer cualquier archivo determina: cuál es el objetivo exacto, qué
-archivos probablemente serán modificados, cuáles solo servirán como referencia. No
-comiences a explorar el proyecto sin haber definido ese alcance. Si aparece un
-archivo nuevo durante la implementación, justifica por qué es necesario abrirlo.
-Queda prohibido explorar archivos "por si acaso".
-
-## 2. Lectura mínima obligatoria
-
-Orden obligatorio: 1) buscar símbolo/método/clase mediante grep/find; 2) leer
-únicamente el rango mínimo necesario; 3) leer el archivo completo solo cuando sea
-imprescindible comprender su estructura global. Prohibido abrir archivos completos
-para modificar un único método.
-
-## 3. Un archivo solo se abre una vez
-
-Cada archivo leído debe terminar en uno de estos estados: modificado, utilizado
-como referencia indispensable, o descartado definitivamente para esta tarea.
-Prohibido reabrir el mismo archivo durante la misma tarea salvo que haya cambiado
-o exista justificación técnica.
-
-## 4. Reconstrucción del proyecto
-
-Prohibido reconstruir mentalmente el framework completo. Trabaja únicamente sobre
-los archivos afectados. Si la tarea afecta menos de tres archivos, prohibido
-ampliar el contexto a módulos no relacionados.
-
-## 5. Comandos de consola
-
-Priorizar grep/rg/findstr. Evitar `cat` completos, `sed` extensos, `tail` largos y
-listados masivos. Nunca ejecutar comandos cuya salida supere la información
-realmente necesaria.
-
-## 6. Logs
-
-Nunca leer logs completos. Extraer únicamente: nombre del test, excepción, stack
-relevante, líneas indispensables. Una vez identificada la causa raíz, prohibido
-volver a leer ese mismo bloque.
-
-## 7. Selenium
-
-Mientras el cambio no esté terminado, prohibido ejecutar Selenium (solo verificar
-sintaxis cuando sea necesario). Agrupar los cambios compatibles y validar E2E una
-única vez al finalizar. Solo ejecutar antes si el usuario lo solicita o existe un
-bloqueo imposible de resolver sin evidencia E2E.
-
-## 8. Investigación
-
-Orden obligatorio: 1) formular hipótesis; 2) determinar la evidencia mínima; 3)
-obtener únicamente esa evidencia; 4) confirmar o descartar; 5) solo entonces
-decidir si abrir nuevos archivos. Nunca explorar archivos esperando encontrar la
-respuesta.
-
-## 9. Informes
-
-Cada informe contiene únicamente: archivos modificados, resultado, bloqueos,
-siguiente paso. No repetir información ya comunicada. No generar narrativas largas
-salvo solicitud expresa.
-
-## 10. Autoevaluación de costo
-
-Antes de cualquier acción costosa (lectura de archivos, comandos, corridas de
-Selenium, generación de logs, informes), estima internamente su costo. Si existe
-una alternativa claramente más eficiente, úsala automáticamente.
-
-## 11. Reutilización
-
-Antes de escribir código nuevo, comprueba si ya existe un helper, método, utilidad
-o patrón reutilizable. No crear duplicados.
-
-## 12. Validaciones
-
-Durante el desarrollo: no ejecutar pruebas unitarias salvo que el cambio las
-afecte directamente; no ejecutar Selenium hasta el final; no realizar múltiples
-validaciones cuando una sola sea suficiente.
-
-## 13. Principio de mínima intervención
-
-Modificar únicamente el código necesario. No refactorizar por gusto. No mover
-archivos. No renombrar elementos. No mejorar código ajeno si no forma parte del
-objetivo solicitado.
-
-## 14. Principio de mínima salida
-
-Toda respuesta contiene únicamente información útil. Evitar repetir contexto,
-explicar funcionamiento ya conocido, volver a listar reglas, describir archivos
-que no cambiaron.
-
-## 15. Modelo recomendado
-
-Sonnet 5 para: mantenimiento, Selenium, Page Objects, helpers, FastReport, React,
-tests, documentación. Opus únicamente para: arquitectura, investigaciones
-complejas, diseño de soluciones, causa raíz difícil.
-
-## 16. Objetivo permanente
-
-Minimizar el consumo de contexto y tokens manteniendo exactamente el mismo nivel
-de calidad técnica. Nunca sacrificar evidencia. Nunca consumir contexto que no
-aporte información nueva.
+# Eficiencia de contexto — leer lo necesario, nunca menos de lo necesario
+
+Minimizá lectura y comandos redundantes. Pero esto NUNCA es excusa para no verificar
+algo importante: si confirmar un selector, un flujo, un parámetro o un supuesto
+heredado requiere inspeccionar la pantalla real, hacelo — preferí una investigación
+de más antes que generar código sobre una suposición (ver "Descubrir y Verificar"
+más abajo, que es la regla que manda cuando compite con esta).
+
+- Buscá primero (`grep`/`find`) el símbolo/método/clase antes de leer un archivo
+  completo; leé el archivo entero solo cuando haga falta entender su estructura
+  global o el cambio lo requiera.
+- No releas archivos ya analizados en esta sesión salvo que cambiaron, los
+  modificaste vos, o hay evidencia de que quedaron desactualizados.
+- No leas logs/reportes completos: extraé con búsqueda acotada (`grep`/`rg`/
+  `Select-String`/`findstr`) solo el test, la excepción y el stack relevantes.
+- No listes directorios completos (`ls -R`, `find .`, `tree`) salvo pedido
+  explícito del usuario.
+- Agrupá los cambios compatibles y corré Selenium una sola vez al finalizar el
+  desarrollo — salvo que necesites confirmar en vivo un selector/flujo/parámetro
+  del que no tenés certeza: eso se investiga siempre, sin importar el costo.
+- Informes breves: archivos modificados, resultado, bloqueos, próximo paso. No
+  repitas contexto ya comunicado en la conversación.
+- Antes de una acción costosa (lecturas masivas, muchos comandos, varias
+  corridas), preguntate si ya podés responder con lo que tenés.
+
+Modelo recomendado: Sonnet 5 para desarrollo cotidiano (Page Objects, Selenium,
+helpers, tests, documentación). Opus para arquitectura compleja, investigaciones
+profundas o causa raíz difícil.
 
 ---
 
@@ -404,7 +166,51 @@ validation, reports.
 ## Primary Mission
 
 Create tests that fully respect the framework conventions. Never create isolated
-implementations. Every new test must reuse the existing infrastructure.
+implementations. Every new test must reuse the existing infrastructure — but
+infrastructure only counts as reusable once it's confirmed compatible with the
+concrete screen (see "Discover and Verify" below), not because it worked elsewhere.
+
+## Discover and Verify — before reusing any infrastructure
+
+Similarity to another screen is NOT evidence. Before extending a generic base class
+(`ConfiguracionEntidadListadoPage`, `ConfiguracionEntidadDetallePage`, or any other
+reusable Page Object) for a NEW entity, confirm with real Selenium — never by
+analogy — that its generic mechanisms actually apply to THAT screen: the "screen
+loaded" selector, the "record name" selector, the access path into Editar, the
+search box. An inherited selector that was never checked against the real DOM counts
+as an "uncertain identification" (`GUIDELINES.md §5`): don't guess it — verify it or
+fail explicitly.
+
+Before implementing, map every real mode of the screen (listing, consulta, edición) —
+not just the Crear form. Before registering a non-form case's parameters, test the
+screen's actual search/filter criteria live — see "Non-form Tests" below.
+
+A test is not finished when the file compiles or the Page Object looks right. It's
+finished when: the reused selectors were confirmed live, the parameters were
+confirmed to cover every real way to drive the scenario, and — for a parametrized
+case — `execution-context.json` (or the Panel) was actually checked to contain the
+registered keys, not assumed from the code.
+
+**Incident — inherited selector (2026-08-21):** Usuario's consulta view has no
+`[class*="forms-header"]`, but the test inherited that "screen loaded" wait from
+`ConfiguracionEntidadListadoPage.abrirDetalle()` without checking — confirmed
+`TimeoutError` against the real screen. Lesson: never reuse a base class's "loaded"
+selector without confirming it exists on the new screen.
+
+**Incident — incomplete query criteria (2026-08-21):** `consultar-usuario` was
+registered with only a `nombre` parameter, copied from another entity's pattern,
+without testing what this specific screen's search actually supports. Live
+confirmation: the global search box finds a user by "Código de usuario" too, even
+though that column isn't even visible in the grid. Lesson: "no parameters" or "one
+parameter" is a decision made AFTER testing the screen's real search criteria, never
+by copying the previous screen's pattern.
+
+**Incident — incomplete Execution Context (2026-08-21):** of 6 new test files, 5
+were never executed (individually or via a whole-module run) before being reported
+as done — their parameters, though declared correctly in code, never reached
+`execution-context.json`, so the Panel showed them as requiring no input. Lesson: a
+test isn't "done" until you confirmed — by reading `execution-context.json` or the
+Panel, not by assuming — that its parameters actually got registered.
 
 ## Naming
 
@@ -425,6 +231,44 @@ Never invent parameter names. Never create manual parameter lists. User values a
 override autofill. Concretely: seed with `registrarCasoDesdeFormulario(CASO, ESTRATEGIAS)`,
 fill with a Page Object method that composes `Form.completarDesde()` (e.g.
 `completarRequeridosConContexto`), and validate the map with `validarControlesDeclarados()`.
+
+### ESTRATEGIAS must declare EVERY real control, not just the ones the test autofills
+
+`ESTRATEGIAS` is the single source of truth of what controls a form HAS
+(`GUIDELINES.md §Forms`) — not just the ones a given test happens to fill. A control that
+exists in the app but is deliberately never autofilled (e.g. a switch that defaults ON, where
+blind autofill would wrongly turn it off) still belongs in `ESTRATEGIAS`. Leaving it out to
+dodge an autofill side effect breaks the single-source-of-truth contract and silently disables
+`validarControlesDeclarados`'s ability to ever flag that control.
+
+**Real incident (2026-08-20):** `ComportamientoConceptoNominaDetallePage.ESTRATEGIAS` declared
+only 2 of the form's 4 real controls (`Concepto`, `Tipo Nómina`), omitting `Todos los
+intervalos` (switch, defaults ON) and `Intervalo` (disabled while the switch is ON) — because
+declaring the switch would have let the generic autofill force it OFF (breaking Guardar via
+the newly-required `Intervalo`). The test itself also seeded its Execution Context with a
+hardcoded manual list (`registrarCaso(CASO, ['Concepto', 'Tipo Nómina'])`) instead of
+`registrarCasoDesdeFormulario` — the exact anti-pattern this section already prohibited — and
+never called `validarControlesDeclarados`, so nothing ever warned that the map didn't match the
+UI. Both gaps existed only in this one test; every sibling `crear-*` test in the same batch was
+already compliant.
+
+**Fix, and the pattern to reuse:** for a switch whose default isn't "off", declare it with
+`{ estrategia: 'switch', soloSiDirigido: true }` (`core/strategies/builtinStrategies.js`,
+`SwitchStrategy`). With no value directed from the Panel, the switch is left INTACT at its
+current state instead of being forced off; with a directed value, it applies normally. This is
+a Core-level option (benefits any switch in any module with a non-off default), not a per-test
+workaround.
+
+### `validarControlesDeclarados` is mandatory, not optional, when a test skips `completarConContexto`
+
+`ConfiguracionEntidadDetallePage.completarConContexto()` already calls
+`Form.validarControlesDeclarados()` internally — so most `crear-*`/`editar-*` tests get the
+sync check for free. But a test with special filling logic that bypasses
+`completarConContexto` (e.g. one that resolves values via QA fixtures instead of reading the
+Execution Context directly, like `crear-comportamiento-concepto-nomina`) loses that check along
+with it. **Any such test MUST call `form.validarControlesDeclarados(ESTRATEGIAS)` explicitly**,
+right after opening the form, before filling anything. This is not optional cleanup — it is the
+only thing that would have caught the incident above automatically.
 
 ## Automatic-mode default rename in "editar-*" tests: bounded "QA-N", never random/growing
 
@@ -480,16 +324,26 @@ branch.
 
 ## Non-form Tests
 
-Examples: publish requisition, pause requisition, share requisition, import documents, and
-any test that does NOT fill a form with data (e.g. a required-field validation test that
-saves empty, or a detector that iterates a control). Use `registrarCaso()` only with the
-minimum parameters required. Do not generate an Input Model.
+Examples: publish requisition, pause requisition, share requisition, import documents,
+consult/search screens, and any test that does NOT fill a form with data. Use
+`registrarCaso()` — do not generate an Input Model.
+
+"Minimum parameters required" means the smallest set that still covers every real way
+the scenario can be driven — NOT the smallest set that happens to make the test run.
+"This screen can execute without typing anything" is not the same statement as "this
+scenario has no real parameters." Before registering, verify live (see "Discover and
+Verify" above) every distinct way the screen can be searched/targeted — a global
+search box, per-column filters, a lookup by an ID/code that isn't even a visible
+column — and register a parameter for each one that's a legitimate way to drive the
+scenario.
 
 ## Selectors
 
 Never use indexes, DOM order, visual order, base64 or fragile selectors. Prefer accessible
 name, title, aria-label, visible text, metadata, data-testid. If identification is
-uncertain: do not guess — fail explicitly, generate diagnostics, attach evidence.
+uncertain: do not guess — fail explicitly, generate diagnostics, attach evidence. This
+applies equally to a selector inherited from a reused base class — see "Discover and
+Verify" above.
 
 ## Reading DataGrid rows without opening the detail
 
@@ -595,6 +449,32 @@ was the actual gap.
 Always reuse Evidence, Problem Log, Screen Inspector, Screenshots, Execution Context. Never
 create custom evidence systems.
 
+## Ambient noise: the "Generación de nómina" toast
+
+This shared QA environment runs a background "Generación de nómina" process (from another
+user/session, not this test) that renders a toast using the SAME `notify_record` class as the
+app's real Guardar/Crear/Editar toast, mutating its own text through stages ("Generación de
+nómina" → "Verificando proceso..." → "Nómina:Cargando Nómina...Período:Cargando
+Períodos...Usuario:Lyanne"). It can appear on ANY screen, unrelated to what the test is doing.
+
+This is already filtered centrally in `core/components/Notify.js#getTexto()` — it excludes any
+`notify_record` node whose text matches `/n[oó]mina\s*:|per[ií]odo\s*:|verificando proceso/i`.
+**Never re-implement this filter per test** (no ad-hoc regex, no manual text matching for this
+toast in a Page Object or test file) — `Notify.getTexto()`/`esperarTexto()`/`esperarResultado()`
+already handle it for every case that reads a notify through the normal framework path.
+
+The filter is a GENERAL, configurable setting — not hardcoded: `config.ruido.ignorarToastNomina`
+(env var `IGNORAR_TOAST_NOMINA`, default `true`). Leave it at the default for all normal test
+work. The one time to flip it (`IGNORAR_TOAST_NOMINA=false` in `.env`) is when the work ITSELF is
+testing the "Generación de Nómina" feature and a case genuinely needs to read that toast as the
+real notify — turn it back to the default afterward.
+
+Confirmed with real evidence (2026-08-19): this toast does NOT contain any `loader-manager`-class
+element, so it is never what `esperarSinLoader` (`core/utils/UiContext.js`) is waiting on — if a
+screen hangs while this toast happens to be visible, look for an actual stuck loader on that
+screen (e.g. the documented "Distribución de Pago" bug in `TipoNominaDetallePage`) rather than
+assuming the toast itself is blocking the interaction.
+
 ## Recovery
 
 Never abandon the application after a failure. Reuse the existing recovery strategy whenever
@@ -636,8 +516,10 @@ duplicate that paragraph in `descripcion`; it is appended automatically.
 
 ## Checklist
 
-Before finishing verify: uses existing infrastructure; no duplicated logic; correct naming;
-correct selectors; Execution Context updated; evidence generated; compatibility preserved;
+Before finishing verify: reused infrastructure was confirmed against the real screen (not
+assumed from similarity); no duplicated logic; correct naming; selectors verified live;
+Execution Context updated **and confirmed** (read `execution-context.json` or the Panel —
+declaring it in code is not enough); evidence generated; compatibility preserved;
 documentation updated; new case registered in `organizacion-tests.js` (section, category,
 one-sentence description) unless it's a pure flow test.
 

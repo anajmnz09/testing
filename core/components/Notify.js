@@ -29,9 +29,16 @@ class Notify extends BaseComponent {
    * filtro, `querySelector` puede devolver ESE nodo en vez del notify real
    * de la acción, y el test falla clasificando una notificación que no le
    * pertenece.
+   *
+   * El filtro es CONFIGURABLE de forma general (`config.ruido.
+   * ignorarToastNomina`, env var `IGNORAR_TOAST_NOMINA`, default `true`) —
+   * nunca hardcodeado por test. Se desactiva (`IGNORAR_TOAST_NOMINA=false`
+   * en `.env`) solo cuando se esté probando la propia feature de
+   * "Generación de Nómina" y haga falta leer ESE toast como notify real.
    */
   async getTexto() {
-    return this.driver.executeScript(() => {
+    const ignorarToastNomina = config.ruido.ignorarToastNomina;
+    return this.driver.executeScript((filtrar) => {
       const nodos = document.querySelectorAll('[class*="notify_record"]');
       // El widget de fondo es un MISMO nodo que va mutando su contenido en
       // etapas ("Generación de nómina" -> "Verificando proceso..." ->
@@ -44,10 +51,11 @@ class Notify extends BaseComponent {
       // "Verificando proceso"), no por el texto completo.
       for (const n of nodos) {
         const t = (n.textContent || '').trim();
-        if (t && !/n[oó]mina\s*:|per[ií]odo\s*:|verificando proceso/i.test(t)) return t;
+        const esToastAmbiental = filtrar && /n[oó]mina\s*:|per[ií]odo\s*:|verificando proceso/i.test(t);
+        if (t && !esToastAmbiental) return t;
       }
       return '';
-    });
+    }, ignorarToastNomina);
   }
 
   /** Espera a que aparezca un notify (real, ver `getTexto`) y devuelve su texto ('' si no aparece). */

@@ -55,6 +55,20 @@ class ConfiguracionEntidadListadoPage extends BasePage {
     return celdas.length ? celdas[0] : fila;
   }
 
+  /**
+   * Locator que señala "el detalle de un registro ya cargó" tras abrirlo
+   * (doble-click). Default: el header estándar de Configuración
+   * (`forms-header`, ya usado por ~15 entidades). OVERRIDEABLE por una
+   * entidad cuya pantalla de consulta no use ese header — confirmado con
+   * evidencia real que "Usuario" no lo tiene (su vista de consulta usa un
+   * layout propio, `UsuariosConsultPage_*`, sin `forms-header`); antes de
+   * este getter, `abrirDetalle`/`abrirPrimero` esperaban un selector
+   * hardcodeado que nunca aparecía en esa pantalla y tiraban `TimeoutError`.
+   */
+  get _localizadorDetalleCargado() {
+    return By.css('[class*="forms-header"]');
+  }
+
   /** Abre el formulario de creación (botón "Crear"). Devuelve la MISMA pantalla que consulta/edición, ya cargada y editable. */
   async crear() {
     logger.info(`${this.constructor.name}: click en "Crear"`);
@@ -73,7 +87,7 @@ class ConfiguracionEntidadListadoPage extends BasePage {
     const timeout = config.timeouts.explicitWaitMs;
     await this.grid.buscar(nombre);
     const filaLoc = this.grid._filaLocator(nombre);
-    const headerDetalle = By.css('[class*="forms-header"]');
+    const headerDetalle = this._localizadorDetalleCargado;
     const DetallePage = this.constructor.DetallePageClass;
 
     let ultimoError;
@@ -96,21 +110,30 @@ class ConfiguracionEntidadListadoPage extends BasePage {
   }
 
   /**
-   * Abre el detalle (modo consulta) de la PRIMERA fila del listado, SIN
-   * pasar por el buscador — a diferencia de `abrirDetalle`, que primero
-   * filtra con `grid.buscar(nombre)`. Existe porque el buscador de Horarios
-   * está roto en el ambiente actual (confirmado con evidencia real: buscar
-   * CUALQUIER texto, incluso el de un registro recién creado por este mismo
-   * framework, dispara "Internal Error" del backend antes de poder abrir el
-   * detalle) — mientras esa falla siga, los casos "automáticos" (sin nombre
-   * dirigido desde el Panel) de esa entidad deben evitar `grid.buscar()` por
-   * completo. Queda acá (no solo en Horarios) por si otra entidad futura
-   * necesita el mismo desvío.
+   * Abre el detalle (modo consulta) de la PRIMERA fila del listado. SIN
+   * argumento, no pasa por el buscador — a diferencia de `abrirDetalle`, que
+   * filtra con `grid.buscar(nombre)` Y ADEMÁS matchea `nombre` contra el
+   * texto de la fila. Existe porque el buscador de Horarios está roto en el
+   * ambiente actual (confirmado con evidencia real: buscar CUALQUIER texto,
+   * incluso el de un registro recién creado por este mismo framework,
+   * dispara "Internal Error" del backend antes de poder abrir el detalle) —
+   * mientras esa falla siga, los casos "automáticos" (sin nombre dirigido
+   * desde el Panel) de esa entidad deben evitar `grid.buscar()` por completo.
+   *
+   * `textoFiltro` (opcional): si se pasa, filtra el grid con
+   * `grid.buscar(textoFiltro)` y abre lo que quede — SIN intentar matchear
+   * ese texto contra el contenido de la fila (a diferencia de
+   * `abrirDetalle`). Usar cuando el criterio de búsqueda NO es una columna
+   * visible del grid (ej. "Código de usuario" en Usuarios: el buscador
+   * global SÍ lo indexa, confirmado con evidencia real, aunque esa columna
+   * nunca se muestre — por eso `abrirDetalle` no sirve para ese criterio,
+   * su `_filaLocator` busca el texto DENTRO de las celdas visibles).
    */
-  async abrirPrimero() {
+  async abrirPrimero(textoFiltro) {
     const timeout = config.timeouts.explicitWaitMs;
+    if (textoFiltro) await this.grid.buscar(textoFiltro);
     const filaLoc = By.css('.dx-data-row');
-    const headerDetalle = By.css('[class*="forms-header"]');
+    const headerDetalle = this._localizadorDetalleCargado;
     const DetallePage = this.constructor.DetallePageClass;
 
     let ultimoError;

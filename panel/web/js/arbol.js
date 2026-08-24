@@ -53,7 +53,10 @@ function nodo(n, onSelect, onRun, nivel) {
   );
   fila.append(izq, lbl, der);
 
-  const wrap = el("div", { class: `tree-nodo tree-${n.tipo}` }, fila, hijosBox);
+  // Cada sección/categoría arranca COLAPSADA (a pedido explícito: quedaban
+  // siempre abiertas y era incómodo navegar el árbol) — el usuario expande
+  // solo lo que necesita, clickeando la fila (mismo toggle de siempre).
+  const wrap = el("div", { class: `tree-nodo tree-${n.tipo}${esGrupo ? " colapsado" : ""}` }, fila, hijosBox);
   fila.addEventListener("click", () => {
     if (esGrupo) wrap.classList.toggle("colapsado");
     if (n.tipo === "caso") {

@@ -4,6 +4,15 @@ const logger = require('../utils/logger');
 const config = require('../config');
 const { containsTextoIgnoreCase } = require('../utils/xpath');
 
+/** Normaliza el texto de un label para comparar EXACTO (recorta, saca ':'/'*' finales, minúscula). */
+function _normalizarLabelTexto(s) {
+  return String(s == null ? '' : s)
+    .replace(/\*/g, '')
+    .replace(/:\s*$/, '')
+    .trim()
+    .toLowerCase();
+}
+
 /**
  * Componente reutilizable para los formularios de la app Triple. Los formularios
  * ubican cada campo en un contenedor `.group-field-*` con un `<label>` (el
@@ -78,10 +87,46 @@ class Form extends BaseComponent {
    */
   async _elemCampo(label) {
     try {
-      return await this.driver.wait(until.elementLocated(this._campo(label)), this._timeout());
+      return await this._mejorCandidato(this._campo(label), label);
     } catch (e) {
-      return this.driver.wait(until.elementLocated(this._campoGenerico(label)), this._timeout());
+      return this._mejorCandidato(this._campoGenerico(label), label);
     }
+  }
+
+  /**
+   * Espera a que `locator` matchee, y si matchea MÁS DE UN contenedor,
+   * prefiere el que tiene una coincidencia EXACTA de label sobre uno que
+   * solo la contiene como SUBSTRING. Sin esto, dos campos donde el label de
+   * uno es substring literal del otro (ej. "Rate" dentro de "Usar Rate":
+   * ambos son `dx-field-item` HERMANOS, ninguno anidado dentro del otro, así
+   * que la exclusión anti-colisión de `_campo`/`_campoGenerico` — pensada
+   * para el caso ANIDADO, ver su comentario — no descarta a ninguno de los
+   * dos) hacen que `_campo('Rate')` matchee AMBOS contenedores, y
+   * `until.elementLocated` se quedaba con el primero en orden de documento
+   * ("Usar Rate", un switch sin `.dx-texteditor-input`) — confirmado con
+   * evidencia real en Categoría Actividades: escribir en "Rate" fallaba
+   * buscando el editor dentro del contenedor de OTRO campo. Sin ambigüedad
+   * (el caso de siempre, un solo match), se comporta exactamente igual que
+   * antes. Si hay ambigüedad y NINGÚN candidato matchea exacto, se conserva
+   * el comportamiento previo (el primero) en vez de fallar.
+   */
+  async _mejorCandidato(locator, label) {
+    await this.driver.wait(until.elementLocated(locator), this._timeout());
+    const candidatos = await this.driver.findElements(locator);
+    if (candidatos.length <= 1) return candidatos[0];
+
+    const objetivo = _normalizarLabelTexto(label);
+    for (const candidato of candidatos) {
+      try {
+        const labels = await candidato.findElements(By.css('label'));
+        for (const lbl of labels) {
+          if (_normalizarLabelTexto(await lbl.getText()) === objetivo) return candidato;
+        }
+      } catch (e) {
+        /* candidato "stale" entre el findElements y la lectura: se descarta, sigue con el resto */
+      }
+    }
+    return candidatos[0];
   }
 
   _opcionLocator() {
@@ -170,10 +215,31 @@ class Form extends BaseComponent {
    * error con las opciones REALMENTE visibles, para diagnóstico accionable
    * (mismo criterio que ya usa `FormsHeader` para sus botones).
    */
+  /**
+   * Intenta desplazar una lista virtualizada de DevExtreme (`dx-list` con
+   * scroll "simulado", no nativo — `scrollTop` no le hace nada) usando el
+   * scroll de RUEDA del mouse de Selenium (`actions().scroll`) con ORIGEN en
+   * un item YA VISIBLE de la lista. Confirmado con evidencia real: el
+   * contenedor scrolleable (`.dx-scrollable-container`) no tiene tamaño
+   * medible para Selenium ("no size and location") y un `WheelEvent`
+   * sintético por `dispatchEvent` no lo mueve — pero el scroll real de
+   * Selenium con origen en un ítem SÍ dispara que DevExtreme renderice más
+   * opciones. Si no hay nada scrolleable (lista corta) simplemente no pasa
+   * nada; se ignora cualquier error.
+   */
+  async _intentarScrollLista(itemVisible, cantidadPx = 200) {
+    try {
+      await this.driver.actions().scroll(0, 0, 0, cantidadPx, itemVisible).perform();
+    } catch (e) {
+      /* lista no scrolleable, o el item dejó de ser interactuable — se ignora */
+    }
+  }
+
   async _itemVisiblePorTexto(texto, selectorCss, { umbral = 0.85 } = {}) {
     const locator = selectorCss ? By.css(selectorCss) : this._opcionLocator();
     const buscado = this._normalizarTexto(texto);
     let disponibles = [];
+    let ultimoConjuntoScrolleado = null;
 
     try {
       return await this.driver.wait(async () => {
@@ -218,6 +284,19 @@ class Form extends BaseComponent {
             `Form: "${texto}" no coincide exacto; se usa la opción más similar "${mejor.texto}" (${Math.round(mejorPuntaje * 100)}% similitud)`
           );
           return mejor.el;
+        }
+
+        // Nada coincidió entre lo VISIBLE ahora: si es una lista larga
+        // virtualizada, la opción buscada puede estar más abajo, todavía sin
+        // renderizar (confirmado real: "Tipo concepto" de Concepto de Nómina
+        // solo renderiza ~11 de más de 40 opciones sin scroll). Se scrollea
+        // un paso antes del siguiente poll — solo cuando el conjunto visible
+        // cambió desde el último intento, para no scrollear sin sentido una
+        // vez llegado al final de una lista corta o al fondo real.
+        const conjuntoActual = disponibles.join('|');
+        if (conjuntoActual !== ultimoConjuntoScrolleado) {
+          ultimoConjuntoScrolleado = conjuntoActual;
+          await this._intentarScrollLista(visibles[visibles.length - 1].el);
         }
         return false;
       }, this._timeout());
@@ -473,7 +552,7 @@ class Form extends BaseComponent {
     if (texto === undefined || texto === null || texto === '') return undefined;
     logger.info(`Form: agregar tag libre "${texto}" en "${label}"`);
     const campo = await this._elemCampo(label);
-    const input = await campo.findElement(By.css('.dx-texteditor-input'));
+    const input = await this._inputDeCampo(campo, label);
     await this._escribirTagsEnInput(input, [texto]);
   }
 
@@ -493,7 +572,7 @@ class Form extends BaseComponent {
     if (!lista.length) return undefined;
     logger.info(`Form: agregar ${lista.length} tag(s) libre(s) en "${label}": ${lista.join(' | ')}`);
     const campo = await this._elemCampo(label);
-    const input = await campo.findElement(By.css('.dx-texteditor-input'));
+    const input = await this._inputDeCampo(campo, label);
     await this._escribirTagsEnInput(input, lista);
     return lista;
   }
@@ -545,7 +624,7 @@ class Form extends BaseComponent {
       try {
         const campo = await this._elemCampo(label);
         await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', campo);
-        const input = await campo.findElement(By.css('.dx-texteditor-input'));
+        const input = await this._inputDeCampo(campo, label);
         if (clear) {
           await input.clear();
         } else {
@@ -573,7 +652,46 @@ class Form extends BaseComponent {
     }
   }
 
+  /**
+   * Editor `.dx-texteditor-input` DENTRO de un contenedor de campo ya
+   * localizado, con POLL (no una sola lectura) hasta `timeout`.
+   *
+   * Confirmado con evidencia real (Categoría Actividades, "Rate" tras
+   * encender el switch "Usar Rate"): un campo condicional a otro control
+   * (switch/selección previa) puede tardar un instante en montar su editor
+   * real — el contenedor del campo (`campo`, ya localizado) no cambia de
+   * identidad ni tira `StaleElementReferenceError`, pero
+   * `campo.findElement('.dx-texteditor-input')` sin esperar revienta con
+   * "Unable to locate element" si se lo llama en ese instante. Es un hueco
+   * DISTINTO al de `_elemCampo` (que ya espera a que el CONTENEDOR exista) —
+   * acá se espera a que el EDITOR DENTRO de un contenedor ya existente
+   * termine de montarse. Reutilizable por cualquier método de `Form` que
+   * escriba en un campo potencialmente condicional a otro.
+   */
+  async _inputDeCampo(campo, label, timeout = 5000) {
+    const input = await this.driver
+      .wait(async () => {
+        const els = await campo.findElements(By.css('.dx-texteditor-input'));
+        return els.length ? els[0] : false;
+      }, timeout)
+      .catch(() => null);
+    if (!input) {
+      throw new Error(`Form: "${label}" no expuso su editor (.dx-texteditor-input) tras esperar ${timeout}ms.`);
+    }
+    return input;
+  }
+
   /** Activa (o desactiva) un switch por label. */
+  /**
+   * Confirmado con evidencia real (Categoría Actividades, "Usar Rate"): el
+   * click NO actualiza `aria-pressed` de forma síncrona — leerlo
+   * inmediatamente después del click puede devolver el valor VIEJO, aunque
+   * el click en sí se disparó sin error. Sin esperar a que el atributo
+   * refleje el nuevo estado, `setCampo`/`completarConContexto` seguían de
+   * largo pensando que el switch ya quedó en `encendido`, y el registro se
+   * guardaba con el switch en su valor original — un "fallo silencioso", sin
+   * ninguna excepción que lo delatara.
+   */
   async setSwitch(label, encendido = true) {
     const campo = await this._elemCampo(label);
     const sw = await campo.findElement(By.css('.dx-switch'));
@@ -581,6 +699,9 @@ class Form extends BaseComponent {
     if (estado !== encendido) {
       logger.info(`Form: switch "${label}" -> ${encendido}`);
       await sw.click();
+      await this.driver
+        .wait(async () => (await sw.getAttribute('aria-pressed')) === String(encendido), this._timeout())
+        .catch(() => {});
     }
   }
 

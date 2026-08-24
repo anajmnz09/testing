@@ -3,6 +3,7 @@ import * as arbol from "./arbol.js";
 import * as detalle from "./detalle.js";
 import * as consola from "./consola.js";
 import * as historial from "./historial.js";
+import * as configuracion from "./configuracion.js";
 import { pantallaInicio } from "./componentes.js";
 
 const treeCont = document.getElementById("tree");
@@ -61,6 +62,7 @@ function aplicarFiltro() {
 // --- Wiring ---
 document.getElementById("tg-tests").addEventListener("click", () => setModo(false));
 document.getElementById("tg-hist").addEventListener("click", () => setModo(true));
+document.getElementById("tg-config").addEventListener("click", () => configuracion.abrir(detCont));
 document.getElementById("search").addEventListener("input", aplicarFiltro);
 document.getElementById("menu-toggle").addEventListener("click", () =>
   document.querySelector(".app-sidebar").classList.toggle("abierto")

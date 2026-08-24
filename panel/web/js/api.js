@@ -16,6 +16,13 @@ export const ejecutar = (run) =>
     body: JSON.stringify({ run }),
   });
 export const cancelar = () => j("/api/cancelar", { method: "POST" });
+export const configuracion = () => j("/api/configuracion");
+export const guardarConfiguracion = (valores) =>
+  j("/api/configuracion", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ valores }),
+  });
 export const guardarContexto = (modulo, caso, valores) =>
   j("/api/contexto", {
     method: "POST",

@@ -170,9 +170,15 @@ class ConfiguracionEntidadDetallePage extends BasePage {
    * (ej. deshabilitado con un valor pre-cargado), nunca se sobreescribe.
    *
    * @param {string} caso
-   * @param {{incluirOpcionales?: boolean}} [opts]
+   * @param {{incluirOpcionales?: boolean, excepto?: string[]}} [opts]
+   *   `excepto`: labels que este pase NO debe tocar, ni siquiera para leer si
+   *   están vacíos — para campos cuya habilitación depende de OTRO campo (ej.
+   *   "Tipo Ingreso" solo es clickeable con "Origen"="Ingreso" — regla real de
+   *   la app) y que el test ya resolvió explícito ANTES de llamar acá. Sin
+   *   esto, el autofill genérico intentaría tocar un control deshabilitado y
+   *   colgarse/fallar tratando de abrir un dropdown no clickeable.
    */
-  async completarConContexto(caso, { incluirOpcionales = false } = {}) {
+  async completarConContexto(caso, { incluirOpcionales = false, excepto = [] } = {}) {
     const entidad = this.constructor.NOMBRE_ENTIDAD;
     logger.info(`${this.constructor.name}: completar formulario desde Execution Context (caso="${caso}")`);
     await this.form.validarControlesDeclarados(this._estrategias, { etiqueta: entidad });
@@ -180,6 +186,7 @@ class ConfiguracionEntidadDetallePage extends BasePage {
     const resultado = {};
 
     for (const label of Object.keys(this._estrategias)) {
+      if (excepto.includes(label)) continue;
       if (!(await this.form.estaVacio(label))) {
         logger.info(`${this.constructor.name}: "${label}" ya tiene datos, no se sobreescribe`);
         continue;

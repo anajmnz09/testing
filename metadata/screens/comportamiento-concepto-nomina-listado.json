@@ -1,0 +1,388 @@
+{
+  "pantalla": "comportamiento-concepto-nomina-listado",
+  "capturadoEn": "2026-08-18T16:57:25.489Z",
+  "baseUrl": "https://test.triple.com.do/",
+  "inspector": {
+    "version": 2,
+    "firma": "f8f84161d5d0"
+  },
+  "botones": [
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "sync-nav-btn ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": "SyncCacheButton",
+      "nombreAccesible": "Actualizar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Cia_0042025",
+      "soloIcono": false,
+      "texto": "Cia_0042025"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-outlined dx-button-normal dx-button-has-text dx-button-has-icon dx-item dx-buttongrou",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "ANABEL   HINOJOSA JIMENEZ",
+      "soloIcono": false,
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-contained dx-button-normal dx-button-has-icon SrhhSidebar_collapse_btn__KAjWX",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Contraer | SRH-Fecha-Izquierda",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "up-btn right-2",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Ir arriba",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn dx-state-disabled",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": null,
+      "soloIcono": false,
+      "texto": "Crear"
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal snglbtn",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Filtros",
+      "soloIcono": false,
+      "texto": "Filtro"
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button-mode-contained dx-button-normal dx-dropdowneditor-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Seleccionar",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal viewBtn dx-state-disabled dx-state-invisible",
+      "dataTestId": null,
+      "deshabilitado": true,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Modo tarjeta",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal viewBtn dx-state-invisible",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": true,
+      "id": null,
+      "nombreAccesible": "Modo lista",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-widget dx-button dx-button-mode-text dx-button-normal dx-button-has-icon ",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "SRH-Buscar-Azul",
+      "soloIcono": true,
+      "texto": ""
+    },
+    {
+      "clase": "dx-page-size dx-selection",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Display 20 items on page",
+      "soloIcono": false,
+      "texto": "20"
+    },
+    {
+      "clase": "dx-page-size",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Display 0 items on page",
+      "soloIcono": false,
+      "texto": "Todos"
+    },
+    {
+      "clase": "dx-button-disable dx-navigate-button dx-prev-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Previous page",
+      "soloIcono": false,
+      "texto": ""
+    },
+    {
+      "clase": "dx-page dx-selection",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Page 1",
+      "soloIcono": false,
+      "texto": "1"
+    },
+    {
+      "clase": "dx-navigate-button dx-next-button",
+      "dataTestId": null,
+      "deshabilitado": false,
+      "iconoEmbebido": false,
+      "id": null,
+      "nombreAccesible": "Next page",
+      "soloIcono": false,
+      "texto": ""
+    }
+  ],
+  "controles": [],
+  "grids": [
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": "Página #1. Cantidad de páginas: 1 (-1 Registros)"
+    },
+    {
+      "cantidadFilasVisibles": 0,
+      "columnas": [],
+      "ejemploPrimeraFila": [],
+      "info": null
+    }
+  ],
+  "headers": [
+    {
+      "acciones": [],
+      "botones": [],
+      "clase": "SrhhSidebarMenu_sidebar_menu_header__hpsR9",
+      "labels": [
+        "Usuario"
+      ],
+      "switches": [],
+      "texto": "ConfiguracionesUsuario ANABEL   HINOJOSA JIMENEZ"
+    }
+  ],
+  "identificadores": [
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "viewport",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "theme-color",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": null,
+      "name": "description",
+      "tag": "meta",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "rootBody",
+      "name": null,
+      "tag": "body",
+      "texto": "You need to enable JavaScript to run this app.Generación de "
+    },
+    {
+      "dataTestId": null,
+      "id": "root",
+      "name": null,
+      "tag": "div",
+      "texto": "Generación de nóminaVerificando proceso de generación de nóm"
+    },
+    {
+      "dataTestId": null,
+      "id": "Layer_1",
+      "name": null,
+      "tag": "svg",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "selectModulos",
+      "name": null,
+      "tag": "div",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "SyncCacheButton",
+      "name": null,
+      "tag": "button",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "NotificationDropDown",
+      "name": null,
+      "tag": "a",
+      "texto": ""
+    },
+    {
+      "dataTestId": null,
+      "id": "ConfiguracionDropdown",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-7aad2e81-db10-a41e-7291-6ab76911e892",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "dx-51cc80a4-3e2e-bad6-52dd-86d2bbf63926",
+      "name": null,
+      "tag": "div",
+      "texto": "Desliza hacia abajo para actualizar...Suelta para actualizar"
+    },
+    {
+      "dataTestId": null,
+      "id": "CompanyDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "Cia_0042025"
+    },
+    {
+      "dataTestId": null,
+      "id": "userDropDown",
+      "name": null,
+      "tag": "div",
+      "texto": "ANABEL   HINOJOSA JIMENEZ"
+    },
+    {
+      "dataTestId": null,
+      "id": "titleColumn",
+      "name": null,
+      "tag": "div",
+      "texto": "Comportamiento concepto Nómina"
+    },
+    {
+      "dataTestId": null,
+      "id": "buttonsColumn",
+      "name": null,
+      "tag": "div",
+      "texto": "CrearFiltro"
+    },
+    {
+      "dataTestId": null,
+      "id": "childrenOuterWrapper",
+      "name": null,
+      "tag": "div",
+      "texto": "Cargando datos...20TodosPágina #1. Cantidad de páginas: 1 (-"
+    },
+    {
+      "dataTestId": null,
+      "id": "childrenInnerWrapper",
+      "name": null,
+      "tag": "div",
+      "texto": "Cargando datos...20TodosPágina #1. Cantidad de páginas: 1 (-"
+    }
+  ],
+  "navegacion": [
+    {
+      "clase": "text-dark text-decoration-none",
+      "href": "/srhh/config/perfil",
+      "id": null,
+      "texto": "Configuraciones"
+    },
+    {
+      "clase": "text-dark text-decoration-none",
+      "href": "/srhh",
+      "id": null,
+      "texto": "Acerca de"
+    }
+  ],
+  "switchesSueltos": [],
+  "titulo": "Triple",
+  "url": "https://test.triple.com.do/srhh/v/U2FsdGVkX1_LTds6Ny4dtsaNC6CpuFWCTSKwzBX_jHyt-qXsvH5ftbXFQd16vKneYfYSZUL99pMSfbZaTzMvkQSsH9EYAzHbWkkoKM_43H8",
+  "validaciones": {
+    "camposInvalidos": [],
+    "notifyVisible": "Generación de nóminaVerificando proceso de generación de nóminaNómina:Cargando Nómina...Período:Cargando Períodos...Usuario:Lyanne"
+  },
+  "origen": "reconocimiento-nomina"
+}

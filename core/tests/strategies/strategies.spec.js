@@ -16,16 +16,34 @@ const SelectionStrategy = require('../../strategies/SelectionStrategy');
  *     casos que no dirigen sus datos.
  */
 
-/** Form simulado: registra qué primitiva se invocó y con qué argumentos. */
-function formSimulado({ textoItem = 'Opción Real' } = {}) {
+/**
+ * Form simulado: registra qué primitiva se invocó y con qué argumentos.
+ *
+ * `staleClicksAntesDeExito`: hace que `.click()` del item devuelto por
+ * `_itemVisiblePorTexto` tire `StaleElementReferenceError` esa cantidad de
+ * veces antes de tener éxito — simula la lista virtualizada de DevExtreme
+ * re-renderizando justo después de localizar el item (ver
+ * `SearchAndSelectStrategy`, incidente real de "Comportamiento concepto
+ * Nómina").
+ */
+function formSimulado({ textoItem = 'Opción Real', staleClicksAntesDeExito = 0 } = {}) {
   const llamadas = [];
+  let clicksFallidos = 0;
   const registrar = (nombre) => (...args) => {
     llamadas.push({ nombre, args });
     return undefined;
   };
   const elemento = {
     getText: async () => `  ${textoItem}  `,
-    click: async () => llamadas.push({ nombre: 'click', args: [] }),
+    click: async () => {
+      if (clicksFallidos < staleClicksAntesDeExito) {
+        clicksFallidos++;
+        const err = new Error('stale element reference: stale element not found in the current frame');
+        err.name = 'StaleElementReferenceError';
+        throw err;
+      }
+      llamadas.push({ nombre: 'click', args: [] });
+    },
     sendKeys: async (...args) => llamadas.push({ nombre: 'sendKeys', args }),
   };
 
@@ -148,6 +166,44 @@ describe('Selection Strategies (unitario)', function () {
       expect(aplicado).to.equal('ADMINISTRADOR');
     });
 
+    it('searchAndSelect reintenta ante stale element al clickear el item y termina eligiéndolo', async function () {
+      const form = formSimulado({ textoItem: 'AHORRO COOPERATIVA', staleClicksAntesDeExito: 2 });
+      const aplicado = await strategies.obtener('searchAndSelect').aplicar(form, 'Concepto', 'ahorro cooperativa');
+
+      expect(form.nombres().filter((n) => n === '_itemVisiblePorTexto')).to.have.lengthOf(3);
+      expect(form.nombres().filter((n) => n === 'click')).to.have.lengthOf(1);
+      expect(aplicado).to.equal('AHORRO COOPERATIVA');
+    });
+
+    it('searchAndSelect propaga el error si el stale element persiste más de 3 intentos', async function () {
+      const form = formSimulado({ textoItem: 'AHORRO COOPERATIVA', staleClicksAntesDeExito: 3 });
+      let error = null;
+      try {
+        await strategies.obtener('searchAndSelect').aplicar(form, 'Concepto', 'ahorro cooperativa');
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).to.not.equal(null);
+      expect(error.message).to.match(/stale element/i);
+    });
+
+    it('searchAndSelect propaga de inmediato un error que NO es stale element (no lo confunde con reintento)', async function () {
+      const form = formSimulado({ textoItem: 'AHORRO COOPERATIVA' });
+      form._itemVisiblePorTexto = async () => {
+        throw new Error('Form: no se encontró ninguna opción suficientemente similar a "x"');
+      };
+      let error = null;
+      try {
+        await strategies.obtener('searchAndSelect').aplicar(form, 'Concepto', 'x');
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).to.not.equal(null);
+      expect(error.message).to.contain('no se encontró ninguna opción');
+    });
+
     it('searchAndSelect cierra el overlay con Escape en los controles múltiples (tagbox)', async function () {
       const form = formSimulado();
       await strategies.obtener('searchAndSelect').aplicar(form, 'Persona(s) a sustituir', 'Hugo', { multiple: true });
@@ -239,6 +295,36 @@ describe('Selection Strategies (unitario)', function () {
       it(`apaga con ${JSON.stringify(valor)}`, async function () {
         const form = formSimulado();
         const aplicado = await strategies.obtener('switch').aplicar(form, 'Rotativo', valor);
+
+        expect(form.llamadas[0].args).to.deep.equal(['Rotativo', false]);
+        expect(aplicado).to.equal(false);
+      });
+    });
+
+    describe('soloSiDirigido (switches con default ON en la app)', function () {
+      it('sin valor y soloSiDirigido: no toca el switch (lo deja en su default)', async function () {
+        const form = formSimulado();
+        const aplicado = await strategies
+          .obtener('switch')
+          .aplicar(form, 'Todos los intervalos', undefined, { soloSiDirigido: true });
+
+        expect(form.llamadas).to.be.empty;
+        expect(aplicado).to.equal(undefined);
+      });
+
+      it('con valor dirigido y soloSiDirigido: se aplica normal (no se ignora)', async function () {
+        const form = formSimulado();
+        const aplicado = await strategies
+          .obtener('switch')
+          .aplicar(form, 'Todos los intervalos', true, { soloSiDirigido: true });
+
+        expect(form.llamadas[0].args).to.deep.equal(['Todos los intervalos', true]);
+        expect(aplicado).to.equal(true);
+      });
+
+      it('sin soloSiDirigido, sin valor: sigue apagando (comportamiento histórico intacto)', async function () {
+        const form = formSimulado();
+        const aplicado = await strategies.obtener('switch').aplicar(form, 'Rotativo', undefined);
 
         expect(form.llamadas[0].args).to.deep.equal(['Rotativo', false]);
         expect(aplicado).to.equal(false);
