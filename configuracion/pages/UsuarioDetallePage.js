@@ -23,9 +23,11 @@ const logger = require('@triple/core/utils/logger');
  *    es requerido — ver abajo).
  *  - "Idioma": selectbox CON buscador OPCIONAL, llega PRESELECCIONADO
  *    ("Español") — `searchAndSelect`.
- *  - "Es administrador"/"Tiene acceso a RRHH": switches, ambos APAGADOS por
- *    defecto. A PEDIDO EXPLÍCITO del usuario, `crear-usuario` NUNCA los
- *    enciende — existen tests DEDICADOS para cada uno
+ *  - "Es administrador"/"Tiene acceso a RRHH": switches, APAGADOS por
+ *    defecto. `crear-usuario` los enciende SOLO si el Panel dirige `true`
+ *    explícito para alguno (autofill genérico sin dirección los deja en
+ *    `false`, igual que el default de la app). También existen tests
+ *    DEDICADOS idempotentes para activarlos sobre un Usuario ya existente
  *    (`marcar-usuario-administrador`, `dar-acceso-rrhh-usuario`).
  *
  * EDITAR (`ESTRATEGIAS_EDITAR`, tras `editar()`):
@@ -38,9 +40,10 @@ const logger = require('@triple/core/utils/logger');
  *    agregando "Cia_003" a un usuario que ya tenía "Cia_001"/"Cia_002": las
  *    3 quedan). El Panel dirige varios valores separados por "|" (ver
  *    `core/strategies/builtinStrategies.js#parsearValoresMultiples`).
- *  - "Es administrador"/"Tiene acceso a RRHH": switches — declarados para que
- *    `validarControlesDeclarados` los reconozca, pero `editar-usuario` NO
- *    los toca (ver tests dedicados arriba); no forma parte de sus "cambios".
+ *  - "Es administrador"/"Tiene acceso a RRHH": switches — `editar-usuario`
+ *    los toca SOLO si el Panel dirige `true` explícito para alguno (sin
+ *    autofill: si no se dirigen, quedan intactos en su estado actual); se
+ *    verifican aparte con `esperarInterruptor` (ver tests dedicados arriba).
  *  - Sección "Grupos" (grid debajo del form): a pedido explícito del
  *    usuario, se IGNORA por completo — no se declara, no se lee, no se toca.
  *

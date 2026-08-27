@@ -65,9 +65,13 @@ describe('Configuración - Editar Cuenta Contable', function () {
       const dirigido = testContext.get(CASO, label);
       if (dirigido !== undefined) {
         cambios[label] = dirigido;
-      } else if (label === 'Descripción') {
-        cambios[label] = siguienteNombreQA(await detalle.getValor(label));
       }
+    }
+    // Chequeo a nivel de CASO, no de campo: el default de "Descripción" solo
+    // aplica si el Panel no dirigió NADA (ni un solo campo) — si dirigió
+    // cualquier otro campo, "Descripción" vacío significa "no tocar".
+    if (!Object.keys(cambios).length) {
+      cambios['Descripción'] = siguienteNombreQA(await detalle.getValor('Descripción'));
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {

@@ -129,18 +129,29 @@ class Form extends BaseComponent {
     return candidatos[0];
   }
 
-  _opcionLocator() {
-    return By.css('.dx-list-item, .dx-overlay-content .dx-data-row');
+  /** CSS de `_opcionLocator()`, como STRING — para usar dentro de `executeScript` (ver esos métodos más abajo). */
+  _opcionSelectorCss() {
+    return '.dx-list-item, .dx-overlay-content .dx-data-row';
   }
 
-  /** Espera y devuelve el primer item VISIBLE del dropdown abierto (evita items pre-renderizados ocultos). */
+  _opcionLocator() {
+    return By.css(this._opcionSelectorCss());
+  }
+
+  /**
+   * Espera y devuelve el primer item VISIBLE del dropdown abierto (evita
+   * items pre-renderizados ocultos) — ver nota de rendimiento en
+   * `_esperarOverlayCerrado`: un solo `executeScript` en vez de `isDisplayed()`
+   * elemento por elemento (el elemento DOM devuelto por `executeScript` se
+   * hidrata como WebElement normal, usable con `.click()`/`.getText()`).
+   */
   async _primerItemVisible() {
     return this.driver.wait(async () => {
-      const items = await this.driver.findElements(this._opcionLocator());
-      for (const it of items) {
-        try { if (await it.isDisplayed()) return it; } catch (e) { /* stale */ }
-      }
-      return false;
+      const el = await this.driver.executeScript(
+        (sel) => Array.from(document.querySelectorAll(sel)).find((e) => e.offsetParent !== null) || null,
+        this._opcionSelectorCss()
+      );
+      return el || false;
     }, this._timeout());
   }
 
@@ -236,23 +247,26 @@ class Form extends BaseComponent {
   }
 
   async _itemVisiblePorTexto(texto, selectorCss, { umbral = 0.85 } = {}) {
-    const locator = selectorCss ? By.css(selectorCss) : this._opcionLocator();
+    const selector = selectorCss || this._opcionSelectorCss();
     const buscado = this._normalizarTexto(texto);
     let disponibles = [];
     let ultimoConjuntoScrolleado = null;
 
     try {
       return await this.driver.wait(async () => {
-        const items = await this.driver.findElements(locator);
-        const visibles = [];
-        for (const it of items) {
-          try {
-            if (await it.isDisplayed()) {
-              const t = (await it.getText()).trim();
-              visibles.push({ el: it, texto: t, normalizado: this._normalizarTexto(t) });
-            }
-          } catch (e) { /* stale */ }
-        }
+        // UN solo `executeScript` en vez de `isDisplayed()`+`getText()` elemento
+        // por elemento — ver nota de rendimiento en `_esperarOverlayCerrado`
+        // (confirmado real: catálogo "Usuario" de Grupos con 1000+ opciones
+        // volvía esto muy lento, varios round-trips de WebDriver por ítem, en
+        // CADA vuelta de este `driver.wait`). El resto de la lógica de
+        // matching (exacto/substring/similitud/scroll) queda IGUAL, solo
+        // cambia cómo se recolectan `{el, texto}` de lo visible.
+        const crudos = await this.driver.executeScript((sel) => {
+          return Array.from(document.querySelectorAll(sel))
+            .filter((el) => el.offsetParent !== null)
+            .map((el) => ({ el, texto: (el.textContent || '').trim() }));
+        }, selector);
+        const visibles = crudos.map((v) => ({ el: v.el, texto: v.texto, normalizado: this._normalizarTexto(v.texto) }));
         disponibles = visibles.map((v) => v.texto);
         if (!visibles.length) return false;
 
@@ -308,24 +322,36 @@ class Form extends BaseComponent {
     }
   }
 
-  /** Espera a que no quede ningún item de dropdown visible. */
+  /**
+   * Espera a que no quede ningún item de dropdown visible.
+   *
+   * Confirmado con evidencia real (Grupos, catálogo "Usuario" con 1000+
+   * elementos reales): la versión anterior consultaba `isDisplayed()` de a
+   * UN elemento por vez (round-trip de WebDriver cada uno) — para un
+   * catálogo grande eso es lento en sí (varios segundos) Y se repetía en
+   * CADA vuelta de este `driver.wait` mientras el overlay seguía abierto,
+   * multiplicando el costo. Un único `executeScript` resuelve la visibilidad
+   * de TODOS los elementos del lado del navegador, en una sola ida y vuelta,
+   * sin cambiar el criterio (mismo `_opcionSelectorCss()`, mismo "visible" =
+   * `offsetParent !== null`, equivalente práctico de `isDisplayed()` acá).
+   */
   async _esperarOverlayCerrado() {
-    await this.driver.wait(async () => {
-      const ovs = await this.driver.findElements(this._opcionLocator());
-      for (const o of ovs) {
-        try { if (await o.isDisplayed()) return false; } catch (e) { /* stale = cerrado */ }
-      }
-      return true;
-    }, this._timeout());
+    await this.driver.wait(
+      () =>
+        this.driver.executeScript(
+          (sel) => !Array.from(document.querySelectorAll(sel)).some((el) => el.offsetParent !== null),
+          this._opcionSelectorCss()
+        ),
+      this._timeout()
+    );
   }
 
-  /** True si hay algún item de dropdown visible en pantalla. */
+  /** True si hay algún item de dropdown visible en pantalla — ver nota de rendimiento en `_esperarOverlayCerrado`. */
   async _hayItemVisible() {
-    const items = await this.driver.findElements(this._opcionLocator());
-    for (const it of items) {
-      try { if (await it.isDisplayed()) return true; } catch (e) { /* stale */ }
-    }
-    return false;
+    return this.driver.executeScript(
+      (sel) => Array.from(document.querySelectorAll(sel)).some((el) => el.offsetParent !== null),
+      this._opcionSelectorCss()
+    );
   }
 
   /**
@@ -389,20 +415,13 @@ class Form extends BaseComponent {
   /**
    * True si el dropdown recién abierto muestra ÚNICAMENTE el placeholder "Sin
    * datos para mostrar" (ni cero items —eso es un error de selector, no aplica—
-   * ni items reales).
+   * ni items reales) — ver nota de rendimiento en `_esperarOverlayCerrado`.
    */
   async _soloSinDatos() {
-    const items = await this.driver.findElements(this._opcionLocator());
-    const visibles = [];
-    for (const it of items) {
-      try { if (await it.isDisplayed()) visibles.push(it); } catch (e) { /* stale */ }
-    }
-    if (visibles.length !== 1) return false;
-    try {
-      return (await visibles[0].getText()).trim() === 'Sin datos para mostrar';
-    } catch (e) {
-      return false; // stale u otro error: no es el caso que nos ocupa
-    }
+    return this.driver.executeScript((sel) => {
+      const visibles = Array.from(document.querySelectorAll(sel)).filter((el) => el.offsetParent !== null);
+      return visibles.length === 1 && visibles[0].textContent.trim() === 'Sin datos para mostrar';
+    }, this._opcionSelectorCss());
   }
 
   /**
@@ -478,6 +497,17 @@ class Form extends BaseComponent {
    * TODA la mecánica de overlay ya verificada (`_itemVisiblePorTexto`,
    * `_primerItemVisible`, `_esperarOverlayCerrado`), así que no duplica nada.
    *
+   * Con `valor` provisto, ESCRIBE en el propio editor para filtrar antes de
+   * buscar la coincidencia — mismo criterio que `SearchAndSelectStrategy`
+   * (equivalente "por locator" en vez de "por label"): sin este paso, un
+   * catálogo grande dependía solo del scroll de respaldo de
+   * `_itemVisiblePorTexto`, más lento y más frágil que filtrar. Se escribe en
+   * el input DENTRO de `root` (el mismo que abrió el dropdown) — nunca
+   * `_inputBusqueda(label)`, cuyo fallback busca CUALQUIER input visible
+   * dentro de `.dx-popup-content`: con más de un selectbox en el mismo popup
+   * (caso real: "Agregar Miembro" de Grupos, 3 campos) escribiría en el
+   * campo equivocado.
+   *
    * @param locator     By.* del `.dx-selectbox`/`.dx-dropdowneditor`
    * @param valor       texto de la opción; si es vacío/undefined, toma la primera
    * @returns {Promise<string>} el texto REAL de la opción elegida
@@ -491,18 +521,105 @@ class Form extends BaseComponent {
         // elemento puede quedar stale mientras el modal termina de renderizar.
         const root = await this.waitVisible(locator);
         await this._abrirDropdownEn(root, { jsClick: true });
+        if (valor !== undefined && valor !== null && valor !== '') {
+          const input = await root.findElement(By.css('.dx-texteditor-input'));
+          await input.sendKeys(Key.chord(Key.CONTROL, 'a'), String(valor));
+        }
         const item =
           valor === undefined || valor === null || valor === ''
             ? await this._primerItemVisible()
             : await this._itemVisiblePorTexto(valor);
-        const texto = (await item.getText()).trim();
-        await item.click();
+        // `item.getText()` (Selenium) confirmado con evidencia real que
+        // devuelve '' en headless para estos ítems (`display: table`, layout
+        // de tabla de DevExtreme) — mismo tipo de inconsistencia headless que
+        // el click nativo de más abajo. `textContent` vía `executeScript` es
+        // consistente con cómo ya se leyó este mismo texto en
+        // `_itemVisiblePorTexto`/`_primerItemVisible`.
+        const texto = (await this.driver.executeScript('return arguments[0].textContent', item)).trim();
+        // Click por JS, no nativo — mismo motivo que `jsClick` en
+        // `_abrirDropdownEn` (el overlay del popup intercepta el click nativo):
+        // confirmado con evidencia real (headless) que el ítem recién
+        // encontrado por polling puede no ser interactable un instante después
+        // (`ElementNotInteractableError`), incluso reintentando toda la
+        // secuencia — un click nativo idéntico, hecho de una sola vez sin
+        // pasar por el poll, sí funciona.
+        await this.driver.executeScript('arguments[0].click()', item);
         await this._esperarOverlayCerrado();
         return texto;
       } catch (err) {
         ultimoError = err;
-        if (!/stale element/i.test(err.message) || i === intentos - 1) throw err;
-        logger.info(`Form: reintentando elegirEnSelectbox tras stale (intento ${i + 1}/${intentos})`);
+        // "not interactable" confirmado con evidencia real (headless, catálogo
+        // "Usuario" filtrado por texto): mismo origen que el "stale element" ya
+        // contemplado — el ítem recién encontrado se re-renderiza (DevExtreme
+        // reemplaza el nodo, no lo muta) en el instante entre ubicarlo y
+        // clickearlo, así que reintentar (re-ubicar todo desde cero) resuelve
+        // igual que con "stale element".
+        if (!/stale element|not interactable/i.test(err.message) || i === intentos - 1) throw err;
+        logger.info(`Form: reintentando elegirEnSelectbox tras error transitorio (intento ${i + 1}/${intentos})`);
+      }
+    }
+    throw ultimoError;
+  }
+
+  /**
+   * Como `elegirEnSelectbox`, pero para un TAGBOX (multi-select) identificado
+   * por un LOCATOR (no por label) — mismo caso de uso: un tagbox dentro de un
+   * popup sin `group-field`/`<label>` (ej. "Roles" del popup "Agregar
+   * Permiso" de Grupos). Acepta un string, un array de strings (varios tags,
+   * en orden) o vacío (toma solo el PRIMERO disponible — mismo criterio
+   * "primera opción si no hay regla" que el resto del framework). El
+   * dropdown se abre UNA sola vez y los tags se clickean en secuencia sobre
+   * la MISMA lista abierta (igual mecánica que `SearchAndSelectStrategy`
+   * para tagbox: no hace falta reabrir entre uno y otro); un tagbox no
+   * cierra solo al elegir, así que cierra con ESCAPE al final.
+   *
+   * A DIFERENCIA de `elegirEnSelectbox`, acá NO se escribe en el editor para
+   * filtrar — a propósito, no un olvido: es el mismo criterio ya documentado
+   * en `SearchAndSelectStrategy` para `opciones.multiple` (escribir en el
+   * buscador de un TagBox reprodujo, en al menos un caso real, que el
+   * overlay quedara reportándose "abierto" para Selenium aunque la UI ya
+   * había cerrado — `_esperarOverlayCerrado()` nunca resolvía). Se depende
+   * del scroll de respaldo de `_itemVisiblePorTexto` para catálogos largos.
+   *
+   * @param locator  By.* del `.dx-tagbox`
+   * @param valores  string | string[] | undefined/null/'' (primera opción)
+   * @returns {Promise<string[]>} los textos REALES elegidos, en orden
+   */
+  async elegirEnTagbox(locator, valores, intentos = 2) {
+    const lista =
+      valores === undefined || valores === null || valores === ''
+        ? [undefined]
+        : Array.isArray(valores)
+          ? valores
+          : [valores];
+    logger.info(
+      `Form: seleccionar ${lista[0] === undefined ? 'primera opción' : JSON.stringify(lista)} en tagbox por locator`
+    );
+    let ultimoError;
+    for (let i = 0; i < intentos; i++) {
+      const textos = [];
+      try {
+        // Se re-localiza el root en CADA intento: en un popup recién montado el
+        // elemento puede quedar stale mientras el modal termina de renderizar.
+        const root = await this.waitVisible(locator);
+        await this._abrirDropdownEn(root, { jsClick: true });
+        for (const valor of lista) {
+          const item =
+            valor === undefined ? await this._primerItemVisible() : await this._itemVisiblePorTexto(valor);
+          // `textContent` en vez de `getText()` — ver comentario en `elegirEnSelectbox`.
+          textos.push((await this.driver.executeScript('return arguments[0].textContent', item)).trim());
+          // Click por JS — mismo motivo que en `elegirEnSelectbox` (ver su comentario).
+          await this.driver.executeScript('arguments[0].click()', item);
+        }
+        await this.driver.actions().sendKeys(Key.ESCAPE).perform();
+        await this._esperarOverlayCerrado();
+        return textos;
+      } catch (err) {
+        ultimoError = err;
+        // Mismo criterio que `elegirEnSelectbox`: "not interactable" es el
+        // mismo tipo de carrera transitoria que "stale element" acá.
+        if (!/stale element|not interactable/i.test(err.message) || i === intentos - 1) throw err;
+        logger.info(`Form: reintentando elegirEnTagbox tras error transitorio (intento ${i + 1}/${intentos})`);
       }
     }
     throw ultimoError;

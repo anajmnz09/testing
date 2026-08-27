@@ -308,16 +308,16 @@
     "Comportamiento (Concepto) a editar": ""
   },
   "crear-usuario": {
-    "Nombre Completo": "",
+    "Nombre Completo": "Juan pedro",
     "Compañía": "",
-    "Código de usuario": "",
-    "Correo": "",
+    "Código de usuario": "jeliaspedro",
+    "Correo": "jeliaspedro@gmail.com",
     "Idioma": "",
     "Es administrador": false,
-    "Tiene acceso a RRHH": false
+    "Tiene acceso a RRHH": true
   },
   "consultar-usuario": {
-    "nombre": "petronila",
+    "nombre": "juan pedro",
     "Código de usuario": ""
   },
   "editar-usuario": {
@@ -330,13 +330,35 @@
     "Nombre de Usuario a editar": ""
   },
   "agregar-foto-usuario": {
-    "nombre": "petronila",
+    "nombre": "anabel",
     "archivo": ""
   },
   "marcar-usuario-administrador": {
-    "nombre": ""
+    "nombre": "juan elias"
   },
   "dar-acceso-rrhh-usuario": {
-    "nombre": "ptronila"
+    "nombre": "juan elias"
+  },
+  "crear-grupo": {
+    "Nombre": "prueba panel"
+  },
+  "consultar-grupo": {
+    "nombre": "test"
+  },
+  "editar-grupo": {
+    "Nombre de Grupo a editar": "QA-1",
+    "Nombre": "",
+    "Descripción": "descripcion panel"
+  },
+  "agregar-miembro-grupo": {
+    "Nombre de Grupo": "qa-2",
+    "Usuario": "anabel",
+    "Compañías permitidas": "",
+    "Sucursal": ""
+  },
+  "agregar-permiso-grupo": {
+    "Nombre de Grupo": "",
+    "Módulo": "",
+    "Roles": ""
   }
 }

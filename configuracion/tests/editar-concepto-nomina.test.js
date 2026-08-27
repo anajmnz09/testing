@@ -55,8 +55,7 @@ describe('Configuración - Editar Concepto de Nómina', function () {
     const infoEditar = await detalle.editar();
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
-    // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA, un default seguro (renombrar "Nombre").
+    // Arma los cambios: lo que el Panel dirija (cualquier campo declarado).
     // "Tipo Ingreso" se resuelve APARTE (depende de "Origen" — ver comentario
     // del archivo), nunca como un campo directo más de este loop.
     const cambios = {};
@@ -65,8 +64,6 @@ describe('Configuración - Editar Concepto de Nómina', function () {
       const dirigido = testContext.get(CASO, label);
       if (dirigido !== undefined) {
         cambios[label] = dirigido;
-      } else if (label === 'Nombre') {
-        cambios[label] = siguienteNombreQA(await detalle.getValor(label));
       }
     }
 
@@ -80,6 +77,14 @@ describe('Configuración - Editar Concepto de Nómina', function () {
           `${CASO}: se ignora "Tipo Ingreso" dirigido porque "Origen" queda en "${origenEfectivo}" (deshabilitado por la app salvo Origen="Ingreso").`
         );
       }
+    }
+
+    // Default seguro (renombrar "Nombre") SOLO si el Panel no dirigió NADA
+    // (ni un campo declarado ni "Tipo Ingreso") — chequeo a nivel de CASO, no
+    // de campo: si se dirigió cualquier otra cosa, "Nombre" vacío significa
+    // "no tocar".
+    if (!Object.keys(cambios).length) {
+      cambios['Nombre'] = siguienteNombreQA(nombreUsado);
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {

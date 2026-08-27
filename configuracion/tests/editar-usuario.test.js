@@ -22,9 +22,14 @@ testContext.registrarCasoDesdeFormulario(CASO, UsuarioDetallePage.ESTRATEGIAS_ED
  * cambio. La sección "Grupos" se ignora por completo, a pedido explícito del
  * usuario.
  *
- * "Es administrador"/"Tiene acceso a RRHH" NUNCA se tocan acá — tienen sus
- * propios tests dedicados (`marcar-usuario-administrador`,
- * `dar-acceso-rrhh-usuario`).
+ * "Es administrador"/"Tiene acceso a RRHH": se tocan SOLO si el Panel dirige
+ * `true` explícito para alguno — a diferencia del resto de campos, no hay
+ * autofill acá (no se apagan solos si no se dirigen; quedan INTACTOS en su
+ * estado actual). Se verifican APARTE del resto con `esperarInterruptor`
+ * (no con `Form.getValor`/`assertTextoIgual`: no sirven para un switch — ver
+ * `UsuarioDetallePage.estadoInterruptor`). Además de acá, siguen existiendo
+ * tests dedicados idempotentes para activarlos: `marcar-usuario-administrador`,
+ * `dar-acceso-rrhh-usuario`.
  *
  * "Compañías permitidas" (tagbox multi-select) se resuelve APARTE del resto:
  * el Panel dirige varios valores separados por "|" (ver
@@ -60,26 +65,46 @@ describe('Configuración - Editar Usuario', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Cambios "simples" (texto): todo lo que el Panel dirija, salvo los 2
-    // switches (tests aparte) y "Compañías permitidas" (multi-valor, aparte).
+    // switches (verificados aparte, ver abajo) y "Compañías permitidas"
+    // (multi-valor, aparte).
     const cambios = {};
     for (const label of Object.keys(UsuarioDetallePage.ESTRATEGIAS_EDITAR)) {
       if (label === 'Es administrador' || label === 'Tiene acceso a RRHH' || label === 'Compañías permitidas') continue;
       const dirigido = testContext.get(CASO, label);
       if (dirigido !== undefined) {
         cambios[label] = dirigido;
-      } else if (label === 'Nombre Completo') {
-        cambios[label] = siguienteNombreQA(await detalle.getValor(label));
       }
+    }
+
+    // Switches: solo se tocan si el Panel dirige `true` explícito (`_vacio`
+    // trata `false`/sin dirigir como "no dirigido") — sin autofill, quedan
+    // intactos si no se dirigen.
+    const interruptores = {};
+    for (const label of ['Es administrador', 'Tiene acceso a RRHH']) {
+      if (testContext.get(CASO, label) === true) interruptores[label] = true;
     }
 
     const companiasDirigidas = testContext.get(CASO, 'Compañías permitidas');
     const companiasAAgregar = companiasDirigidas ? parsearValoresMultiples(companiasDirigidas) : null;
 
+    // Default seguro (renombrar "Nombre Completo") SOLO si el Panel no
+    // dirigió NADA en absoluto (ni un campo simple, ni un switch, ni
+    // "Compañías permitidas") — chequeo a nivel de CASO, no de campo: si se
+    // dirigió cualquier otra cosa, "Nombre Completo" vacío significa "no
+    // tocar".
+    if (!Object.keys(cambios).length && !Object.keys(interruptores).length && !companiasAAgregar) {
+      cambios['Nombre Completo'] = siguienteNombreQA(await detalle.getValor('Nombre Completo'));
+    }
+
     logger.info(
       `${CASO}: editando -> ${JSON.stringify(cambios)}` +
+        (Object.keys(interruptores).length ? `, interruptores -> ${JSON.stringify(interruptores)}` : '') +
         (companiasAAgregar ? `, Compañías permitidas (agregar) -> ${JSON.stringify(companiasAAgregar)}` : '')
     );
     for (const [label, valor] of Object.entries(cambios)) {
+      await detalle.setCampo(label, valor);
+    }
+    for (const [label, valor] of Object.entries(interruptores)) {
       await detalle.setCampo(label, valor);
     }
     if (companiasAAgregar && companiasAAgregar.length) {
@@ -95,6 +120,10 @@ describe('Configuración - Editar Usuario', function () {
     for (const label of Object.keys(cambios)) {
       finales[label] = await detalle.esperarValor(label, cambios[label]);
     }
+    const interruptoresFinales = {};
+    for (const label of Object.keys(interruptores)) {
+      interruptoresFinales[label] = await detalle.esperarInterruptor(label, true);
+    }
     await evidence.attachScreenshot(ctx.driver, this, { label: `Consulta DESPUÉS de editar - "${nombreUsado}"` });
 
     for (const label of Object.keys(cambios)) {
@@ -102,6 +131,13 @@ describe('Configuración - Editar Usuario', function () {
         finales[label],
         cambios[label],
         `"${label}" no quedó en "${cambios[label]}" (quedó "${finales[label]}").`
+      );
+    }
+    for (const label of Object.keys(interruptores)) {
+      assert.strictEqual(
+        interruptoresFinales[label],
+        true,
+        `"${label}" no quedó activado para "${nombreUsado}" tras editar.`
       );
     }
 

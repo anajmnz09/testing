@@ -25,9 +25,14 @@ const DOMINIO_CORREO_QA = 'qa.triple.test';
  * deriva un valor tipo username a partir del nombre, en vez de uno
  * arbitrario. Si el Panel dirige su propio código, se respeta ese.
  *
- * "Es administrador"/"Tiene acceso a RRHH" NUNCA se tocan acá — a pedido
- * explícito del usuario, quedan siempre APAGADOS (default de la app) y
- * tienen sus propios tests dedicados: `marcar-usuario-administrador` y
+ * "Es administrador"/"Tiene acceso a RRHH": APAGADOS por defecto (igual que
+ * la app) salvo que el Panel dirija explícitamente `true` para alguno — en
+ * ese caso este test SÍ los enciende al crear. Sin dirección, el autofill
+ * genérico (`completarConContexto` con `incluirOpcionales:true`) los deja en
+ * `false`, mismo estado que trae la app por defecto (no-op, confirmado en
+ * `SwitchStrategy`: sin `soloSiDirigido`, fuerza a apagado cuando no hay
+ * valor). Además de acá, siguen existiendo tests dedicados idempotentes para
+ * activarlos sobre un Usuario YA EXISTENTE: `marcar-usuario-administrador` y
  * `dar-acceso-rrhh-usuario`.
  *
  * El usuario creado queda en estado "Pendiente" (requiere validación por
@@ -54,7 +59,7 @@ describe('Configuración - Crear Usuario', function () {
 
     await form.completarConContexto(CASO, {
       incluirOpcionales: true,
-      excepto: ['Nombre Completo', 'Código de usuario', 'Correo', 'Es administrador', 'Tiene acceso a RRHH'],
+      excepto: ['Nombre Completo', 'Código de usuario', 'Correo'],
     });
 
     await form.guardar();

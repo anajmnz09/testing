@@ -212,6 +212,26 @@ as done — their parameters, though declared correctly in code, never reached
 test isn't "done" until you confirmed — by reading `execution-context.json` or the
 Panel, not by assuming — that its parameters actually got registered.
 
+**Incident — declared-but-ignored control (2026-08-26):** `crear-usuario` and
+`editar-usuario` declared "Es administrador"/"Tiene acceso a RRHH" as `'switch'` in
+`ESTRATEGIAS` (so `validarControlesDeclarados` recognizes them) but excluded both
+labels from `completarConContexto`/the field loop by design. Declaring a control is
+what makes `registrarCasoDesdeFormulario` seed it into `execution-context.json` AND
+makes the Panel render it as a live, tickable checkbox — that part is automatic and
+NOT tied to whether the test actually reads the value. The result: the Panel showed
+a real checkbox for those two fields under `crear-usuario`/`editar-usuario`, the user
+ticked it expecting it to apply, and nothing happened — not a rendering bug (the
+Aug-19 switch/checkbox fix still worked correctly), the test code was silently
+throwing the value away. Lesson: an `excepto`/manual-skip list is invisible from the
+Panel — before excluding a declared control from being applied, check whether that
+exclusion is still the intended behavior, and if it's permanent, say so in the
+docblock loud enough that a Panel user isn't misled by a checkbox that does nothing.
+If the field needs its own verification mechanism once un-excluded, wire that up too,
+not just the write path: a boolean switch needs its own poll-and-compare (e.g.
+`esperarInterruptor` + `assert.strictEqual`), never the generic text-field path
+(`esperarValor`/`assertTextoIgual` read/compare rendered text, not a pressed/checked
+state).
+
 ## Naming
 
 Descriptive names are the single source of truth. Never use TC-001, TC-002, etc.
@@ -301,6 +321,38 @@ Panel did not direct a single field for that case. The moment the Panel directs 
 used exactly as typed, verbatim, with NO suffix, NO random number, and NO call to
 `siguienteNombreQA` appended to it. Never wrap or append anything to a Panel-directed value;
 never call `siguienteNombreQA` outside that one `if` branch.
+
+**Incident — the rule was documented correctly but implemented wrong in half the files
+(2026-08-27):** the case-level check above (`if (!Object.keys(cambios).length)`, evaluated
+AFTER the field loop) is the only correct implementation. A tempting but WRONG variant writes
+the same intent as a per-field check INSIDE the loop instead:
+
+```js
+// WRONG — fires whenever THIS field is empty, regardless of what else was directed
+for (const label of Object.keys(EntidadDetallePage.ESTRATEGIAS)) {
+  const dirigido = testContext.get(CASO, label);
+  if (dirigido !== undefined) {
+    cambios[label] = dirigido;
+  } else if (label === 'Nombre') {
+    cambios[label] = siguienteNombreQA(await detalle.getValor(label));  // ← bug
+  }
+}
+```
+
+This reads as "fall back to the default if this field wasn't directed" — which sounds right
+in isolation, but ignores every OTHER field the Panel might have directed. Confirmed real:
+a user directed the record to open AND a value for "Descripción", left "Nombre" blank
+expecting it untouched — the record got renamed anyway, because "Nombre" alone being empty
+was enough to trigger the fallback. Audited all 12 `editar-*` cases in `configuracion` against
+this exact pattern: 6 already used the correct case-level check (`editar-beneficio`,
+`editar-departamento`, `editar-habilidad`, `editar-plan-de-seguro`,
+`editar-proveedor-seguro`, `editar-razon-salida`); 6 had the per-field bug
+(`editar-categoria-actividad`, `editar-concepto-nomina`, `editar-cuenta-contable`,
+`editar-grupo`, `editar-tipo-nomina`, `editar-usuario`) and were fixed to match. Lesson: when
+writing a NEW `editar-*` case, copying the field-loop structure from an EXISTING file is not
+enough — cross-check the fallback specifically against the `if (!Object.keys(cambios).length)`
+shape in this section, since a buggy sibling file is just as easy to copy from as a correct
+one and reads just as reasonably on its own.
 
 ## Automatic-mode default name in "crear-*" tests: Panel-directed values are never suffixed
 

@@ -280,13 +280,13 @@ module.exports = {
     seccion: 'Usuarios y permisos',
     categoria: 'Usuarios',
     descripcion:
-      'Crea un Usuario nuevo completando su formulario en Configuración > Usuarios y permisos > Usuarios (queda en estado Pendiente, requiere validación por correo). Nunca activa "Es administrador"/"Tiene acceso a RRHH" — ver los tests dedicados a esos switches.',
+      'Crea un Usuario nuevo completando su formulario en Configuración > Usuarios y permisos > Usuarios (queda en estado Pendiente, requiere validación por correo). Activa "Es administrador"/"Tiene acceso a RRHH" solo si el Panel lo dirige explícito; también existen tests dedicados a esos switches.',
   },
   'editar-usuario': {
     seccion: 'Usuarios y permisos',
     categoria: 'Usuarios',
     descripcion:
-      'Edita un Usuario ya existente y confirma el cambio (incluye "Compañías permitidas", multi-select, sin tocar los switches "Es administrador"/"Tiene acceso a RRHH" ni la sección "Grupos").',
+      'Edita un Usuario ya existente y confirma el cambio (incluye "Compañías permitidas", multi-select, y los switches "Es administrador"/"Tiene acceso a RRHH" solo si el Panel los dirige; ignora la sección "Grupos").',
   },
   'agregar-foto-usuario': {
     seccion: 'Usuarios y permisos',
@@ -302,5 +302,32 @@ module.exports = {
     seccion: 'Usuarios y permisos',
     categoria: 'Usuarios',
     descripcion: 'Activa el switch "Tiene acceso a RRHH" de un Usuario ya existente y confirma el cambio.',
+  },
+  'crear-grupo': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Grupos',
+    descripcion: 'Crea un Grupo nuevo completando su único campo, "Nombre", en Configuración > Usuarios y permisos > Grupos.',
+  },
+  'consultar-grupo': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Grupos',
+    descripcion: 'Abre el detalle de un Grupo ya existente desde Configuración > Usuarios y permisos > Grupos.',
+  },
+  'editar-grupo': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Grupos',
+    descripcion:
+      'Edita "Nombre" y "Descripción" de un Grupo ya existente y confirma el cambio releyendo el listado (sin tocar Miembros ni permisos).',
+  },
+  'agregar-miembro-grupo': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Grupos',
+    descripcion:
+      'Agrega un miembro (Usuario + Compañías permitidas + Sucursal) a un Grupo ya existente y confirma que aparece en "Miembros del grupo".',
+  },
+  'agregar-permiso-grupo': {
+    seccion: 'Usuarios y permisos',
+    categoria: 'Grupos',
+    descripcion: 'Agrega un permiso (Módulo + Roles) a un Grupo ya existente y confirma que aparece en "Permisos del grupo".',
   },
 };

@@ -17,6 +17,7 @@ const CategoriaActividadesPage = require('../pages/CategoriaActividadesPage');
 const ConceptoNominaPage = require('../pages/ConceptoNominaPage');
 const ComportamientoConceptoNominaPage = require('../pages/ComportamientoConceptoNominaPage');
 const UsuariosPage = require('../pages/UsuariosPage');
+const GruposPage = require('../pages/GruposPage');
 
 /**
  * Fixtures compartidos por los casos del módulo (mismo patrón que
@@ -249,6 +250,19 @@ function usarListadoUsuarios() {
   return ctx;
 }
 
+/** Igual que `usarListadoSucursales`, pero deja cargado el listado "Grupos" (Usuarios y permisos). */
+function usarListadoGrupos() {
+  const ctx = {};
+  beforeEach(async function () {
+    ctx.driver = await createDriver();
+    await authFlow.login(ctx.driver);
+    const configuraciones = await navigationFlow.abrirConfiguracion(ctx.driver);
+    await configuraciones.irA('Grupos', 'Usuarios y permisos');
+    ctx.lista = await new GruposPage(ctx.driver).listo();
+  });
+  return ctx;
+}
+
 module.exports = {
   usarListadoSucursales,
   usarListadoDepartamentos,
@@ -267,4 +281,5 @@ module.exports = {
   usarListadoConceptoNomina,
   usarListadoComportamientoConceptoNomina,
   usarListadoUsuarios,
+  usarListadoGrupos,
 };

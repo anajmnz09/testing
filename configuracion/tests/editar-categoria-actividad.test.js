@@ -46,15 +46,19 @@ describe('Configuración - Editar Categoría de Actividad', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA, un default seguro (renombrar "Categorías").
+    // si no se dirigió NADA (ni un solo campo), un default seguro (renombrar
+    // "Categorías"). El chequeo es a nivel de CASO, no de campo: si el Panel
+    // dirigió CUALQUIER otro campo (o incluso solo la clave de búsqueda),
+    // "Categorías" vacío significa "no tocar", no "usar el default".
     const cambios = {};
     for (const label of Object.keys(CategoriaActividadDetallePage.ESTRATEGIAS)) {
       const dirigido = testContext.get(CASO, label);
       if (dirigido !== undefined) {
         cambios[label] = dirigido;
-      } else if (label === 'Categorías') {
-        cambios[label] = siguienteNombreQA(await detalle.getValor(label));
       }
+    }
+    if (!Object.keys(cambios).length) {
+      cambios['Categorías'] = siguienteNombreQA(nombreUsado);
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {

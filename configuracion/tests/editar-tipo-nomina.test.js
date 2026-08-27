@@ -53,15 +53,18 @@ describe('Configuración - Editar Tipo Nómina', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA, un default seguro (renombrar "Nombre").
+    // si no se dirigió NADA (ni un solo campo), un default seguro (renombrar
+    // "Nombre"). Chequeo a nivel de CASO, no de campo: si el Panel dirigió
+    // cualquier otro campo, "Nombre" vacío significa "no tocar".
     const cambios = {};
     for (const label of Object.keys(TipoNominaDetallePage.ESTRATEGIAS)) {
       const dirigido = testContext.get(CASO, label);
       if (dirigido !== undefined) {
         cambios[label] = dirigido;
-      } else if (label === 'Nombre') {
-        cambios[label] = siguienteNombreQA(await detalle.getValor(label));
       }
+    }
+    if (!Object.keys(cambios).length) {
+      cambios['Nombre'] = siguienteNombreQA(nombreUsado);
     }
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
