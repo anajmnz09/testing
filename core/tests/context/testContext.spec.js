@@ -189,6 +189,7 @@ describe('testContext / Execution Context (unitario)', function () {
       'Nombre de requisición': 'text',
       Puesto: 'searchAndSelect',
       Rotativo: 'switch',
+      'Compañías permitidas': { estrategia: 'searchAndSelect', multiple: true },
     };
 
     it('siembra las claves con los LABELS REALES del formulario', function () {
@@ -199,6 +200,7 @@ describe('testContext / Execution Context (unitario)', function () {
         'Nombre de requisición': '',
         Puesto: '',
         Rotativo: false,
+        'Compañías permitidas': '',
       });
     });
 
@@ -227,6 +229,19 @@ describe('testContext / Execution Context (unitario)', function () {
       expect(Object.keys(ctx.getCaso('crear-req'))).to.include('maxEmpleados');
     });
 
+    it('pone `clavesExtra` PRIMERO — el Panel debe mostrar la clave de búsqueda ("X a editar") antes que los campos del formulario, no al final', function () {
+      const ctx = conContexto({});
+      ctx.registrarCasoDesdeFormulario('editar-req', CONTROLES, ['Nombre de Requisición a editar']);
+
+      expect(Object.keys(ctx.getCaso('editar-req'))).to.deep.equal([
+        'Nombre de Requisición a editar',
+        'Nombre de requisición',
+        'Puesto',
+        'Rotativo',
+        'Compañías permitidas',
+      ]);
+    });
+
     it('NO pisa los valores que el usuario ya cargó (misma garantía que registrarCaso)', function () {
       const ctx = conContexto({ 'crear-req': { Puesto: 'ANALISTA DE MERCADO' } });
       ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
@@ -236,9 +251,46 @@ describe('testContext / Execution Context (unitario)', function () {
     });
 
     it('es idempotente: no reescribe si ya están todas las claves', function () {
-      const ctx = conContexto({ 'crear-req': { 'Nombre de requisición': '', Puesto: '', Rotativo: false } });
+      const ctx = conContexto({
+        'crear-req': { 'Nombre de requisición': '', Puesto: '', Rotativo: false, 'Compañías permitidas': '' },
+        _camposMultivalor: { 'crear-req': ['Compañías permitidas'] },
+      });
 
       expect(ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES)).to.equal(false);
+    });
+
+    it('detecta un control `{ multiple: true }` y lo registra como multivalor, sin tocar su valor sembrado', function () {
+      const ctx = conContexto({});
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
+
+      // El valor sembrado sigue siendo un string vacío normal — el "es
+      // multivalor" vive APARTE (`_camposMultivalor`), no en el valor.
+      expect(ctx.getCaso('crear-req')['Compañías permitidas']).to.equal('');
+      expect(ctx.todo()._camposMultivalor).to.deep.equal({ 'crear-req': ['Compañías permitidas'] });
+    });
+
+    it('un valor con "|" en un campo multivalor se lee tal cual (el parseo es responsabilidad del test, no de testContext)', function () {
+      const ctx = conContexto({ 'crear-req': { 'Compañías permitidas': 'Cia_001 | Cia_002' } });
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES);
+
+      expect(ctx.get('crear-req', 'Compañías permitidas')).to.equal('Cia_001 | Cia_002');
+    });
+  });
+
+  describe('registrarCaso con `multivalor` explícito (casos sin ESTRATEGIAS, ej. un popup manual)', function () {
+    it('marca la clave como multivalor cuando se pasa `{ clave, multivalor: true }`', function () {
+      const ctx = conContexto({});
+      ctx.registrarCaso('agregar-permiso', ['Módulo', { clave: 'Roles', multivalor: true }]);
+
+      expect(ctx.getCaso('agregar-permiso')).to.deep.equal({ Módulo: '', Roles: '' });
+      expect(ctx.todo()._camposMultivalor).to.deep.equal({ 'agregar-permiso': ['Roles'] });
+    });
+
+    it('no marca nada como multivalor si ninguna entrada lo pide', function () {
+      const ctx = conContexto({});
+      ctx.registrarCaso('caso-simple', ['a', 'b']);
+
+      expect(ctx.todo()._camposMultivalor).to.equal(undefined);
     });
   });
 

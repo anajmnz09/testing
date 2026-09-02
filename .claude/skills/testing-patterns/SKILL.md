@@ -465,6 +465,23 @@ discarded silently rather than failing the case — log it and move on. Don't in
 bespoke "strict mode"; only add one if a future case explicitly needs the field to be
 required.
 
+**The Panel shows the "|" hint automatically — no manual placeholder map to maintain.**
+`testContext.registrarCasoDesdeFormulario` detects `{ multiple: true }` on any declared
+control by itself (same declaration `Form.setValor` already uses to operate the control) and
+records it in a reserved `_camposMultivalor` section of `execution-context.json` — the Panel
+reads that to render the field as type `"lista"` (generic "Opción 1 | Opción 2" placeholder),
+independent of the field's current stored value (so the hint doesn't disappear once the user
+saves a non-empty value — it used to be inferred from "is the stored value an array", which
+broke as soon as a real string got saved). For a case that registers a multi-value field
+manually (`testContext.registrarCaso`, not `registrarCasoDesdeFormulario` — e.g. a popup field
+with no `ESTRATEGIAS` backing it, see `agregar-permiso-grupo`'s "Roles"), pass
+`{ clave: 'Roles', multivalor: true }` instead of a bare label string to get the same
+treatment. Either way, parsing the "|"-separated value back into an array on the TEST side
+still needs its own explicit `parsearValoresMultiples(testContext.get(caso, label))` call —
+that part stayed manual on purpose: different cases consume the list differently (Usuario's
+"Compañías permitidas" ADDS to what's already there, Grupos' `elegirEnTagbox` REPLACES), so
+there isn't one correct auto-apply behavior to bake in.
+
 ## Validation
 
 Every test should verify: expected UI state, expected notifications, expected persistence,

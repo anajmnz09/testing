@@ -29,6 +29,18 @@ testContext.registrarCasoDesdeFormulario(CASO, ComportamientoConceptoNominaDetal
  */
 describe('Configuración - Editar Comportamiento Concepto Nómina', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoComportamientoConceptoNomina();
 
   it(`${CASO}: edita un Comportamiento concepto Nómina existente y confirma el cambio`, async function () {

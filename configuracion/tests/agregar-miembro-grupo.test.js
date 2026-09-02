@@ -54,6 +54,12 @@ describe('Configuración - Agregar Miembro a Grupo', function () {
 
     await evidence.attachScreenshot(ctx.driver, this, { label: `Miembro agregado - "${nombreUsado}"` });
 
+    // Este grid NO tiene buscador y se divide en varias páginas. NO alcanza
+    // con pararse en la última: si el usuario elegido YA era miembro del
+    // grupo, la app podría actualizar esa fila EN SU LUGAR en vez de crear
+    // una al final (mismo riesgo confirmado en "Permisos del grupo",
+    // incidente 2026-08-28). `filasMiembros()` recorre TODAS las páginas
+    // por eso mismo.
     const miembros = await detalle.filasMiembros();
     assert.ok(
       miembros.some((m) => m.toLowerCase().includes(elegido.usuario.toLowerCase())),

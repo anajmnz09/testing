@@ -30,10 +30,19 @@ function leerTodo(modulo) {
   }
 }
 
-function inferirTipo(clave, valor) {
+// Mismo literal que `SECCION_MULTIVALOR` en `core/context/testContext.js`
+// (esa es la fuente de verdad de quién escribe acá) — lista de labels por
+// caso que aceptan varios valores separados por "|". Se mira APARTE del
+// valor sembrado (nunca a partir de si el valor ES un array) para que el
+// hint del Panel no dependa de qué haya guardado el usuario la última vez:
+// una clave sigue siendo "multivalor" aunque su valor actual sea un string
+// vacío o uno ya completado.
+const SECCION_MULTIVALOR = '_camposMultivalor';
+
+function inferirTipo(clave, valor, esMultivalor) {
   if (/archivo|file/i.test(clave)) return 'file';
   if (typeof valor === 'boolean') return 'switch';
-  if (Array.isArray(valor)) return 'lista';
+  if (esMultivalor || Array.isArray(valor)) return 'lista';
   return 'texto';
 }
 
@@ -41,10 +50,11 @@ function inferirTipo(clave, valor) {
 function seccion(modulo, caso) {
   const todo = leerTodo(modulo);
   const s = todo[caso] || {};
+  const multivalor = new Set((todo[SECCION_MULTIVALOR] && todo[SECCION_MULTIVALOR][caso]) || []);
   return {
     caso,
     tieneSeccion: caso in todo,
-    claves: Object.keys(s).map((k) => ({ nombre: k, valor: s[k], tipo: inferirTipo(k, s[k]) })),
+    claves: Object.keys(s).map((k) => ({ nombre: k, valor: s[k], tipo: inferirTipo(k, s[k], multivalor.has(k)) })),
   };
 }
 

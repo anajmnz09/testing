@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const PlanDeSeguroDetallePage = require('../pages/PlanDeSeguroDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-plan-de-seguro';
 // Clave de BÚSQUEDA (identifica el plan de seguro EXISTENTE a abrir),
@@ -40,6 +41,18 @@ testContext.registrarCasoDesdeFormulario(CASO, PlanDeSeguroDetallePage.ESTRATEGI
  */
 describe('Configuración - Editar Plan de seguro', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoPlanesDeSeguros();
 
   it(`${CASO}: edita un Plan de seguro existente y confirma el cambio`, async function () {
@@ -64,17 +77,12 @@ describe('Configuración - Editar Plan de seguro', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA, un default seguro (renombrar "Nombre Plan de seguro").
-    const cambios = {};
-    for (const label of Object.keys(PlanDeSeguroDetallePage.ESTRATEGIAS)) {
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
-    if (!Object.keys(cambios).length) {
-      cambios['Nombre Plan de seguro'] = siguienteNombreQA(nombreUsado);
-    }
+    // si no se dirigió NADA (ver `cambiosEditar.js`), un default seguro
+    // (renombrar "Nombre Plan de seguro").
+    const cambios = armarCambiosDirigidos(CASO, PlanDeSeguroDetallePage.ESTRATEGIAS);
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [{ campo: 'Nombre Plan de seguro', valor: siguienteNombreQA(nombreUsado) }],
+    });
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
       await detalle.setCampo(label, valor);

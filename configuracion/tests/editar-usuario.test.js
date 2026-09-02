@@ -5,6 +5,7 @@ const logger = require('@triple/core/utils/logger');
 const UsuarioDetallePage = require('../pages/UsuarioDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-usuario';
 // Clave de BÚSQUEDA (identifica el Usuario EXISTENTE a abrir, por su "Nombre
@@ -41,6 +42,18 @@ testContext.registrarCasoDesdeFormulario(CASO, UsuarioDetallePage.ESTRATEGIAS_ED
  */
 describe('Configuración - Editar Usuario', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoUsuarios();
 
   it(`${CASO}: edita un Usuario existente y confirma el cambio`, async function () {
@@ -67,14 +80,9 @@ describe('Configuración - Editar Usuario', function () {
     // Cambios "simples" (texto): todo lo que el Panel dirija, salvo los 2
     // switches (verificados aparte, ver abajo) y "Compañías permitidas"
     // (multi-valor, aparte).
-    const cambios = {};
-    for (const label of Object.keys(UsuarioDetallePage.ESTRATEGIAS_EDITAR)) {
-      if (label === 'Es administrador' || label === 'Tiene acceso a RRHH' || label === 'Compañías permitidas') continue;
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
+    const cambios = armarCambiosDirigidos(CASO, UsuarioDetallePage.ESTRATEGIAS_EDITAR, {
+      excluir: ['Es administrador', 'Tiene acceso a RRHH', 'Compañías permitidas'],
+    });
 
     // Switches: solo se tocan si el Panel dirige `true` explícito (`_vacio`
     // trata `false`/sin dirigir como "no dirigido") — sin autofill, quedan
@@ -88,13 +96,12 @@ describe('Configuración - Editar Usuario', function () {
     const companiasAAgregar = companiasDirigidas ? parsearValoresMultiples(companiasDirigidas) : null;
 
     // Default seguro (renombrar "Nombre Completo") SOLO si el Panel no
-    // dirigió NADA en absoluto (ni un campo simple, ni un switch, ni
-    // "Compañías permitidas") — chequeo a nivel de CASO, no de campo: si se
-    // dirigió cualquier otra cosa, "Nombre Completo" vacío significa "no
-    // tocar".
-    if (!Object.keys(cambios).length && !Object.keys(interruptores).length && !companiasAAgregar) {
-      cambios['Nombre Completo'] = siguienteNombreQA(await detalle.getValor('Nombre Completo'));
-    }
+    // dirigió NADA en absoluto (ver `cambiosEditar.js`) — acá "nada" incluye
+    // los switches y "Compañías permitidas", resueltos aparte arriba.
+    await aplicarDefaultSiVacio(cambios, {
+      condicionExtra: Object.keys(interruptores).length > 0 || !!companiasAAgregar,
+      defaults: [{ campo: 'Nombre Completo', valor: async () => siguienteNombreQA(await detalle.getValor('Nombre Completo')) }],
+    });
 
     logger.info(
       `${CASO}: editando -> ${JSON.stringify(cambios)}` +

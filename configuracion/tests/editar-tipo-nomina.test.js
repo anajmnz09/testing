@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const TipoNominaDetallePage = require('../pages/TipoNominaDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-tipo-nomina';
 // Clave de BÚSQUEDA (identifica el Tipo Nómina EXISTENTE a abrir), separada
@@ -29,6 +30,18 @@ testContext.registrarCasoDesdeFormulario(CASO, TipoNominaDetallePage.ESTRATEGIAS
  */
 describe('Configuración - Editar Tipo Nómina', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoTipoNomina();
 
   it(`${CASO}: edita un Tipo Nómina existente y confirma el cambio`, async function () {
@@ -53,19 +66,12 @@ describe('Configuración - Editar Tipo Nómina', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA (ni un solo campo), un default seguro (renombrar
-    // "Nombre"). Chequeo a nivel de CASO, no de campo: si el Panel dirigió
-    // cualquier otro campo, "Nombre" vacío significa "no tocar".
-    const cambios = {};
-    for (const label of Object.keys(TipoNominaDetallePage.ESTRATEGIAS)) {
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
-    if (!Object.keys(cambios).length) {
-      cambios['Nombre'] = siguienteNombreQA(nombreUsado);
-    }
+    // si no se dirigió NADA (ver `cambiosEditar.js`), un default seguro
+    // (renombrar "Nombre").
+    const cambios = armarCambiosDirigidos(CASO, TipoNominaDetallePage.ESTRATEGIAS);
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [{ campo: 'Nombre', valor: siguienteNombreQA(nombreUsado) }],
+    });
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
       await detalle.setCampo(label, valor);

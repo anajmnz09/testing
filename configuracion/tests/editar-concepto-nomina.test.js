@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const ConceptoNominaDetallePage = require('../pages/ConceptoNominaDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-concepto-nomina';
 // Clave de BÚSQUEDA (identifica el Concepto de nómina EXISTENTE a abrir),
@@ -32,6 +33,18 @@ testContext.registrarCasoDesdeFormulario(CASO, ConceptoNominaDetallePage.ESTRATE
  */
 describe('Configuración - Editar Concepto de Nómina', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoConceptoNomina();
 
   it(`${CASO}: edita un Concepto de nómina existente y confirma el cambio`, async function () {
@@ -58,14 +71,7 @@ describe('Configuración - Editar Concepto de Nómina', function () {
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado).
     // "Tipo Ingreso" se resuelve APARTE (depende de "Origen" — ver comentario
     // del archivo), nunca como un campo directo más de este loop.
-    const cambios = {};
-    for (const label of Object.keys(ConceptoNominaDetallePage.ESTRATEGIAS)) {
-      if (label === 'Tipo Ingreso') continue;
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
+    const cambios = armarCambiosDirigidos(CASO, ConceptoNominaDetallePage.ESTRATEGIAS, { excluir: ['Tipo Ingreso'] });
 
     const tipoIngresoDirigido = testContext.get(CASO, 'Tipo Ingreso');
     if (tipoIngresoDirigido !== undefined) {
@@ -80,12 +86,11 @@ describe('Configuración - Editar Concepto de Nómina', function () {
     }
 
     // Default seguro (renombrar "Nombre") SOLO si el Panel no dirigió NADA
-    // (ni un campo declarado ni "Tipo Ingreso") — chequeo a nivel de CASO, no
-    // de campo: si se dirigió cualquier otra cosa, "Nombre" vacío significa
-    // "no tocar".
-    if (!Object.keys(cambios).length) {
-      cambios['Nombre'] = siguienteNombreQA(nombreUsado);
-    }
+    // (ver `cambiosEditar.js`) — "Tipo Ingreso" ya resuelto arriba cuenta:
+    // si quedó agregado a `cambios`, el default no se aplica.
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [{ campo: 'Nombre', valor: siguienteNombreQA(nombreUsado) }],
+    });
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
       await detalle.setCampo(label, valor);

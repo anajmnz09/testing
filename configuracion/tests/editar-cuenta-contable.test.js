@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const CuentaContableDetallePage = require('../pages/CuentaContableDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-cuenta-contable';
 // Clave de BÚSQUEDA (identifica la cuenta contable EXISTENTE a abrir),
@@ -30,6 +31,18 @@ testContext.registrarCasoDesdeFormulario(CASO, CuentaContableDetallePage.ESTRATE
  */
 describe('Configuración - Editar Cuenta Contable', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoCuentasContables();
 
   it(`${CASO}: edita una Cuenta Contable existente y confirma el cambio`, async function () {
@@ -60,19 +73,15 @@ describe('Configuración - Editar Cuenta Contable', function () {
     // sucesivas sobre el mismo registro revienta con "Ya existe una fila con
     // este campo"; "QA-1", "QA-2"… nunca choca, mismo criterio que el resto
     // de los `editar-*` que renombran su propio campo identificador).
-    const cambios = {};
-    for (const label of Object.keys(CuentaContableDetallePage.ESTRATEGIAS)) {
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
-    // Chequeo a nivel de CASO, no de campo: el default de "Descripción" solo
-    // aplica si el Panel no dirigió NADA (ni un solo campo) — si dirigió
-    // cualquier otro campo, "Descripción" vacío significa "no tocar".
-    if (!Object.keys(cambios).length) {
-      cambios['Descripción'] = siguienteNombreQA(await detalle.getValor('Descripción'));
-    }
+    // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
+    // si no se dirigió NADA (ver `cambiosEditar.js`), un default seguro
+    // (renombrar "Descripción" a partir de su valor ACTUAL, no de
+    // `nombreUsado` — acá el criterio de búsqueda es "No. Cuenta Contable",
+    // un campo DISTINTO al que se renombra).
+    const cambios = armarCambiosDirigidos(CASO, CuentaContableDetallePage.ESTRATEGIAS);
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [{ campo: 'Descripción', valor: async () => siguienteNombreQA(await detalle.getValor('Descripción')) }],
+    });
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
       await detalle.setCampo(label, valor);

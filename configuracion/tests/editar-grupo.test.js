@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const GruposPage = require('../pages/GruposPage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-grupo';
 // Clave de BÚSQUEDA (identifica el Grupo EXISTENTE a abrir), separada a
@@ -50,6 +51,18 @@ const DESCRIPCION_QA = 'Descripción QA de prueba automatizada.';
  */
 describe('Configuración - Editar Grupo', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoGrupos();
 
   it(`${CASO}: edita "Nombre" y "Descripción" de un Grupo existente`, async function () {
@@ -73,25 +86,18 @@ describe('Configuración - Editar Grupo', function () {
     const infoEditar = await detalle.editar();
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
-    const nombreCampoDirigido = testContext.get(CASO, 'Nombre');
-    const descripcionDirigida = testContext.get(CASO, 'Descripción');
-    // Modo 100% automático SOLO si el Panel no dirigió NI "Nombre" NI
-    // "Descripción" — ver REGLA en el docblock de arriba.
-    const esAutomatico = nombreCampoDirigido === undefined && descripcionDirigida === undefined;
-
-    let nombreNuevo;
-    if (nombreCampoDirigido !== undefined) {
-      nombreNuevo = nombreCampoDirigido;
-    } else if (esAutomatico) {
-      nombreNuevo = siguienteNombreQA(nombreUsado);
-    }
-
-    let descripcionNueva;
-    if (descripcionDirigida !== undefined) {
-      descripcionNueva = descripcionDirigida;
-    } else if (esAutomatico) {
-      descripcionNueva = DESCRIPCION_QA;
-    }
+    // Arma los cambios: lo que el Panel dirija ("Nombre"/"Descripción") +,
+    // si no se dirigió NADA (ver `cambiosEditar.js` — REGLA en el docblock
+    // de arriba), los defaults automáticos de ambos campos.
+    const cambios = armarCambiosDirigidos(CASO, ['Nombre', 'Descripción']);
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [
+        { campo: 'Nombre', valor: siguienteNombreQA(nombreUsado) },
+        { campo: 'Descripción', valor: DESCRIPCION_QA },
+      ],
+    });
+    const nombreNuevo = cambios['Nombre'];
+    const descripcionNueva = cambios['Descripción'];
 
     logger.info(
       `${CASO}: editando "${nombreUsado}" -> ` +

@@ -36,6 +36,17 @@ const CONTEXT_FILE =
   process.env.EXECUTION_CONTEXT || path.join(PROJECT_DIR, 'data', 'execution-context.json');
 
 const SECCION_GLOBAL = 'global';
+// Sección reservada (mismo criterio que `SECCION_GLOBAL`: un nombre que
+// ningún CASO real usa) donde se registra QUÉ claves de qué casos aceptan
+// varios valores separados por "|" — ver `registrarCaso`/
+// `registrarCasoDesdeFormulario` (quién escribe) y
+// `panel/anfitrion/contexto.js#seccion` (quién lo lee, para que el Panel
+// muestre el hint "Opción 1 | Opción 2" automáticamente, sin un mapa
+// hardcodeado por label). Es una lista de labels por caso, NO afecta el
+// VALOR sembrado de la clave (sigue siendo `''`, un string normal) — separar
+// "qué tipo de campo es" de "qué valor tiene ahora mismo" evita que el hint
+// desaparezca del Panel apenas el usuario guarda un valor no vacío.
+const SECCION_MULTIVALOR = '_camposMultivalor';
 
 let _cache = null;
 
@@ -158,10 +169,19 @@ async function getODescubrir(caso, clave, descubrir) {
  * claves que el usuario haya agregado.
  *
  * Cada entrada de `claves` es normalmente un string (semilla `''`, el caso de
- * siempre). También acepta `{ clave, vacio }` para sembrar un valor semilla
- * distinto de `''` — hoy lo usa `registrarCasoDesdeFormulario` para los
- * controles `switch` (semilla `false`, no `''`), así el Panel los infiere como
- * checkbox (`panel/anfitrion/contexto.js#inferirTipo` detecta `boolean`).
+ * siempre). También acepta `{ clave, vacio, multivalor }`:
+ *  - `vacio`: valor semilla distinto de `''` — hoy lo usa
+ *    `registrarCasoDesdeFormulario` para los controles `switch` (semilla
+ *    `false`, no `''`), así el Panel los infiere como checkbox
+ *    (`panel/anfitrion/contexto.js#inferirTipo` detecta `boolean`).
+ *  - `multivalor: true`: marca la clave como aceptando VARIOS valores
+ *    separados por "|" (mismo separador que `parsearValoresMultiples`,
+ *    `core/strategies`) — se registra en `SECCION_MULTIVALOR`, no en el
+ *    valor sembrado, para que el Panel muestre el hint automáticamente sin
+ *    que cada caso declare su propio placeholder a mano. Usarlo para
+ *    cualquier clave que el test vaya a pasar por `parsearValoresMultiples`
+ *    (tagbox/multi-select que `registrarCasoDesdeFormulario` no pueda
+ *    detectar solo porque el caso no la declaró vía `ESTRATEGIAS`).
  *
  * @returns {boolean} true si el archivo cambió
  */
@@ -171,14 +191,33 @@ function registrarCaso(caso, claves = []) {
   let cambio = false;
 
   if (!datos[caso]) cambio = true;
+  const multivalorNuevas = [];
   claves.forEach((entrada) => {
-    const clave = typeof entrada === 'string' ? entrada : entrada.clave;
-    const vacio = typeof entrada === 'string' ? '' : entrada.vacio;
+    const esString = typeof entrada === 'string';
+    const clave = esString ? entrada : entrada.clave;
+    const vacio = esString ? '' : entrada.vacio;
+    if (!esString && entrada.multivalor) multivalorNuevas.push(clave);
     if (!(clave in seccion)) {
       seccion[clave] = vacio !== undefined ? vacio : '';
       cambio = true;
     }
   });
+
+  if (multivalorNuevas.length) {
+    const registro = new Set((datos[SECCION_MULTIVALOR] && datos[SECCION_MULTIVALOR][caso]) || []);
+    let cambioMultivalor = false;
+    for (const clave of multivalorNuevas) {
+      if (!registro.has(clave)) {
+        registro.add(clave);
+        cambioMultivalor = true;
+      }
+    }
+    if (cambioMultivalor) {
+      datos[SECCION_MULTIVALOR] = datos[SECCION_MULTIVALOR] || {};
+      datos[SECCION_MULTIVALOR][caso] = [...registro];
+      cambio = true;
+    }
+  }
 
   if (cambio) {
     datos[caso] = seccion;
@@ -189,19 +228,37 @@ function registrarCaso(caso, claves = []) {
 }
 
 /**
- * Como `registrarCaso`, pero deriva las claves del FORMULARIO: siembra todos los
- * controles editables (labels REALES) del mapa `control -> estrategia` que declara
- * el Page Object, más las `clavesExtra` que el caso necesite (parámetros que no
- * son campos del formulario, p. ej. un contador o el nombre de una pregunta).
+ * Como `registrarCaso`, pero deriva las claves del FORMULARIO: siembra
+ * `clavesExtra` PRIMERO (parámetros que no son campos del formulario, p. ej.
+ * un contador o el nombre de una pregunta — en casi todo `editar-*` es la
+ * clave de BÚSQUEDA, "Nombre de X a editar": el usuario necesita ver "a qué
+ * registro le estoy hablando" antes que los campos que va a cambiarle, no
+ * después), y DESPUÉS todos los controles editables (labels REALES) del mapa
+ * `control -> estrategia` que declara el Page Object.
  *
  * Así el usuario ve en el Execution Context TODOS los campos del formulario con
  * su nombre real y sólo tiene que completar los que quiera dirigir; nunca inventa
  * ni crea claves. Es puramente ADITIVO: `registrarCaso` queda intacto y los casos
  * que no usan formularios siguen registrando sólo sus parámetros.
  *
+ * OJO: el orden acá solo importa para un CASO NUEVO (o una clave nueva
+ * dentro de un caso ya existente) — `registrarCaso` nunca reordena claves ya
+ * presentes en `execution-context.json` (mismo criterio "nunca pisa lo que
+ * ya está" de siempre), así que un caso existente con las claves en el orden
+ * viejo necesita que alguien reordene esa sección del archivo a mano una
+ * vez; el código nuevo ya deja bien ordenado todo lo que se registre de acá
+ * en adelante.
+ *
  * Un control declarado con estrategia `'switch'` se siembra con `false` (no
  * `''`): es la única forma de que el Panel lo detecte como boolean y lo pinte
  * como checkbox en vez de un input de texto (ver `_vacio`/`inferirTipo`).
+ *
+ * Un control declarado con `{ multiple: true }` (tagbox/multi-select, ej.
+ * "Compañías permitidas" de Usuario) se marca `multivalor: true` — detectado
+ * automáticamente de la MISMA declaración que ya usa `Form.setValor` para
+ * operar el control, sin que el caso tenga que repetirlo. El Panel lo lee de
+ * `SECCION_MULTIVALOR` y muestra el hint del separador "|" solo — ver
+ * `registrarCaso`.
  *
  * @param caso        nombre descriptivo del caso
  * @param controles   mapa `label -> 'estrategia' | { estrategia, ... }` (ESTRATEGIAS del Page Object)
@@ -210,10 +267,12 @@ function registrarCaso(caso, claves = []) {
  */
 function registrarCasoDesdeFormulario(caso, controles = {}, clavesExtra = []) {
   const claves = [
-    ...formInputModel
-      .desdeControles(controles)
-      .map(({ label, estrategia }) => (estrategia === 'switch' ? { clave: label, vacio: false } : label)),
     ...clavesExtra,
+    ...formInputModel.desdeControles(controles).map(({ label, estrategia, opciones }) => {
+      if (estrategia === 'switch') return { clave: label, vacio: false };
+      if (opciones && opciones.multiple) return { clave: label, multivalor: true };
+      return label;
+    }),
   ];
   return registrarCaso(caso, claves);
 }
@@ -221,6 +280,7 @@ function registrarCasoDesdeFormulario(caso, controles = {}, clavesExtra = []) {
 module.exports = {
   CONTEXT_FILE,
   SECCION_GLOBAL,
+  SECCION_MULTIVALOR,
   get,
   tiene,
   getCaso,

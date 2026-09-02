@@ -9,11 +9,14 @@ const CASO = 'agregar-permiso-grupo';
 // separada de "Módulo"/"Roles" (campos reales del popup "Agregar Permiso").
 // "Roles" acepta VARIOS valores separados por "|" (mismo criterio que
 // "Compañías permitidas" de Usuario — ver `parsearValoresMultiples`), ya
-// que el widget real es un tagbox multi-select. Si el Panel no dirige
-// "Módulo"/"Roles", se elige la PRIMERA opción de cada uno — ver
-// `GrupoDetallePage.agregarPermiso`.
+// que el widget real es un tagbox multi-select — se marca `multivalor: true`
+// para que el Panel muestre el hint del separador automáticamente (este caso
+// no pasa por `registrarCasoDesdeFormulario`/`ESTRATEGIAS`, así que no hay
+// forma de detectarlo solo; hay que marcarlo a mano acá, una vez). Si el
+// Panel no dirige "Módulo"/"Roles", se elige la PRIMERA opción de cada uno —
+// ver `GrupoDetallePage.agregarPermiso`.
 const CLAVE_BUSQUEDA = 'Nombre de Grupo';
-testContext.registrarCaso(CASO, [CLAVE_BUSQUEDA, 'Módulo', 'Roles']);
+testContext.registrarCaso(CASO, [CLAVE_BUSQUEDA, 'Módulo', { clave: 'Roles', multivalor: true }]);
 
 /**
  * Agrega un permiso a un Grupo ya existente: entra a Editar, abre el popup
@@ -54,6 +57,12 @@ describe('Configuración - Agregar Permiso a Grupo', function () {
 
     await evidence.attachScreenshot(ctx.driver, this, { label: `Permiso agregado - "${nombreUsado}"` });
 
+    // Este grid NO tiene buscador y se divide en varias páginas. NO alcanza
+    // con pararse en la última: si el módulo elegido YA tenía un permiso
+    // asignado al grupo, la app le suma el rol a esa fila EN SU LUGAR (no
+    // crea una fila nueva al final) — confirmado con evidencia real
+    // (incidente 2026-08-28, módulo "ADMINISTRACION" ya permisado en
+    // "qa-1"). `filasPermisos()` recorre TODAS las páginas por eso mismo.
     const permisos = await detalle.filasPermisos();
     assert.ok(
       permisos.some((p) => p.toLowerCase().includes(elegido.modulo.toLowerCase())),

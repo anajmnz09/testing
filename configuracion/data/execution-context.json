@@ -39,7 +39,7 @@
     "nombre": ""
   },
   "editar-departamento": {
-    "Nombre de Departamento a editar": "DEPARTAMENTO QA TRIM",
+    "Nombre de Departamento a editar": "",
     "Departamento": "",
     "Clasificación 1": "",
     "Departamento Padre": "",
@@ -92,12 +92,12 @@
     "nombre": ""
   },
   "editar-horario": {
+    "Descripción de Horario a editar": "",
     "Referencia": "",
     "Hora Inicial": "",
     "Hora final": "",
     "Descripción": "",
-    "Estado": "",
-    "Descripción de Horario a editar": ""
+    "Estado": ""
   },
   "crear-grado-academico": {
     "Nombre": "",
@@ -105,10 +105,10 @@
     "Referencia MT": ""
   },
   "editar-grado-academico": {
+    "Grado Académico a editar": "",
     "Nombre": "",
     "Estado": "",
-    "Referencia MT": "",
-    "Grado Académico a editar": ""
+    "Referencia MT": ""
   },
   "crear-beneficio": {
     "Beneficio": "Compras",
@@ -119,10 +119,10 @@
     "nombre": ""
   },
   "editar-beneficio": {
+    "Nombre de Beneficio a editar": "Compras ",
     "Beneficio": "Compras 2",
     "Concepto de nómina": "",
-    "Estado": "activO",
-    "Nombre de Beneficio a editar": "Compras "
+    "Estado": "activO"
   },
   "consultar-grado-academico": {
     "nombre": ""
@@ -135,9 +135,9 @@
     "nombre": ""
   },
   "editar-habilidad": {
+    "Habilidad a editar": "",
     "Habilidad": "",
-    "Estado": "",
-    "Habilidad a editar": ""
+    "Estado": ""
   },
   "crear-plan-de-seguro": {
     "Nombre Proveedor": "",
@@ -152,14 +152,14 @@
     "nombre": ""
   },
   "editar-plan-de-seguro": {
+    "Nombre de Plan de seguro a editar": "",
     "Nombre Proveedor": "",
     "Estado": "",
     "Nombre Plan de seguro": "",
     "Tarifa": "",
     "% Empresa": "",
     "% Empleado": "",
-    "Concepto de nómina": "",
-    "Nombre de Plan de seguro a editar": ""
+    "Concepto de nómina": ""
   },
   "crear-razon-salida": {
     "Razón": "",
@@ -169,9 +169,9 @@
     "nombre": ""
   },
   "editar-razon-salida": {
+    "Razón de Salida a editar": "",
     "Razón": "",
-    "Estado": "",
-    "Razón de Salida a editar": ""
+    "Estado": ""
   },
   "crear-proveedor-seguro": {
     "Proveedor": "Human Health co",
@@ -181,9 +181,9 @@
     "nombre": ""
   },
   "editar-proveedor-seguro": {
+    "Proveedor de seguros a editar": "",
     "Proveedor": "",
-    "Estado": "",
-    "Proveedor de seguros a editar": ""
+    "Estado": ""
   },
   "crear-banco": {
     "País": "",
@@ -197,13 +197,13 @@
     "nombre": "popular"
   },
   "editar-banco": {
+    "Nombre de Banco a editar": "",
     "País": "",
     "Nombre": "",
     "Referencia": "",
     "Código": "",
     "Dígito verificador": "",
-    "Estado": "",
-    "Nombre de Banco a editar": ""
+    "Estado": ""
   },
   "crear-cuenta-contable": {
     "No. cuenta": "666",
@@ -214,10 +214,10 @@
     "nombre": ""
   },
   "editar-cuenta-contable": {
+    "No. de Cuenta Contable a editar": "666",
     "No. cuenta": "657",
     "Estado": "",
-    "Descripción": "hola",
-    "No. de Cuenta Contable a editar": "666"
+    "Descripción": "hola"
   },
   "crear-tipo-nomina": {
     "Nombre": "",
@@ -235,6 +235,7 @@
     "nombre": ""
   },
   "editar-tipo-nomina": {
+    "Nombre de Tipo Nómina a editar": "Tipo Nomina QA-panel",
     "Nombre": "",
     "Código nómina": "",
     "Forma Cálculo": "",
@@ -244,8 +245,7 @@
     "TSS Tipo nómina": "",
     "Moneda": "",
     "Permite reapertura": false,
-    "Estado": "",
-    "Nombre de Tipo Nómina a editar": "Tipo Nomina QA-panel"
+    "Estado": ""
   },
   "crear-categoria-actividad": {
     "Categorías": "parking",
@@ -259,13 +259,13 @@
     "nombre": ""
   },
   "editar-categoria-actividad": {
+    "Categoría de actividad a editar": "parking",
     "Categorías": "parking edit",
     "Estado": "",
     "Precio Hora": "",
     "Usar Rate": false,
     "Hora Jornada": "",
-    "Rate": "",
-    "Categoría de actividad a editar": "parking"
+    "Rate": ""
   },
   "crear-concepto-nomina": {
     "Nombre": "Pago casa",
@@ -282,6 +282,7 @@
     "nombre": ""
   },
   "editar-concepto-nomina": {
+    "Nombre de Concepto de nómina a editar": "",
     "Nombre": "",
     "Tipo concepto": "",
     "Clase": "",
@@ -290,8 +291,7 @@
     "Tipo Ingreso": "",
     "% Pago Horas": "",
     "Estado": "",
-    "Tipo Valor": "",
-    "Nombre de Concepto de nómina a editar": ""
+    "Tipo Valor": ""
   },
   "crear-comportamiento-concepto-nomina": {
     "Concepto": "vacaciones",
@@ -303,38 +303,38 @@
     "nombre": ""
   },
   "editar-comportamiento-concepto-nomina": {
+    "Comportamiento (Concepto) a editar": "",
     "Concepto": "",
-    "Tipo Nómina": "",
-    "Comportamiento (Concepto) a editar": ""
+    "Tipo Nómina": ""
   },
   "crear-usuario": {
-    "Nombre Completo": "Juan pedro",
+    "Nombre Completo": "",
     "Compañía": "",
-    "Código de usuario": "jeliaspedro",
-    "Correo": "jeliaspedro@gmail.com",
+    "Código de usuario": "",
+    "Correo": "",
     "Idioma": "",
     "Es administrador": false,
-    "Tiene acceso a RRHH": true
+    "Tiene acceso a RRHH": false
   },
   "consultar-usuario": {
     "nombre": "juan pedro",
     "Código de usuario": ""
   },
   "editar-usuario": {
-    "Nombre Completo": "",
+    "Nombre de Usuario a editar": "QA Usuario 724476",
+    "Nombre Completo": "julieta",
     "Correo": "",
     "Código de usuario": "",
     "Compañías permitidas": "",
     "Es administrador": false,
-    "Tiene acceso a RRHH": false,
-    "Nombre de Usuario a editar": ""
+    "Tiene acceso a RRHH": true
   },
   "agregar-foto-usuario": {
-    "nombre": "anabel",
+    "nombre": "julieta",
     "archivo": ""
   },
   "marcar-usuario-administrador": {
-    "nombre": "juan elias"
+    "nombre": "julieta"
   },
   "dar-acceso-rrhh-usuario": {
     "nombre": "juan elias"
@@ -346,19 +346,27 @@
     "nombre": "test"
   },
   "editar-grupo": {
-    "Nombre de Grupo a editar": "QA-1",
-    "Nombre": "",
-    "Descripción": "descripcion panel"
+    "Nombre de Grupo a editar": "prueba panel",
+    "Nombre": "qa-3",
+    "Descripción": "descripcion panel x5"
   },
   "agregar-miembro-grupo": {
-    "Nombre de Grupo": "qa-2",
-    "Usuario": "anabel",
+    "Nombre de Grupo": "qa-3",
+    "Usuario": "marisol",
     "Compañías permitidas": "",
     "Sucursal": ""
   },
   "agregar-permiso-grupo": {
-    "Nombre de Grupo": "",
-    "Módulo": "",
+    "Nombre de Grupo": "qa-1",
+    "Módulo": "analitica",
     "Roles": ""
+  },
+  "_camposMultivalor": {
+    "editar-usuario": [
+      "Compañías permitidas"
+    ],
+    "agregar-permiso-grupo": [
+      "Roles"
+    ]
   }
 }

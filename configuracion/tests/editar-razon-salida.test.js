@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const RazonSalidaDetallePage = require('../pages/RazonSalidaDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-razon-salida';
 // Clave de BÚSQUEDA (identifica la razón de salida EXISTENTE a abrir),
@@ -27,6 +28,18 @@ testContext.registrarCasoDesdeFormulario(CASO, RazonSalidaDetallePage.ESTRATEGIA
  */
 describe('Configuración - Editar Razón de Salida', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoRazonesDeSalidas();
 
   it(`${CASO}: edita una Razón de Salida existente y confirma el cambio`, async function () {
@@ -51,17 +64,12 @@ describe('Configuración - Editar Razón de Salida', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA, un default seguro (renombrar "Razón").
-    const cambios = {};
-    for (const label of Object.keys(RazonSalidaDetallePage.ESTRATEGIAS)) {
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
-    if (!Object.keys(cambios).length) {
-      cambios['Razón'] = siguienteNombreQA(nombreUsado);
-    }
+    // si no se dirigió NADA (ver `cambiosEditar.js`), un default seguro
+    // (renombrar "Razón").
+    const cambios = armarCambiosDirigidos(CASO, RazonSalidaDetallePage.ESTRATEGIAS);
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [{ campo: 'Razón', valor: siguienteNombreQA(nombreUsado) }],
+    });
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
       await detalle.setCampo(label, valor);

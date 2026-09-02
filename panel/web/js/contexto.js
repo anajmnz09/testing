@@ -13,15 +13,14 @@ import * as api from "./api.js";
 // `crear` devuelve un handle { nodo, valores } para que el detalle lea el estado
 // actual del formulario al ejecutar.
 
-// Presentación pura: labels multi-valor conocidos (separador "|" del
-// framework, ver `parsearValoresMultiples` en
-// core/strategies/builtinStrategies.js) muestran un placeholder con ejemplo,
-// para que quien completa el Panel sepa el formato esperado sin tener que
-// consultar el código del test. Agregar acá cualquier campo nuevo que use
-// ese mismo separador — no hace falta tocar nada más del Panel.
-const PLACEHOLDER_MULTIVALOR = {
-  "Compañías permitidas": "Cia_001 | Cia_002",
-};
+// Placeholder genérico para cualquier campo tipo "lista" (multivalor,
+// separador "|" del framework — ver `parsearValoresMultiples` en
+// core/strategies/builtinStrategies.js): el tipo lo infiere el anfitrión
+// automáticamente (`panel/anfitrion/contexto.js#inferirTipo`) a partir de lo
+// que declaró el Page Object (`{ multiple: true }` en ESTRATEGIAS) o de un
+// `registrarCaso(..., { multivalor: true })` explícito — nunca hace falta
+// mantener acá un mapa a mano por label.
+const PLACEHOLDER_LISTA = "Opción 1 | Opción 2";
 
 export function crear(nodo, contexto) {
   const claves = contexto.claves || [];
@@ -44,7 +43,7 @@ export function crear(nodo, contexto) {
       control = el("input", {
         type: "text",
         value: k.valor == null ? "" : String(k.valor),
-        placeholder: PLACEHOLDER_MULTIVALOR[k.nombre] || "(vacío ⇒ automático)",
+        placeholder: k.tipo === "lista" ? PLACEHOLDER_LISTA : "(vacío ⇒ automático)",
       });
       lectores[k.nombre] = () => control.value;
     }

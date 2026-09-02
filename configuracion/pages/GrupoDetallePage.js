@@ -276,19 +276,84 @@ class GrupoDetallePage extends ConfiguracionEntidadDetallePage {
     return { usuario: usuarioElegido, companiaPermitida: companiaElegida, sucursal: sucursalElegida };
   }
 
-  /** Filas VISIBLES ahora mismo del grid "Miembros del grupo" (columna "Nombre de usuario"). Requiere modo Editar ya activo. */
+  /** TODAS las filas (recorriendo TODAS las páginas) del grid "Miembros del grupo" (columna "Nombre de usuario"). Requiere modo Editar ya activo. */
   async filasMiembros() {
-    return this._filasAccordion('miembros del grupo');
+    return this._todasLasFilasAccordion('Miembros del grupo', 'miembros del grupo');
   }
 
-  async _filasAccordion(regexTitulo) {
-    return this.driver.executeScript((patron) => {
-      const acc = Array.from(document.querySelectorAll('.dx-accordion-item')).find((el) =>
-        new RegExp(patron, 'i').test(el.querySelector('.dx-accordion-item-title-caption')?.textContent || '')
-      );
-      if (!acc) return [];
-      return Array.from(acc.querySelectorAll('.dx-data-row')).map((r) => r.textContent.trim());
-    }, regexTitulo);
+  /** Elemento raíz del acordeón cuyo título matchea `tituloAccordion` (case-insensitive, substring). */
+  async _elementoAccordion(tituloAccordion) {
+    return this.driver.findElement(
+      By.xpath(`//*[contains(@class,'dx-accordion-item')][.//*[contains(text(),'${tituloAccordion}')]]`)
+    );
+  }
+
+  /**
+   * TODAS las filas del acordeón `tituloAccordion`, recorriendo TODAS sus
+   * páginas (clickea "Siguiente" hasta `.dx-button-disable`, igual criterio
+   * que usa `DataGrid` del core para el grid principal). Ninguno de los 2
+   * grids de esta pantalla ("Miembros del grupo"/"Permisos del grupo") tiene
+   * buscador, así que sin recorrer todas las páginas no hay forma confiable
+   * de confirmar que un cambio se aplicó.
+   *
+   * NO asume que lo recién agregado/editado termina en la ÚLTIMA página —
+   * versión anterior de este método navegaba directo a la última página
+   * antes de leer, asumiendo que un ítem recién tocado siempre aparece ahí.
+   * Confirmado con Selenium real (incidente 2026-08-28, "Permisos del grupo"
+   * de "qa-1") que esa asunción es FALSA cuando el módulo/usuario elegido
+   * YA tenía un permiso/membresía existente: la app actualiza esa fila EN
+   * SU LUGAR (le suma roles) en vez de crear una fila nueva al final — la
+   * fila se queda en la página donde ya estaba (ej. página 1), no en la
+   * última, y el conteo total de ítems ni se mueve. No fue una carrera de
+   * refresco (el pager se midió estable durante 5s completos tras guardar);
+   * es que "última página" nunca fue una posición confiable para empezar.
+   * Por eso se juntan las filas de TODAS las páginas y se busca ahí.
+   *
+   * IMPORTANTE (confirmado real, incidente 2026-09-02): el botón "Siguiente"
+   * pasa a `.dx-button-disable` MÁS RÁPIDO de lo que el cuerpo del grid
+   * tarda en re-pintar la página nueva — leer las filas inmediatamente tras
+   * el click (aunque ya se esperó `esperarSinLoader`, que acá no aplica: esta
+   * paginación no muestra loader genérico) devolvía la página VIEJA
+   * duplicada, nunca la nueva. Por eso se espera (poll) a que el contenido
+   * de las filas cambie de verdad antes de darlo por leído.
+   */
+  async _todasLasFilasAccordion(tituloAccordion, regexTitulo, maxPaginas = 50) {
+    const leerFilas = () =>
+      this.driver.executeScript((patron) => {
+        const acc = Array.from(document.querySelectorAll('.dx-accordion-item')).find((el) =>
+          new RegExp(patron, 'i').test(el.querySelector('.dx-accordion-item-title-caption')?.textContent || '')
+        );
+        return acc ? Array.from(acc.querySelectorAll('.dx-data-row')).map((r) => r.textContent.trim()) : [];
+      }, regexTitulo);
+
+    let filasActuales = await leerFilas();
+    const todas = [...filasActuales];
+
+    for (let i = 0; i < maxPaginas; i++) {
+      const acc = await this._elementoAccordion(tituloAccordion);
+      const botones = await acc.findElements(By.css('.dx-next-button'));
+      if (!botones.length) break;
+      const clase = await botones[0].getAttribute('class');
+      if (clase.includes('dx-button-disable')) break;
+
+      await this.driver.executeScript('arguments[0].click()', botones[0]);
+      await this.esperarSinLoader(5000).catch(() => {});
+
+      const anteriorJSON = JSON.stringify(filasActuales);
+      await this.driver
+        .wait(async () => {
+          const candidatas = await leerFilas();
+          if (JSON.stringify(candidatas) !== anteriorJSON) {
+            filasActuales = candidatas;
+            return true;
+          }
+          return false;
+        }, 5000)
+        .catch(() => {});
+
+      todas.push(...filasActuales);
+    }
+    return todas;
   }
 
   /** Abre el popup "Agregar Permiso" (botón "Agregar" del acordeón "Permisos del grupo"). Requiere modo Editar ya activo. */
@@ -319,9 +384,9 @@ class GrupoDetallePage extends ConfiguracionEntidadDetallePage {
     return { modulo: moduloElegido, roles: rolesElegidos };
   }
 
-  /** Filas VISIBLES ahora mismo del grid "Permisos del grupo" (columnas "Módulos"/"Roles"). Requiere modo Editar ya activo. */
+  /** TODAS las filas (recorriendo TODAS las páginas) del grid "Permisos del grupo" (columnas "Módulos"/"Roles"). Requiere modo Editar ya activo. */
   async filasPermisos() {
-    return this._filasAccordion('permisos del grupo');
+    return this._todasLasFilasAccordion('Permisos del grupo', 'permisos del grupo');
   }
 }
 

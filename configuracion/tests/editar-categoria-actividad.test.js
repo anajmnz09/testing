@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const CategoriaActividadDetallePage = require('../pages/CategoriaActividadDetallePage');
 const fixtures = require('../support/fixtures');
 const { siguienteNombreQA } = require('../support/nombresQA');
+const { armarCambiosDirigidos, aplicarDefaultSiVacio } = require('../support/cambiosEditar');
 
 const CASO = 'editar-categoria-actividad';
 // Clave de BÚSQUEDA (identifica la Categoría de actividad EXISTENTE a
@@ -22,6 +23,18 @@ testContext.registrarCasoDesdeFormulario(CASO, CategoriaActividadDetallePage.EST
  */
 describe('Configuración - Editar Categoría de Actividad', function () {
   this.timeout(300000);
+  // Reintento GLOBAL (mocha --retries, TEST_RETRIES) desactivado a propósito
+  // acá: este caso busca el registro por nombre Y le cambia ESE MISMO nombre —
+  // no es idempotente. Si el intento 1 ya renombró el registro pero terminó
+  // en falla por otro motivo (verificación lenta, timeout puntual), un
+  // reintento automático buscaría el nombre VIEJO, que ya no existe, y
+  // fallaría garantizado — confirmado con evidencia real (2026-08-27,
+  // editar-usuario): el intento 1 renombró "QA Usuario 911669" -> "fulano
+  // de tal" con éxito pero terminó "desconocido" por un timeout de
+  // verificación; el reintento buscó "QA Usuario 911669" de nuevo, nunca lo
+  // encontró, y voló el estado del navegador. Mejor un fallo fuerte y claro
+  // una sola vez que un segundo intento condenado.
+  this.retries(0);
   const ctx = fixtures.usarListadoCategoriaActividades();
 
   it(`${CASO}: edita una Categoría de actividad existente y confirma el cambio`, async function () {
@@ -46,20 +59,12 @@ describe('Configuración - Editar Categoría de Actividad', function () {
     assert.ok(infoEditar.accionado, `No se pudo entrar en modo edición para "${nombreUsado}" (header: ${JSON.stringify(infoEditar)}).`);
 
     // Arma los cambios: lo que el Panel dirija (cualquier campo declarado) +,
-    // si no se dirigió NADA (ni un solo campo), un default seguro (renombrar
-    // "Categorías"). El chequeo es a nivel de CASO, no de campo: si el Panel
-    // dirigió CUALQUIER otro campo (o incluso solo la clave de búsqueda),
-    // "Categorías" vacío significa "no tocar", no "usar el default".
-    const cambios = {};
-    for (const label of Object.keys(CategoriaActividadDetallePage.ESTRATEGIAS)) {
-      const dirigido = testContext.get(CASO, label);
-      if (dirigido !== undefined) {
-        cambios[label] = dirigido;
-      }
-    }
-    if (!Object.keys(cambios).length) {
-      cambios['Categorías'] = siguienteNombreQA(nombreUsado);
-    }
+    // si no se dirigió NADA (ver `cambiosEditar.js`), un default seguro
+    // (renombrar "Categorías").
+    const cambios = armarCambiosDirigidos(CASO, CategoriaActividadDetallePage.ESTRATEGIAS);
+    await aplicarDefaultSiVacio(cambios, {
+      defaults: [{ campo: 'Categorías', valor: siguienteNombreQA(nombreUsado) }],
+    });
     logger.info(`${CASO}: editando -> ${JSON.stringify(cambios)}`);
     for (const [label, valor] of Object.entries(cambios)) {
       await detalle.setCampo(label, valor);
