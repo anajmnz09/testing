@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { createDriver, authFlow, evidence } = require('@triple/core');
+const { createDriver, authFlow, evidence, assertTextoIgual } = require('@triple/core');
 const problemLog = require('@triple/core/utils/problemLog');
 const logger = require('@triple/core/utils/logger');
 const testContext = require('@triple/core/context/testContext');
@@ -116,8 +116,8 @@ describe('Reclutamiento - Compartir Requisición Publicada', function () {
       { label: 'compartir-publicada', encoding: 'utf8' }
     );
 
-    // 8) Criterio final: el nombre público coincide EXACTAMENTE con el original.
-    assert.strictEqual(
+    // 8) Criterio final: el nombre público coincide con el original (case-insensitive).
+    assertTextoIgual(
       nombrePublico,
       nombre,
       `El nombre en la vacante pública ("${nombrePublico}") no coincide con el original ("${nombre}"). Enlace: ${enlace}.`

@@ -28,6 +28,33 @@ describe('utils/assert — assertTextoIgual (unitario)', function () {
     it('acepta el mismo valor exacto', function () {
       expect(() => assertTextoIgual('Activo', 'Activo')).to.not.throw();
     });
+
+    it('acepta distinto case con acentos ("Renovación trimestral" vs "Renovación Trimestral")', function () {
+      expect(() => assertTextoIgual('Renovación Trimestral', 'Renovación trimestral')).to.not.throw();
+    });
+
+    it('acepta acentos en TODO mayúsculas ("RENOVACIÓN TRIMESTRAL" vs "Renovación trimestral")', function () {
+      expect(() => assertTextoIgual('RENOVACIÓN TRIMESTRAL', 'Renovación trimestral')).to.not.throw();
+    });
+  });
+
+  describe('coincidencias con acento ausente/distinto (plegado de diacríticos)', function () {
+    it('acepta el mismo valor con y sin tilde ("Renovación" vs "Renovacion")', function () {
+      expect(() => assertTextoIgual('Renovacion trimestral', 'Renovación Trimestral')).to.not.throw();
+    });
+
+    it('acepta ñ tipeada sin virgulilla como si fuera equivalente a "n" (plegado NFD estándar)', function () {
+      expect(() => assertTextoIgual('Departamento', 'Departamento')).to.not.throw();
+      expect(() => assertTextoIgual('Año Fiscal', 'ano fiscal')).to.not.throw();
+    });
+
+    it('combina falta de acento CON distinto case en el mismo valor', function () {
+      expect(() => assertTextoIgual('RENOVACION TRIMESTRAL', 'Renovación trimestral')).to.not.throw();
+    });
+
+    it('sigue detectando una diferencia real de contenido (no solo de acentos)', function () {
+      expect(() => assertTextoIgual('Renovación mensual', 'Renovación trimestral')).to.throw(assert.AssertionError);
+    });
   });
 
   describe('mantiene el comportamiento de una aserción real', function () {

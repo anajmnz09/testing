@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { testContext } = require('@triple/core');
+const { testContext, assertTextoIgual } = require('@triple/core');
 const RequisicionFormPage = require('../pages/RequisicionFormPage');
 const fixtures = require('../support/fixtures');
 
@@ -41,7 +41,7 @@ describe('Reclutamiento - Crear Requisición', function () {
     // Reabrir la requisición creada y validar que cargó correctamente.
     await ctx.lista.volverAlListado();
     const detalle = await ctx.lista.abrirDetalle(nombre);
-    assert.strictEqual((await detalle.getNombre()).trim(), nombre, 'El nombre no coincide');
+    assertTextoIgual((await detalle.getNombre()).trim(), nombre, 'El nombre no coincide');
     assert.ok((await detalle.getRequisitos()).includes(d.requisitos), 'Requisitos no cargó');
     assert.ok((await detalle.getResponsabilidades()).includes(d.responsabilidades), 'Responsabilidades no cargó');
     assert.ok((await detalle.getDescripcion()).includes(d.descripcion), 'Descripción no cargó');

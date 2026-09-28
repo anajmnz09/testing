@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const GruposPage = require('../pages/GruposPage');
 const fixtures = require('../support/fixtures');
@@ -126,7 +126,7 @@ describe('Configuración - Editar Grupo', function () {
       `"${nombreParaBuscar}" no aparece en el listado de Grupos tras editarlo (¿no se aplicó el cambio de Nombre, o cambió sin querer?).`
     );
     if (descripcionNueva !== undefined) {
-      assert.strictEqual(
+      assertTextoIgual(
         filaFinal['Descripción'],
         descripcionNueva,
         `"Descripción" de "${nombreParaBuscar}" no quedó en "${descripcionNueva}" (quedó "${filaFinal['Descripción']}").`

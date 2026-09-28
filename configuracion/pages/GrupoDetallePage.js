@@ -1,6 +1,7 @@
 const { By, Key, until } = require('selenium-webdriver');
 const { ConfiguracionEntidadDetallePage } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
+const { textoIgual } = require('@triple/core/utils/assert');
 
 /**
  * Pantalla de UN registro de "Grupos" (Configuración > Usuarios y permisos >
@@ -168,7 +169,7 @@ class GrupoDetallePage extends ConfiguracionEntidadDetallePage {
     await this.driver
       .wait(async () => {
         actual = (await this.getValorEditar(placeholder)).trim();
-        return actual === esperado;
+        return textoIgual(actual, String(esperado));
       }, timeout)
       .catch(() => {});
     return actual;

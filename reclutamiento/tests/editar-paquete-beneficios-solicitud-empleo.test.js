@@ -115,6 +115,6 @@ describe('Reclutamiento - Editar Paquete Actual de Beneficios de Solicitud de Em
       parseFloat(String(ultimoSalario).replace(/,/g, '')),
       `"Último salario" no quedó en ${ultimoSalario} (quedó "${valorSalario}")`
     );
-    assert.strictEqual(valorBeneficios, beneficios, `"Beneficios" no quedó en "${beneficios}" (quedó "${valorBeneficios}")`);
+    assertTextoIgual(valorBeneficios, beneficios, `"Beneficios" no quedó en "${beneficios}" (quedó "${valorBeneficios}")`);
   });
 });

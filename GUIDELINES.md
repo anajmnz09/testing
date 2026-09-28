@@ -75,6 +75,46 @@ Reglas:
   **`Form.validarControlesDeclarados(ESTRATEGIAS)`** — si la UI muestra controles que
   `ESTRATEGIAS` no declara, se registra **una advertencia** (`logger.warn`) y **nada más**:
   no se rellenan, no se rompe, no se agrega comportamiento implícito.
+- **El campo que identifica la entidad/persona principal de la operación va PRIMERO.**
+  Si un caso representa una operación sobre una persona/entidad específica (editar sus
+  datos, agregarle un registro hijo, etc.), el parámetro que identifica A QUIÉN — la
+  clave de búsqueda, típicamente `"Nombre de <Entidad> a <acción>"` (§Naming más abajo)
+  — debe sembrarse **antes** que los demás campos, nunca al final. Con
+  `registrarCasoDesdeFormulario(CASO, ESTRATEGIAS, clavesExtra)`, `clavesExtra` YA se
+  siembra primero por diseño — pasar ahí la clave de búsqueda alcanza. Con
+  `registrarCaso(CASO, [...])` a mano (casos sin `ESTRATEGIAS`, ej. un mini-form
+  emergente), la clave de búsqueda debe ser el **primer** elemento del array. Esto NO es
+  específico de ningún módulo o formulario: aplica a cualquier caso con este patrón,
+  presente o futuro.
+  - **Ojo con el orden ya persistido:** `registrarCaso` nunca reordena ni borra claves
+    que YA existen en `execution-context.json` (protege datos que el usuario cargó a
+    mano) — así que renombrar o reordenar una clave en el código **no mueve nada** en un
+    caso que ya se había registrado antes con el nombre/orden viejo. Tras un rename como
+    este, hay que reordenar esa sección del `execution-context.json` a mano UNA vez (y
+    borrar cualquier clave vieja que ya no exista en el código — ver siguiente punto). El
+    orden del **objeto JavaScript en el código no es lo mismo que el orden ya escrito en
+    disco**; verificá el archivo real antes de asumir que un cambio de código ya se
+    reflejó ahí. El orden que ve el usuario en el Panel es exactamente
+    `Object.keys()` de esa sección del JSON — confirmado siguiendo la cadena completa
+    `testContext._escribir` → `panel/anfitrion/contexto.js#seccion` (`Object.keys(s)`) →
+    `panel/web/js/contexto.js` (itera esa lista tal cual, sin reordenar).
+  - **Claves huérfanas:** si un caso se registró antes con un nombre de clave que después
+    se renombró en el código, la clave VIEJA queda para siempre en
+    `execution-context.json` (nadie la borra sola) — un campo fantasma que no corresponde
+    a nada real. `registrarCaso` avisa con `logger.warn` cuando detecta claves en el
+    archivo que ya no están en la lista declarada, para que se note y se limpien a mano;
+    no las borra automáticamente (mismo criterio "nunca pisa/borra lo que ya está" del
+    resto del framework — podría ser un dato real que el usuario todavía necesita).
+- **Nunca nombres un campo por su etiqueta genérica sin verificar qué representa.**
+  Antes de mapear/declarar un control o una clave de búsqueda, determiná qué dato
+  representa REALMENTE en el contexto de ESE formulario — no le pongas
+  "Nombre"/"Tipo"/"Estado"/"Código" solo porque así arrancó o porque es la palabra más
+  corta. Si el label es realmente así en la app (`ESTRATEGIAS`, valores de controles
+  reales), se respeta tal cual (regla de labels reales, arriba); el problema es
+  específicamente para claves SINTÉTICAS que el framework inventa (ej. una clave de
+  búsqueda que no es un campo real del DOM) — ahí sí hay que nombrarla por lo que
+  representa (ej. el empleado AL QUE se le agrega un registro), sin quedarse con lo
+  genérico solo porque "andaba".
 
 Ver README §Selection Strategies y `docs/plataforma-de-control-arquitectura.md §18`.
 
@@ -162,6 +202,31 @@ se registra como **advertencia** y la corrida sigue. Matar procesos del sistema 
 delicado: ChromeDriver huérfano se **reporta** (se cierra solo cuando es seguro), nunca
 se matan procesos de Chrome del usuario.
 
+### `KEEP_BROWSER_OPEN` — solo aplica a corridas lanzadas desde el Panel
+
+`KEEP_BROWSER_OPEN` (`.env`) es una preferencia del **usuario humano operando el
+Panel** — sirve para dejar el navegador abierto e inspeccionar visualmente el
+resultado de una corrida que él mismo lanzó desde ahí. Cuando es el asistente
+(Claude) quien levanta un navegador por su cuenta — para investigar un error,
+reproducir un bug, verificar un fix, o correr un test/script de diagnóstico
+directamente (`npm test`, `npx mocha`, un script `node -e`, etc.) — el
+navegador **siempre debe cerrarse al terminar**, sin importar el valor de
+`KEEP_BROWSER_OPEN` en `.env`: el asistente pasa `KEEP_BROWSER_OPEN=false`
+como override de esa invocación puntual (nunca edita el `.env` para lograrlo).
+
+**Por qué:** el valor de `.env` reflejaba lo que el usuario quería para SUS
+propias corridas manuales desde el Panel — el asistente corriendo decenas de
+scripts de diagnóstico en una sesión de investigación no debería heredar esa
+preferencia y dejar ventanas de Chrome acumulándose de fondo (confirmado real:
+esto generó confusión sobre si esas ventanas eran del framework o personales
+del usuario, y contribuyó a diagnosticar mal una causa de flakiness).
+
+**Cómo aplica:** únicamente las corridas que el **Panel** lanza (`panel/anfitrion/
+comando.js`/`lanzador.js`, el mismo `npm test` que ve el usuario en la consola)
+respetan `KEEP_BROWSER_OPEN` tal cual está en `.env` — eso no cambia. Todo lo
+demás que el asistente ejecute por su cuenta, aunque use el mismo comando o
+script, cierra el navegador siempre.
+
 ## Checklist antes de dar por terminado
 
 - [ ] Reutiliza infraestructura existente (Core→…→Tests); sin lógica duplicada.
@@ -177,4 +242,28 @@ se matan procesos de Chrome del usuario.
 - [ ] Pruebas unitarias para la lógica de decisión nueva del core.
 - [ ] Compatibilidad preservada (los tests que no migraron siguen igual).
 - [ ] Limpieza automática post-corrida verificada (0 perfiles residuales; no se tocaron reports/evidencias).
+- [ ] "¿Hay datos de prueba?" se lee con `grid.contarFilas()`/`filasPorColumnas()`
+      (ya hacen poll — nunca una lectura de una sola vez) y, ante un vacío
+      CONFIRMADO, la entidad está clasificada explícitamente como catálogo
+      persistente (falla con `assert.fail()`, nunca `return` silencioso) o
+      como opcional/efímera (`this.skip()`, nunca `return` silencioso) — sin
+      asumir la clasificación, se confirma con el usuario. Ver
+      `testing-patterns/SKILL.md` (incidentes 2026-09-02/2026-09-03).
+- [ ] `editar-*`: captura "ANTES de editar", cambio aplicado, verificación de
+      cada campo con `Form.esperarValor` (no `getValor` suelto), captura
+      "DESPUÉS de editar", `assertTextoIgual` contra el valor ya releído —
+      mismo patrón que `configuracion/tests/editar-usuario.test.js`.
+- [ ] `editar-*`: la clave de BÚSQUEDA (qué registro abrir) tiene nombre
+      propio, descriptivo y específico de la entidad — nunca una palabra
+      genérica (`'nombre'`, `'código'`) que se confunda con un campo real del
+      formulario. Ej.: `"Nombre de Empleado a editar"`, igual que
+      `"Nombre de Usuario a editar"` en `editar-usuario.test.js`. Ver
+      `testing-patterns/SKILL.md`.
+- [ ] La clave que identifica la entidad/persona principal de la operación
+      (búsqueda, o "a quién se le agrega este registro") está sembrada
+      **primero** (`clavesExtra` de `registrarCasoDesdeFormulario`, o primer
+      elemento del array de `registrarCaso`) — y, si el caso YA existía antes
+      del cambio, el `execution-context.json` real se revisó y reordenó a
+      mano (el código no reordena claves ya persistidas), sin dejar claves
+      huérfanas del nombre viejo. Ver §3 arriba y `testing-patterns/SKILL.md`.
 - [ ] Documentación actualizada (README + GUIDELINES + /docs + ejemplos).

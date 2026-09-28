@@ -46,15 +46,44 @@ function inferirTipo(clave, valor, esMultivalor) {
   return 'texto';
 }
 
+/**
+ * Metadata OPCIONAL de agrupación visual por sección + requerido, SOLO para
+ * el Panel — `<modulo>/data/campos-<caso>.js` (ej.
+ * `empleados/data/campos-crear-empleado.js`). No es Input Model ni afecta la
+ * ejecución del test: si el archivo no existe para un caso, no agrupa nada
+ * (mismo criterio tolerante que `organizacion-tests.js`/`cargarOrganizacion`
+ * del descubridor). Se invalida el cache de `require` en cada lectura, mismo
+ * motivo que `descubridor.js#cargarOrganizacion`: el anfitrión es
+ * long-lived.
+ */
+function camposCaso(modulo, caso) {
+  const ruta = path.join(RAIZ, modulo, 'data', `campos-${caso}.js`);
+  try {
+    const resuelta = require.resolve(ruta);
+    delete require.cache[resuelta];
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    return require(resuelta);
+  } catch (e) {
+    return {};
+  }
+}
+
 /** Sección del caso como Input Model degradado (nombre real + tipo inferido). */
 function seccion(modulo, caso) {
   const todo = leerTodo(modulo);
   const s = todo[caso] || {};
   const multivalor = new Set((todo[SECCION_MULTIVALOR] && todo[SECCION_MULTIVALOR][caso]) || []);
+  const campos = camposCaso(modulo, caso);
   return {
     caso,
     tieneSeccion: caso in todo,
-    claves: Object.keys(s).map((k) => ({ nombre: k, valor: s[k], tipo: inferirTipo(k, s[k], multivalor.has(k)) })),
+    claves: Object.keys(s).map((k) => ({
+      nombre: k,
+      valor: s[k],
+      tipo: inferirTipo(k, s[k], multivalor.has(k)),
+      seccion: (campos[k] && campos[k].seccion) || null,
+      requerido: !!(campos[k] && campos[k].requerido),
+    })),
   };
 }
 

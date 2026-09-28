@@ -34,7 +34,17 @@ export function crear(nodo, contexto) {
   const form = el("div", { class: "form" });
   const lectores = {};
   const controles = {};
+  // Agrupación visual OPCIONAL por sección (ver `panel/anfitrion/contexto.js
+  // #camposCaso`): un título en negrita (NO plegable, solo un encabezado
+  // estático) apenas cambia de sección respecto al campo anterior. Campos sin
+  // sección (la mayoría de los casos, que no tienen `data/campos-<caso>.js`)
+  // se renderizan igual que siempre, sin encabezado.
+  let seccionActual = null;
   for (const k of claves) {
+    if (k.seccion && k.seccion !== seccionActual) {
+      seccionActual = k.seccion;
+      form.append(el("div", { class: "form-seccion" }, k.seccion));
+    }
     let control;
     if (k.tipo === "switch") {
       control = el("input", { type: "checkbox", ...(k.valor ? { checked: "" } : {}) });
@@ -48,7 +58,10 @@ export function crear(nodo, contexto) {
       lectores[k.nombre] = () => control.value;
     }
     controles[k.nombre] = control;
-    form.append(el("label", { class: "campo" }, el("span", { class: "campo-lbl" }, k.nombre), control));
+    const lbl = k.requerido
+      ? el("span", { class: "campo-lbl" }, k.nombre + " ", el("span", { class: "campo-requerido" }, "*"))
+      : el("span", { class: "campo-lbl" }, k.nombre);
+    form.append(el("label", { class: "campo" }, lbl, control));
   }
 
   const estado = el("span", { class: "form-estado" });

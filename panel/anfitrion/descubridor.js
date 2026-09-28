@@ -98,6 +98,12 @@ function nodoModulo(modulo) {
       estado: (estados[nombre] || {}).estado || 'sin-ejecutar',
       seccion: meta ? meta.seccion : null,
       categoria: meta ? meta.categoria : null,
+      // `plano: true` → los casos de esa sección cuelgan DIRECTO del nodo de
+      // sección, sin el nivel intermedio de CATEGORÍA (para una sección
+      // acotada tipo "Capacitación", donde separar Crear/Consultar/Editar en
+      // subcarpetas estorba más de lo que ayuda). Ver la construcción del
+      // árbol más abajo.
+      plano: meta ? !!meta.plano : false,
       descripcion: meta ? meta.descripcion : null,
     };
   });
@@ -107,58 +113,107 @@ function nodoModulo(modulo) {
   // declarada en `organizacion-tests.js`, no derivada del nombre. Un caso SIN
   // esa metadata es un test de FLUJO (login, navegación, etc.): queda fuera
   // del árbol del Panel a propósito, sigue existiendo y siendo ejecutable.
-  const conSeccion = casos.filter((c) => c.seccion && c.categoria);
+  //
+  // Una sección `plano` no necesita categoría; el resto sí (mismo criterio de
+  // siempre: sin categoría, no entra al árbol).
+  const conSeccion = casos.filter((c) => c.seccion && (c.categoria || c.plano));
+
+  // Sección PLANA: cualquier caso de esa sección declarado con `plano: true`
+  // la vuelve plana entera (todos sus casos van al mismo nivel, sin categoría).
+  const seccionesPlanas = new Set(conSeccion.filter((c) => c.plano).map((c) => c.seccion));
 
   const secciones = {};
+  const planas = {};
   for (const c of conSeccion) {
-    secciones[c.seccion] = secciones[c.seccion] || {};
-    secciones[c.seccion][c.categoria] = secciones[c.seccion][c.categoria] || [];
-    secciones[c.seccion][c.categoria].push(c);
+    if (seccionesPlanas.has(c.seccion)) {
+      (planas[c.seccion] = planas[c.seccion] || []).push(c);
+    } else {
+      secciones[c.seccion] = secciones[c.seccion] || {};
+      secciones[c.seccion][c.categoria] = secciones[c.seccion][c.categoria] || [];
+      secciones[c.seccion][c.categoria].push(c);
+    }
   }
 
-  const hijos = Object.keys(secciones)
-    .sort()
-    .map((nombreSeccion) => {
-      const categorias = secciones[nombreSeccion];
-      const hijosCategoria = Object.keys(categorias)
-        .sort()
-        .map((nombreCategoria) => {
-          const casosCategoria = categorias[nombreCategoria];
-          const runCategoria = {
-            tipo: 'carpeta',
-            modulo,
-            target: `tests/{${casosCategoria.map((c) => c.nombre).join(',')}}.test.js`,
-          };
-          // Cada caso conoce el `run` de SU categoría (para el botón
-          // "Ejecutar carpeta" del detalle: ya no se puede recomputar por
-          // prefijo del nombre, la agrupación es explícita).
-          for (const c of casosCategoria) {
-            c.grupoRun = runCategoria;
-            c.grupoNombre = nombreCategoria;
-          }
-          return {
-            id: `${modulo}/${nombreSeccion}/${nombreCategoria}`,
-            nombre: nombreCategoria,
-            tipo: 'categoria',
-            modulo,
-            run: runCategoria,
-            hijos: casosCategoria,
-          };
-        });
-      const casosSeccion = Object.values(categorias).flat();
-      return {
-        id: `${modulo}/${nombreSeccion}`,
-        nombre: nombreSeccion,
-        tipo: 'seccion',
-        modulo,
-        run: {
+  function nodoSeccionPlana(nombreSeccion) {
+    const casosSeccion = planas[nombreSeccion];
+    const runSeccion = {
+      tipo: 'carpeta',
+      modulo,
+      target: `tests/{${casosSeccion.map((c) => c.nombre).join(',')}}.test.js`,
+    };
+    // Botón "Ejecutar carpeta" del detalle: el grupo es la sección misma.
+    for (const c of casosSeccion) {
+      c.grupoRun = runSeccion;
+      c.grupoNombre = nombreSeccion;
+    }
+    return {
+      id: `${modulo}/${nombreSeccion}`,
+      nombre: nombreSeccion,
+      tipo: 'seccion',
+      modulo,
+      run: runSeccion,
+      hijos: casosSeccion,
+    };
+  }
+
+  function nodoSeccionConCategorias(nombreSeccion) {
+    const categorias = secciones[nombreSeccion];
+    const hijosCategoria = Object.keys(categorias)
+      .sort()
+      .map((nombreCategoria) => {
+        const casosCategoria = categorias[nombreCategoria];
+        const runCategoria = {
           tipo: 'carpeta',
           modulo,
-          target: `tests/{${casosSeccion.map((c) => c.nombre).join(',')}}.test.js`,
-        },
-        hijos: hijosCategoria,
-      };
-    });
+          target: `tests/{${casosCategoria.map((c) => c.nombre).join(',')}}.test.js`,
+        };
+        // Cada caso conoce el `run` de SU categoría (para el botón
+        // "Ejecutar carpeta" del detalle: ya no se puede recomputar por
+        // prefijo del nombre, la agrupación es explícita).
+        for (const c of casosCategoria) {
+          c.grupoRun = runCategoria;
+          c.grupoNombre = nombreCategoria;
+        }
+        return {
+          id: `${modulo}/${nombreSeccion}/${nombreCategoria}`,
+          nombre: nombreCategoria,
+          tipo: 'categoria',
+          modulo,
+          run: runCategoria,
+          hijos: casosCategoria,
+        };
+      });
+    const casosSeccion = Object.values(categorias).flat();
+    return {
+      id: `${modulo}/${nombreSeccion}`,
+      nombre: nombreSeccion,
+      tipo: 'seccion',
+      modulo,
+      run: {
+        tipo: 'carpeta',
+        modulo,
+        target: `tests/{${casosSeccion.map((c) => c.nombre).join(',')}}.test.js`,
+      },
+      hijos: hijosCategoria,
+    };
+  }
+
+  // Una sección cuyo nombre es EL MISMO del módulo (ej. módulo "empleados" con
+  // `seccion: 'Empleados'`) no aporta una carpeta útil — sería una "Empleados"
+  // dentro de "Empleados". En ese caso NO se crea el nodo de sección: sus
+  // categorías se cuelgan DIRECTO del módulo, al mismo nivel que las demás
+  // carpetas (secciones planas u otras secciones).
+  const norm = (s) => String(s).trim().toLowerCase();
+  const esSeccionDelModulo = (nombreSeccion) => norm(nombreSeccion) === norm(modulo);
+
+  const hijos = [...new Set([...Object.keys(secciones), ...Object.keys(planas)])]
+    .sort()
+    .flatMap((nombreSeccion) => {
+      if (seccionesPlanas.has(nombreSeccion)) return [nodoSeccionPlana(nombreSeccion)];
+      const nodo = nodoSeccionConCategorias(nombreSeccion);
+      return esSeccionDelModulo(nombreSeccion) ? nodo.hijos : [nodo];
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   return {
     id: modulo,

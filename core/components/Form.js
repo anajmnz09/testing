@@ -3,6 +3,7 @@ const BaseComponent = require('./BaseComponent');
 const logger = require('../utils/logger');
 const config = require('../config');
 const { containsTextoIgnoreCase } = require('../utils/xpath');
+const { assertTextoIgual, normalizarTexto } = require('../utils/assert');
 
 /** Normaliza el texto de un label para comparar EXACTO (recorta, saca ':'/'*' finales, minúscula). */
 function _normalizarLabelTexto(s) {
@@ -29,18 +30,31 @@ class Form extends BaseComponent {
   }
 
   /**
-   * Contenedor de un campo por el texto de su label. Soporta DOS convenciones
-   * de formulario verificadas en la app: `group-field` (markup propio de la
-   * app, ej. Requisiciones) y `dx-field-item` (widget nativo `dxForm` de
-   * DevExtreme, ej. Crear Solicitud). Es un OR aditivo: para una pantalla que
-   * solo usa `group-field`, el DOM nunca contiene `dx-field-item`, así que
-   * agregar esa rama no cambia ni un resultado existente — compatibilidad
+   * Contenedor de un campo por el texto de su label. Soporta TRES
+   * convenciones de formulario verificadas en la app: `group-field` (markup
+   * propio de la app, ej. Requisiciones), `dx-field-item` (widget nativo
+   * `dxForm` de DevExtreme, ej. Crear Solicitud) y `dependiente-form-item`
+   * (markup propio de "Dependientes" de Empleado — confirmado real,
+   * 2026-09-10: `<div class="dependiente-form-item"><label>Parentesco:
+   * <span>*</span></label><div class="dx-selectbox ...">`, mismo contenedor
+   * label+editor que las otras dos). Es un OR aditivo: para una pantalla que
+   * solo usa UNA convención, el DOM nunca contiene las otras, así que
+   * agregar una rama no cambia ni un resultado existente — compatibilidad
    * hacia atrás garantizada por construcción, no por casualidad. `*` en vez de
    * `div`: los contenedores `dx-field-item` no siempre son `div`.
    *
-   * `dx-field-item` usa match EXACTO de clase (padding con espacios), no
-   * `contains()` simple sobre el nombre de clase (evita colisión con otros
-   * tokens que empiezan igual, ej. `dx-field-item-content`).
+   * `dx-field-item`/`dependiente-form-item` usan match EXACTO de clase
+   * (padding con espacios), no `contains()` simple sobre el nombre de clase
+   * (evita colisión con otros tokens que empiezan igual, ej.
+   * `dx-field-item-content`).
+   *
+   * Por qué se agregó como convención NOMBRADA acá en vez de dejar que caiga
+   * al fallback genérico (`_campoGenerico`, tercera vía en `_elemCampo`):
+   * ese fallback solo se intenta DESPUÉS de que esta condición agote su
+   * propio timeout completo (`config.timeouts.explicitWaitMs`, 10s default)
+   * — pagar eso por CADA campo de un form de ~15 campos (como "Agregar
+   * Dependiente") es demasiado costoso/lento para ser el camino normal.
+   * Reconocerlo acá hace que el match sea inmediato, igual que las otras dos.
    *
    * CAUSA RAÍZ REAL confirmada por evidencia (no la del primer intento, que
    * era incorrecta): `dxForm` puede agrupar varios campos relacionados dentro
@@ -58,7 +72,8 @@ class Form extends BaseComponent {
   _campo(label) {
     const condicion =
       `(contains(@class,'group-field') or ` +
-      `contains(concat(' ', normalize-space(@class), ' '), ' dx-field-item ')) ` +
+      `contains(concat(' ', normalize-space(@class), ' '), ' dx-field-item ') or ` +
+      `contains(concat(' ', normalize-space(@class), ' '), ' dependiente-form-item ')) ` +
       `and .//label[${containsTextoIgnoreCase(label)}]`;
     return By.xpath(`//*[${condicion} and not(.//*[${condicion}])]`);
   }
@@ -85,11 +100,11 @@ class Form extends BaseComponent {
    * paga el costo ni el riesgo de la tercera (nunca llega a intentarla), y
    * solo una pantalla que realmente la necesita la usa.
    */
-  async _elemCampo(label) {
+  async _elemCampo(label, timeoutMs) {
     try {
-      return await this._mejorCandidato(this._campo(label), label);
+      return await this._mejorCandidato(this._campo(label), label, timeoutMs);
     } catch (e) {
-      return this._mejorCandidato(this._campoGenerico(label), label);
+      return this._mejorCandidato(this._campoGenerico(label), label, timeoutMs);
     }
   }
 
@@ -110,8 +125,8 @@ class Form extends BaseComponent {
    * antes. Si hay ambigüedad y NINGÚN candidato matchea exacto, se conserva
    * el comportamiento previo (el primero) en vez de fallar.
    */
-  async _mejorCandidato(locator, label) {
-    await this.driver.wait(until.elementLocated(locator), this._timeout());
+  async _mejorCandidato(locator, label, timeoutMs = this._timeout()) {
+    await this.driver.wait(until.elementLocated(locator), timeoutMs);
     const candidatos = await this.driver.findElements(locator);
     if (candidatos.length <= 1) return candidatos[0];
 
@@ -451,15 +466,31 @@ class Form extends BaseComponent {
   /**
    * Selecciona en un selectbox la primera opción válida y devuelve su texto.
    * (Cumple la regla: "para selectbox, primera opción válida si no hay regla".)
+   *
+   * Reintenta ante `StaleElementReferenceError` (mismo criterio que
+   * `escribir()`/`seleccionar()`, que ya lo tenían): confirmado con
+   * evidencia real (Crear Empleado, campo "País" recién tras cambiar de
+   * sección del formulario) que `_abrirDropdown` puede toparse con el
+   * contenedor del campo yéndose stale justo cuando la sección todavía está
+   * re-renderizando — antes, esta era la ÚNICA operación de campo del
+   * framework sin ese reintento, así que la carrera se colaba siempre por
+   * acá primero.
    */
-  async seleccionarPrimera(label) {
+  async seleccionarPrimera(label, intentos = 3) {
     logger.info(`Form: seleccionar primera opción de "${label}"`);
-    await this._abrirDropdown(label);
-    const item = await this._primerItemVisible();
-    const texto = (await item.getText()).trim();
-    await item.click();
-    await this._esperarOverlayCerrado();
-    return texto;
+    for (let intento = 1; intento <= intentos; intento++) {
+      try {
+        await this._abrirDropdown(label);
+        const item = await this._primerItemVisible();
+        const texto = (await item.getText()).trim();
+        await item.click();
+        await this._esperarOverlayCerrado();
+        return texto;
+      } catch (e) {
+        if (e.name !== 'StaleElementReferenceError' || intento === intentos) throw e;
+        logger.info(`Form: "${label}" "stale" al seleccionar primera opción (intento ${intento}/${intentos}), reintentando`);
+      }
+    }
   }
 
   /**
@@ -822,6 +853,35 @@ class Form extends BaseComponent {
     }
   }
 
+  /**
+   * Marca/desmarca un DevExtreme CheckBox (`.dx-checkbox`) — WIDGET DISTINTO
+   * de `.dx-switch` (confirmado real, "Indicador Comision" de Paquete
+   * salarial): usa `role="checkbox"`/`aria-checked` (no `aria-pressed` como
+   * el switch), y el elemento queda STALE tras el click (se re-renderiza) —
+   * a diferencia del switch, que no lo hace — por eso se RE-UBICA antes de
+   * confirmar el estado final, en vez de reusar la misma referencia.
+   */
+  async setCheckbox(label, marcado = true) {
+    const campo = await this._elemCampo(label);
+    const chk = await campo.findElement(By.css('.dx-checkbox'));
+    const estado = (await chk.getAttribute('aria-checked')) === 'true';
+    if (estado !== marcado) {
+      logger.info(`Form: checkbox "${label}" -> ${marcado}`);
+      await chk.click();
+      await this.driver
+        .wait(async () => {
+          try {
+            const campoFresco = await this._elemCampo(label);
+            const chkFresco = await campoFresco.findElement(By.css('.dx-checkbox'));
+            return (await chkFresco.getAttribute('aria-checked')) === String(marcado);
+          } catch (e) {
+            return false; // stale entre el click y esta lectura: reintenta
+          }
+        }, this._timeout())
+        .catch(() => {});
+    }
+  }
+
   /** True si el campo está marcado como inválido (badge rojo). */
   async estaInvalido(label) {
     const campos = await this.driver.findElements(this._campo(label));
@@ -941,19 +1001,81 @@ class Form extends BaseComponent {
   }
 
   /**
-   * Labels de los controles VISIBLES del formulario en pantalla (contenedores
-   * `.group-field*` con `<label>`). Normaliza el texto (sin asterisco de requerido
-   * ni ':' final) y descarta duplicados/ocultos. Sólo LEE el DOM: no modifica nada.
+   * Labels de los controles VISIBLES del formulario en pantalla (estén o no
+   * habilitados — ver más abajo). Soporta las MISMAS TRES convenciones que
+   * `_campo()` — `.group-field*` (app propia), `.dx-field-item` (DevExtreme
+   * nativo) y `.dependiente-form-item` ("Dependientes" de Empleado) — antes
+   * solo reconocía la primera, y `dependiente-form-item` se agregó recién
+   * (2026-09-10) DESPUÉS de que `_campo()` ya la reconocía, exactamente el
+   * mismo tipo de desincronización documentada abajo. CAUSA RAÍZ real
+   * confirmada (2026-09-04, "Editar paquete salarial", y reconfirmada
+   * 2026-09-10 con "Dependientes"): `_campo()`/`escribir()`/`setValor()` (el
+   * camino de LEER/ESCRIBIR) soportan una convención nueva ANTES de que este
+   * método (el ÚNICO que alimenta `validarControlesDeclarados`, el camino de
+   * VALIDAR cobertura) se actualice a la par — son DOS copias de la misma
+   * lista de convenciones que hay que mantener sincronizadas a mano; si se
+   * agrega una convención nueva a `_campo()` sin tocar acá, la validación de
+   * cobertura queda silenciosamente inoperante (reporta "0 controles en
+   * pantalla") para CUALQUIER pantalla que use solo esa convención, sin
+   * lanzar ningún error que lo delate. Al tocar una, revisar SIEMPRE la otra.
+   *
+   * NO filtra por deshabilitado/`aria-disabled`: un control que pertenece
+   * estructuralmente al formulario sigue perteneciendo aunque hoy esté
+   * deshabilitado (ej. "Indicador Nomina" — `disabled` según la condición de
+   * negocio vigente, pero con `<input name="indicadorNomina">` real). El
+   * estado actual de un control NUNCA decide si pertenece al formulario —
+   * regla explícita del proyecto (2026-09-04): sólo la ausencia estructural
+   * en el DOM (Caso B, ej. "Ciudad" antes de elegir "País") legítimamente lo
+   * saca de este inventario, y eso ya ocurre solo porque el nodo no existe
+   * — no hace falta ni conviene un filtro adicional para eso.
+   *
+   * Normaliza el texto (sin asterisco de requerido ni ':' final) y descarta
+   * duplicados/ocultos. Sólo LEE el DOM: no modifica nada.
    */
   async controlesVisibles() {
     return this.driver.executeScript(() => {
       const vistos = new Set();
       const out = [];
-      document.querySelectorAll('.group-field, .group-field-2').forEach((g) => {
+      const esTokenExacto = (el, token) =>
+        (' ' + (el.className || '') + ' ').includes(` ${token} `);
+      const candidatos = document.querySelectorAll(
+        '.group-field, .group-field-2, .dx-field-item, .dependiente-form-item'
+      );
+      candidatos.forEach((g) => {
+        // `.dx-field-item`/`.dependiente-form-item` matchean por token EXACTO
+        // (evita falsos positivos como `.dx-field-item-content`) —
+        // `.group-field*` sigue con substring, mismo criterio de siempre
+        // para esa convención.
+        const clase = g.className || '';
+        if (clase.includes('dx-field-item') && !esTokenExacto(g, 'dx-field-item')) return;
+        if (clase.includes('dependiente-form-item') && !esTokenExacto(g, 'dependiente-form-item')) return;
         if (g.offsetParent === null) return; // no visible
+        // WRAPPER DE GRUPO, no un control propio (confirmado real: "Estatura"
+        // de Datos personales — un `.dx-field-item` cuyo ÚNICO propósito es
+        // agrupar visualmente otros `.dx-field-item` reales adentro, "Pies"/
+        // "Pulgadas" — mismo criterio "has-group" que `_campo()` ya usa para
+        // el camino de lectura/escritura, aplicado acá al de inventario: si
+        // tiene un DESCENDIENTE que también matchea la condición de
+        // contenedor, es el grupo, no una hoja — se excluye, sus hijos se
+        // cuentan aparte por su cuenta).
+        if (g.querySelector('.group-field, .group-field-2, .dx-field-item, .dependiente-form-item')) return;
         const label = g.querySelector('label');
         if (!label) return;
-        const t = (label.textContent || '').replace(/\*/g, '').replace(/:\s*$/, '').trim();
+        // Tooltips/hints de ayuda EMBEBIDOS dentro del propio `<label>`
+        // (confirmado real: "Días tomados"/"Días pendientes"/"Días
+        // programados" de Datos básicos RH — un ícono de info con su texto
+        // explicativo como hijo del `<label>`, ej. `<label>Días
+        // tomados<div class="InfoIcon_IconHint__xxxxx"><span
+        // class="InfoIcon_IconHintText__yyyyy">Total de días...</span></div>
+        // </label>`) — sin excluirlo, `label.textContent` concatena el
+        // nombre real del campo con la explicación completa, y ese texto
+        // nunca matchea el label declarado en ESTRATEGIAS aunque el campo SÍ
+        // esté bien declarado (falso positivo). Se excluye por substring
+        // ESTABLE del nombre (`IconHint`), no por el hash de CSS-modules
+        // (`__xxxxx`), que cambia entre builds.
+        const labelClon = label.cloneNode(true);
+        labelClon.querySelectorAll('[class*="IconHint"]').forEach((n) => n.remove());
+        const t = (labelClon.textContent || '').replace(/\*/g, '').replace(/:\s*$/, '').trim();
         if (t && !vistos.has(t)) {
           vistos.add(t);
           out.push(t);
@@ -969,17 +1091,38 @@ class Form extends BaseComponent {
    * Page Object y, si hay controles en pantalla que el mapa no declara, registra
    * una ADVERTENCIA clara en el log.
    *
-   * Es puramente informativo y ADITIVO: NO rellena los controles no declarados, NO
-   * interrumpe la ejecución y NO agrega comportamiento implícito. ESTRATEGIAS sigue
-   * siendo la única fuente de verdad; esto sólo avisa cuando la UI cambió.
+   * Por defecto es puramente informativo y ADITIVO: NO rellena los controles no
+   * declarados, NO interrumpe la ejecución y NO agrega comportamiento implícito.
+   * ESTRATEGIAS sigue siendo la única fuente de verdad; esto sólo avisa cuando la UI
+   * cambió.
+   *
+   * `opciones.estricta` (default `false`, preserva el comportamiento de siempre para
+   * TODO llamador existente): si es `true`, además de loguear la advertencia, LANZA
+   * un error cuando `faltantesEnEstrategias` tiene algo — convierte la omisión en un
+   * fallo duro e imposible de pasar por alto, en vez de un log que puede no leerse
+   * (incidente real, 2026-09-04: dos controles de "Editar paquete salarial" quedaron
+   * fuera de `ESTRATEGIAS` y nadie lo notó porque nada obligaba a mirar el log).
+   *
+   * `opciones.excluir` (array de labels, default `[]`): controles VISIBLES real y
+   * estructuralmente presentes que a propósito NO son un campo dirigible del
+   * formulario (calculados/autogenerados por la app — ej. "Edad", derivada de
+   * "Fecha de nacimiento", sin `name` propio ni forma de editarla en ningún
+   * estado) — se sacan de la comparación ANTES de decidir warn/throw, así
+   * `estricta` puede quedar activado en una sección con este tipo de campo sin
+   * fallar por algo que nunca debió declararse. NO es una forma de esconder un
+   * campo real: cada nombre acá debe estar documentado (por el caller) con la
+   * evidencia de por qué es calculado, mismo criterio que ya distingue Caso A
+   * (real, aunque disabled) de un elemento puramente calculado.
    *
    * @returns el diagnóstico de `formInputModel.comparar` (para inspección/evidencia).
    */
   async validarControlesDeclarados(controles, opciones = {}) {
     const formInputModel = require('../context/formInputModel');
     const etiqueta = opciones.etiqueta || 'formulario';
+    const excluir = new Set(opciones.excluir || []);
     const enPantalla = await this.controlesVisibles();
     const diag = formInputModel.comparar(formInputModel.labels(controles), enPantalla);
+    diag.faltantesEnEstrategias = diag.faltantesEnEstrategias.filter((c) => !excluir.has(c));
 
     logger.info(
       `Form[${etiqueta}]: sincronización — declarados=${diag.declarados.length}, en pantalla=${diag.enPantalla.length}`
@@ -991,6 +1134,13 @@ class Form extends BaseComponent {
           `única fuente de verdad); revisar si el formulario cambió. ` +
           `En pantalla: [${diag.enPantalla.join(', ')}].`
       );
+      if (opciones.estricta) {
+        throw new Error(
+          `Form[${etiqueta}]: cobertura incompleta — ${diag.faltantesEnEstrategias.length} control(es) ` +
+            `visible(s) sin declarar en ESTRATEGIAS: [${diag.faltantesEnEstrategias.join(', ')}]. ` +
+            `Agregarlos a ESTRATEGIAS (con la estrategia real) antes de continuar.`
+        );
+      }
     }
     if (diag.declaradosNoVistos.length) {
       logger.info(
@@ -1047,12 +1197,33 @@ class Form extends BaseComponent {
    * el formulario aún re-renderizando de modo edición a consulta —
    * verificado leyendo un campo inmediatamente después de
    * `resultadoGuardado()`.
+   *
+   * `timeoutMs` (opcional): cuánto espera `_elemCampo` a que el campo
+   * aparezca en el DOM antes de tirar "not located". Sin especificar, usa el
+   * timeout explícito normal del framework (`this._timeout()`) — mismo
+   * comportamiento de siempre. `esperarValor()` pasa uno CORTO acá a
+   * propósito, para poder reintentar varias veces dentro de su propio
+   * presupuesto total en vez de agotarlo entero en un solo intento (ver su
+   * comentario).
    */
-  async getValor(label, intentos = 2) {
+  async getValor(label, { intentos = 2, timeoutMs } = {}) {
     let ultimoError;
     for (let i = 0; i < intentos; i++) {
       try {
-        const campo = await this._elemCampo(label);
+        const campo = await this._elemCampo(label, timeoutMs);
+        // Switch/checkbox: leer el estado REAL (`aria-pressed`/`aria-checked`
+        // del widget), no el `<input>` de respaldo — confirmado real que ese
+        // `<input>` es inconsistente para checkbox (a veces sin reflejar el
+        // estado actual tras Guardar), a diferencia de un textbox/selectbox
+        // donde SÍ es la fuente de verdad. Antes de este fix, un checkbox sin
+        // `.dx-texteditor-input` caía al `<input>` genérico (o a `''` si no
+        // había ninguno) — mismo tipo de dato poco confiable para un control
+        // booleano, igual que ya se documentó para escribir (`setSwitch`/
+        // `setCheckbox` nunca usan el `<input>`, solo el ARIA del widget).
+        const sw = await campo.findElements(By.css('.dx-switch'));
+        if (sw.length) return ((await sw[0].getAttribute('aria-pressed')) || 'false');
+        const chk = await campo.findElements(By.css('.dx-checkbox'));
+        if (chk.length) return ((await chk[0].getAttribute('aria-checked')) || 'false');
         let inputs = await campo.findElements(By.css('.dx-texteditor-input'));
         if (!inputs.length) inputs = await campo.findElements(By.css('input'));
         if (!inputs.length) return '';
@@ -1078,17 +1249,67 @@ class Form extends BaseComponent {
    * todavía. Devuelve el último valor leído (coincida o no, tras agotar el
    * timeout), para poder incluirlo en el mensaje de assert del caso que lo
    * use.
+   *
+   * El campo puede estar TRANSITORIAMENTE AUSENTE del DOM justo tras
+   * "Guardar" (no solo con valor desactualizado) — confirmado con evidencia
+   * real, 2026-09-04 ("Indicador Comision" de Paquete salarial: buscando su
+   * `<label>` directo en el DOM inmediatamente después de Guardar no
+   * aparecía; una lectura posterior, ya reasentado el formulario, sí lo
+   * mostraba con el valor correcto — es decir, el dato SÍ se persistía, el
+   * problema era leerlo en la mitad de un re-render/navegación). Antes de
+   * este fix, `getValor` propagaba ese "not located" tal cual, y como
+   * `driver.wait(fn, timeout)` NO reintenta cuando la función pasada tira
+   * (aborta al primer error), un solo intento fallido consumía TODO el
+   * `timeout` disponible sin dejar lugar a un segundo intento — el poll de
+   * este método, pensado para reintentar, en la práctica solo llegaba a
+   * probar una vez. Ahora cada intento usa un `timeoutMs` corto para
+   * localizar el campo (no el completo) y los errores se tratan como "todavía
+   * no" en vez de abortar, así el `driver.wait` externo sí alcanza a
+   * reintentar varias veces dentro de su propio presupuesto total — sigue
+   * siendo una espera atada a una condición real (el campo reapareciendo con
+   * el valor correcto), no un `sleep` fijo.
    */
-  async esperarValor(label, valorEsperado, { timeout = this._timeout(), contains = true } = {}) {
+  async esperarValor(label, valorEsperado, { timeout = this._timeout(), contains = true, intentoTimeoutMs = 3000 } = {}) {
     let actual = '';
     await this.driver
       .wait(async () => {
-        actual = await this.getValor(label);
-        const a = actual.trim().toLowerCase();
-        const e = String(valorEsperado).trim().toLowerCase();
+        try {
+          actual = await this.getValor(label, { timeoutMs: intentoTimeoutMs });
+        } catch (e) {
+          return false; // campo transitoriamente ausente/stale: no es "no coincide", es "todavía no" — se reintenta
+        }
+        const a = normalizarTexto(actual);
+        const e = normalizarTexto(String(valorEsperado));
         return contains ? a.includes(e) : a === e;
       }, timeout)
       .catch(() => {});
+    return actual;
+  }
+
+  /**
+   * API recomendada para "¿este campo del form quedó en X?": funde
+   * `esperarValor()` (poll, tolerante a un instante de render) + la
+   * comparación final en UN solo call, siempre case-insensitive
+   * (`assertTextoIgual`) — no hay dos pasos separados que un caller pueda
+   * ejecutar a medias (ej. hacer el poll pero comparar el resultado con
+   * `assert.strictEqual` a mano, que es exactamente el bug que esto
+   * reemplaza — ver SKILL.md "Text comparisons must be case-insensitive" y
+   * su incidente 2026-09-09).
+   *
+   * Lanza `AssertionError` si no coincide (case-insensitive, trim en ambos
+   * lados) — igual semántica que `assertTextoIgual`. Devuelve el valor final
+   * leído (por si el caller lo quiere loguear/mostrar en un screenshot).
+   *
+   * Para el flujo típico "cambios -> completar -> verificar", preferir esto
+   * sobre `getValor()`/`esperarValor()` + una comparación manual.
+   */
+  async assertValor(label, valorEsperado, mensaje, { timeout = this._timeout(), intentoTimeoutMs = 3000 } = {}) {
+    const actual = await this.esperarValor(label, valorEsperado, { timeout, contains: false, intentoTimeoutMs });
+    assertTextoIgual(
+      actual,
+      String(valorEsperado),
+      mensaje || `"${label}" no quedó en "${valorEsperado}" (quedó "${actual}").`
+    );
     return actual;
   }
 }

@@ -292,6 +292,26 @@
   color: var(--g-500);
   font-family: var(--mono);
 }
+/* Encabezado de sección (agrupación visual opcional, ej. "crear-empleado")
+   — solo un título, no plegable/desplegable. */
+.form-seccion {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--g-100);
+}
+.form-seccion:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+/* Asterisco de campo requerido — mismo color que la app real (wine/burgundy). */
+.campo-requerido {
+  color: var(--wine-800);
+  font-weight: 700;
+}
 .campo input[type="text"],
 .campo input[type="password"],
 .campo input[type="number"],

@@ -160,6 +160,26 @@ class SwitchStrategy extends SelectionStrategy {
 }
 
 /**
+ * DevExtreme CheckBox (`.dx-checkbox`) marcado/desmarcado. Acepta booleano o
+ * los strings 'true'/'si'/'1'. WIDGET DISTINTO de `SwitchStrategy` (confirmado
+ * real, "Indicador Comision" de Empleados > Paquete salarial): usa
+ * `role="checkbox"`/`aria-checked`, no `aria-pressed` — ver `Form.setCheckbox`.
+ *
+ * Mismo `opciones.soloSiDirigido` que `SwitchStrategy`, mismo motivo: sin
+ * valor dirigido desde el Panel, deja el checkbox INTACTO en su estado actual
+ * en vez de forzarlo a apagado.
+ */
+class CheckboxStrategy extends SelectionStrategy {
+  async aplicar(form, label, valor, opciones = {}) {
+    if (valor === undefined && opciones.soloSiDirigido) return undefined;
+    const marcado =
+      valor === true || /^(true|s[ií]|1|on)$/i.test(String(valor === undefined ? '' : valor));
+    await form.setCheckbox(label, marcado);
+    return marcado;
+  }
+}
+
+/**
  * DateBox: escribe la fecha en el editor y confirma con TAB (los editores de
  * DevExtreme commitean en el blur). Si se prefiere el calendario, se puede
  * registrar otra estrategia sin tocar esta.
@@ -261,6 +281,7 @@ module.exports = {
   TagSelectStrategy,
   TextInputStrategy,
   SwitchStrategy,
+  CheckboxStrategy,
   DatePickerStrategy,
   TreeViewStrategy,
   CustomStrategy,

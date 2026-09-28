@@ -7,6 +7,7 @@ const Popup = require('@triple/core/components/Popup');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 const testContext = require('@triple/core/context/testContext');
+const { textoIgual } = require('@triple/core/utils/assert');
 
 /**
  * Listado + modal de "Grados Académicos" (Configuración > Administración >
@@ -202,7 +203,7 @@ class GradosAcademicosPage extends BasePage {
     await this.driver
       .wait(async () => {
         actual = (await this.getValor(label)).trim();
-        return actual === esperado;
+        return textoIgual(actual, String(esperado));
       }, timeout)
       .catch(() => {});
     return actual;

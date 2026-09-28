@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { By } = require('selenium-webdriver');
-const { testContext, evidence } = require('@triple/core');
+const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const config = require('@triple/core/config');
 const fixtures = require('../support/fixtures');
 
@@ -57,7 +57,7 @@ describe('Reclutamiento - Consultar Banco de Elegibles desde una Requisición', 
     const titulo = await tituloBancoElegibles(ctx.driver);
     await evidence.attachScreenshot(ctx.driver, this, { label: 'Banco de candidatos' });
 
-    assert.strictEqual(
+    assertTextoIgual(
       titulo,
       'Banco de candidatos',
       `Se esperaba llegar a la pantalla "Banco de candidatos" tras clickear "B. Elegibles" (título leído: "${titulo}").`

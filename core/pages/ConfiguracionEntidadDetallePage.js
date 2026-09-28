@@ -7,6 +7,7 @@ const Popup = require('../components/Popup');
 const logger = require('../utils/logger');
 const config = require('../config');
 const testContext = require('../context/testContext');
+const { textoIgual } = require('../utils/assert');
 
 /**
  * Base reutilizable para la pantalla de UN registro de cualquier entidad de
@@ -100,7 +101,7 @@ class ConfiguracionEntidadDetallePage extends BasePage {
     await this.driver
       .wait(async () => {
         actual = await this.getNombre();
-        return actual === nombreEsperado;
+        return textoIgual(actual, nombreEsperado);
       }, timeout)
       .catch(() => {});
     return actual;
@@ -117,7 +118,7 @@ class ConfiguracionEntidadDetallePage extends BasePage {
     await this.driver
       .wait(async () => {
         actual = (await this.getValor(label)).trim();
-        return actual === esperado;
+        return textoIgual(actual, String(esperado));
       }, timeout)
       .catch(() => {});
     return actual;

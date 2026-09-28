@@ -1,6 +1,6 @@
 'use strict';
 
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 const comando = require('./comando');
 
@@ -90,13 +90,36 @@ function suscribir(res) {
   });
 }
 
+/**
+ * Mata el proceso lanzado y TODOS sus descendientes (npm > node > mocha >
+ * chromedriver > chrome). `proceso.kill()` NO alcanza acá: `ejecutar()` usa
+ * `spawn(..., { shell: true })`, así que en Windows el PID real es el de
+ * `cmd.exe` — matarlo no mata a sus hijos (confirmado con evidencia real:
+ * tras `proceso.kill()`, chromedriver.exe/chrome.exe seguían vivos y el test
+ * seguía avanzando varios pasos más, login incluido). `taskkill /T` mata el
+ * árbol completo desde el PID dado; en plataformas no-Windows (sin ese
+ * problema, sin shell de por medio en la práctica) se usa `proceso.kill()`
+ * normal.
+ */
+function _matarArbol(proceso) {
+  if (process.platform === 'win32') {
+    try {
+      execSync(`taskkill /pid ${proceso.pid} /T /F`, { stdio: 'ignore' });
+      return;
+    } catch (e) {
+      /* el proceso puede haber terminado por su cuenta */
+    }
+  }
+  try {
+    proceso.kill();
+  } catch (e) {
+    /* noop */
+  }
+}
+
 function cancelar() {
   if (estaCorriendo()) {
-    try {
-      activa.proceso.kill();
-    } catch (e) {
-      /* noop */
-    }
+    _matarArbol(activa.proceso);
     return { ok: true };
   }
   return { ok: false };

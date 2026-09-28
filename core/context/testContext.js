@@ -188,20 +188,43 @@ async function getODescubrir(caso, clave, descubrir) {
 function registrarCaso(caso, claves = []) {
   const datos = _datos();
   const seccion = datos[caso] || {};
+  const yaExistia = !!datos[caso];
   let cambio = false;
 
   if (!datos[caso]) cambio = true;
   const multivalorNuevas = [];
+  const declaradas = new Set();
   claves.forEach((entrada) => {
     const esString = typeof entrada === 'string';
     const clave = esString ? entrada : entrada.clave;
     const vacio = esString ? '' : entrada.vacio;
+    declaradas.add(clave);
     if (!esString && entrada.multivalor) multivalorNuevas.push(clave);
     if (!(clave in seccion)) {
       seccion[clave] = vacio !== undefined ? vacio : '';
       cambio = true;
     }
   });
+
+  // Claves HUÉRFANAS: quedaron en el archivo de una versión anterior del caso
+  // (ej. una clave renombrada en el código) pero ya no las declara nadie.
+  // Solo AVISA — nunca las borra (mismo criterio "nunca pisa/borra lo que ya
+  // está" del resto del framework, podría ser un dato real que el usuario
+  // todavía necesita) — así el drift entre código y `execution-context.json`
+  // se nota en el log en vez de quedar como un campo fantasma indefinido.
+  // Ver `GUIDELINES.md §3` / `testing-patterns/SKILL.md` (incidente
+  // 2026-09-04: "nombre" huérfano tras el rename a "Nombre de Empleado a
+  // editar", nunca detectado porque nada avisaba de la clave sobrante).
+  if (yaExistia) {
+    const huerfanas = Object.keys(seccion).filter((k) => !declaradas.has(k));
+    if (huerfanas.length) {
+      logger.warn(
+        `testContext: [${caso}] clave(s) en execution-context.json que ya NO declara el ` +
+          `código: [${huerfanas.join(', ')}]. Probablemente quedaron de un rename anterior — ` +
+          `revisar y, si corresponde, quitarlas a mano (no se borran solas).`
+      );
+    }
+  }
 
   if (multivalorNuevas.length) {
     const registro = new Set((datos[SECCION_MULTIVALOR] && datos[SECCION_MULTIVALOR][caso]) || []);
@@ -249,9 +272,12 @@ function registrarCaso(caso, claves = []) {
  * vez; el código nuevo ya deja bien ordenado todo lo que se registre de acá
  * en adelante.
  *
- * Un control declarado con estrategia `'switch'` se siembra con `false` (no
- * `''`): es la única forma de que el Panel lo detecte como boolean y lo pinte
- * como checkbox en vez de un input de texto (ver `_vacio`/`inferirTipo`).
+ * Un control declarado con estrategia `'switch'` O `'checkbox'` se siembra
+ * con `false` (no `''`): es la única forma de que el Panel lo detecte como
+ * boolean y lo pinte como checkbox en vez de un input de texto (ver
+ * `_vacio`/`inferirTipo`) — `inferirTipo` (`panel/anfitrion/contexto.js`) ya
+ * es agnóstico al nombre de la estrategia (decide por `typeof valor ===
+ * 'boolean'`), así que declarar acá alcanza, sin tocar el Panel.
  *
  * Un control declarado con `{ multiple: true }` (tagbox/multi-select, ej.
  * "Compañías permitidas" de Usuario) se marca `multivalor: true` — detectado
@@ -269,7 +295,7 @@ function registrarCasoDesdeFormulario(caso, controles = {}, clavesExtra = []) {
   const claves = [
     ...clavesExtra,
     ...formInputModel.desdeControles(controles).map(({ label, estrategia, opciones }) => {
-      if (estrategia === 'switch') return { clave: label, vacio: false };
+      if (estrategia === 'switch' || estrategia === 'checkbox') return { clave: label, vacio: false };
       if (opciones && opciones.multiple) return { clave: label, multivalor: true };
       return label;
     }),

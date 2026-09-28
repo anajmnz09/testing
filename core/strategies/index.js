@@ -53,6 +53,7 @@ registrar('searchAndSelect', new builtin.SearchAndSelectStrategy());
 registrar('tagSelect', new builtin.TagSelectStrategy());
 registrar('text', new builtin.TextInputStrategy());
 registrar('switch', new builtin.SwitchStrategy());
+registrar('checkbox', new builtin.CheckboxStrategy());
 registrar('datePicker', new builtin.DatePickerStrategy());
 registrar('treeView', new builtin.TreeViewStrategy());
 registrar('custom', new builtin.CustomStrategy());

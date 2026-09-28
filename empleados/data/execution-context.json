@@ -1,0 +1,313 @@
+{
+  "consultar-empleado": {
+    "nombre": ""
+  },
+  "crear-empleado": {
+    "Tipo ID": "",
+    "Identificación": "",
+    "Primer Nombre": "",
+    "Segundo Nombre": "",
+    "Primer Apellido": "",
+    "Segundo Apellido": "",
+    "Dimensión empleado": "",
+    "Sucursal": "",
+    "Modalidad": "",
+    "Puesto de trabajo": "",
+    "Departamento": "",
+    "Supervisor": "",
+    "Referencia": "",
+    "Nacionalidad": "",
+    "País de nacimiento": "",
+    "Fecha de nacimiento": "",
+    "Género": "",
+    "Estado civil": "",
+    "Número de hijos": "",
+    "Estatura": "",
+    "Pies": "",
+    "Pulgadas": "",
+    "Tipo de sangre": "",
+    "Condición médica": "",
+    "Discapacidad": "",
+    "Riesgo": "",
+    "Camisa": "",
+    "Pantalón": "",
+    "Zapatos": "",
+    "Email corporativo": "",
+    "Email personal": "",
+    "Teléfono de trabajo": "",
+    "Teléfono personal": "",
+    "País": "",
+    "Ciudad": "",
+    "Sector": "",
+    "Calle": "",
+    "Nombre": "",
+    "Teléfono": "",
+    "Parentesco": "",
+    "Tipo de contrato": "",
+    "Fecha de inicio": "",
+    "Razón de salida": "",
+    "Tipo de salario": "",
+    "Categoría de pago horas": "",
+    "Horario": "",
+    "Forma de pago": "",
+    "Compañía ARS": "",
+    "Compañía AFP": "",
+    "Compañía de seguro de vida": "",
+    "Agente de retencion": "",
+    "Saldo a favor ISR": "",
+    "Descuento AFP": "",
+    "Descuento SFS": "",
+    "Descuento ISR": "",
+    "Días tomados": "",
+    "Días pendientes": "",
+    "Días programados": "",
+    "Salario": "",
+    "Monto tope de comisión": "",
+    "Porciento Salario": "",
+    "Clasificación 1": "",
+    "Clasificación 2": "",
+    "Clasificación 3": "",
+    "Supervisor multicompañía": false,
+    "Fecha finalización": "",
+    "Fecha de salida": "",
+    "Banco": "",
+    "Tipo de cuenta": "",
+    "No. cuenta": "",
+    "Indicador Comision": false,
+    "Indicador Nomina": false
+  },
+  "consultar-datos-basicos": {
+    "nombre": ""
+  },
+  "consultar-resumen-cv": {
+    "nombre": ""
+  },
+  "consultar-datos-personales": {
+    "nombre": ""
+  },
+  "consultar-capacitacion": {
+    "nombre": "",
+    "Nombre de Empleado a consultar": ""
+  },
+  "consultar-dependientes": {
+    "nombre": ""
+  },
+  "consultar-amonestaciones": {
+    "nombre": ""
+  },
+  "consultar-herramientas": {
+    "nombre": ""
+  },
+  "consultar-ausencias": {
+    "nombre": "alba"
+  },
+  "consultar-acciones": {
+    "nombre": ""
+  },
+  "consultar-datos-basicos-rh": {
+    "nombre": ""
+  },
+  "consultar-paquete-salarial": {
+    "nombre": ""
+  },
+  "consultar-beneficios": {
+    "nombre": ""
+  },
+  "consultar-prestamos": {
+    "nombre": ""
+  },
+  "consultar-seguros": {
+    "nombre": ""
+  },
+  "consultar-centro-de-costo": {
+    "nombre": ""
+  },
+  "consultar-analisis-medicos": {
+    "nombre": ""
+  },
+  "consultar-contratos": {
+    "nombre": ""
+  },
+  "consultar-otros-documentos": {
+    "nombre": ""
+  },
+  "consultar-cartas": {
+    "nombre": ""
+  },
+  "consultar-cartas-pendientes": {
+    "nombre": ""
+  },
+  "consultar-dimensiones-financieras": {
+    "nombre": ""
+  },
+  "editar-datos-basicos": {
+    "Nombre de Empleado a editar": "",
+    "Tipo ID": "",
+    "Identificación": "841-8304702-9",
+    "Primer Nombre": "",
+    "Segundo Nombre": " ",
+    "Primer Apellido": "no tiene",
+    "Segundo Apellido": "apellido",
+    "Dimensión empleado": "1",
+    "Sucursal": "",
+    "Modalidad": "presencial",
+    "Puesto de trabajo": "",
+    "Departamento": "",
+    "Supervisor": "",
+    "Referencia": "",
+    "Supervisor multicompañía": true
+  },
+  "editar-datos-personales": {
+    "Nombre de Empleado a editar": "",
+    "Nacionalidad": "español",
+    "País de nacimiento": "españa",
+    "Fecha de nacimiento": "20/12/1992",
+    "Género": "sin definir",
+    "Estado civil": "casado",
+    "Número de hijos": "2",
+    "Estatura": "11",
+    "Pies": "11",
+    "Pulgadas": "11",
+    "Tipo de sangre": "o positivo",
+    "Condición médica": "nada",
+    "Discapacidad": "nada",
+    "Riesgo": "bajo",
+    "Camisa": "l",
+    "Pantalón": "m",
+    "Zapatos": "5",
+    "Email corporativo": "adrmervelsal@gmail.com",
+    "Email personal": "adrmervelsal@correotrabajo.com",
+    "Teléfono de trabajo": "8096761906",
+    "Teléfono personal": "8096761906",
+    "País": "españa",
+    "Ciudad": "granada",
+    "Sector": "bartolome",
+    "Calle": "calle",
+    "Nombre": "fulana",
+    "Teléfono": "8098766754",
+    "Parentesco": "fulana"
+  },
+  "editar-datos-basicos-rh": {
+    "Nombre de Empleado a editar": "",
+    "Tipo de contrato": "fijo",
+    "Fecha de inicio": "05/09/2023",
+    "Razón de salida": "",
+    "Tipo de salario": "horas",
+    "Categoría de pago horas": "categoria",
+    "Horario": "",
+    "Forma de pago": "",
+    "Compañía ARS": "",
+    "Compañía AFP": "",
+    "Compañía de seguro de vida": "",
+    "Agente de retencion": "",
+    "Saldo a favor ISR": "24000",
+    "Descuento AFP": "no",
+    "Descuento SFS": "no",
+    "Descuento ISR": "no",
+    "Días tomados": "5",
+    "Días pendientes": "",
+    "Días programados": "",
+    "Fecha finalización": "",
+    "Fecha de salida": "",
+    "Banco": "",
+    "Tipo de cuenta": "",
+    "No. cuenta": ""
+  },
+  "agregar-educacion": {
+    "Nombre de Empleado que recibe la Educación": "",
+    "Nombre programa educativo": "programa",
+    "Lugar": "qa",
+    "Fecha de inicio": "20/12/2023",
+    "Fecha finalización": "20/12/2024",
+    "Descripción": "nada"
+  },
+  "agregar-experiencia": {
+    "Nombre de Empleado que recibe la Experiencia": "",
+    "Puesto": "",
+    "Lugar": "",
+    "Fecha de inicio": "",
+    "Fecha finalización": "",
+    "Descripción": ""
+  },
+  "agregar-habilidad": {
+    "Nombre de Empleado que recibe la Habilidad": "",
+    "Tipo": "Habilidades digitales",
+    "Habilidad": "excell",
+    "Nivel": "Avanzado"
+  },
+  "editar-paquete-salarial": {
+    "Nombre de Empleado a editar": "",
+    "Salario": "",
+    "Monto tope de comisión": "",
+    "Porciento Salario": "",
+    "Clasificación 1": "",
+    "Clasificación 2": "",
+    "Clasificación 3": "",
+    "Indicador Comision": true,
+    "Indicador Nomina": false
+  },
+  "agregar-capacitacion": {
+    "Nombre de Empleado que recibe la Capacitación": "",
+    "Nombre": "whatever",
+    "Descripción": "nada",
+    "Centro": "infotep",
+    "Facilitador": "infotep",
+    "Costo": "1000",
+    "Inversión Empresa": "1000",
+    "Fecha de inicio": "9/9/2026",
+    "Fecha finalización": "9/9/2026",
+    "Cantidad Horas": "8",
+    "Frecuencia": "anual"
+  },
+  "editar-capacitacion": {
+    "Nombre de Empleado con la Capacitación": "",
+    "Nombre de la Capacitación a editar (opcional)": "whatever",
+    "Nombre": "prueba edicion",
+    "Descripción": "prueba edicion",
+    "Centro": "prueba edicion",
+    "Facilitador": "prueba edicion",
+    "Costo": "500",
+    "Inversión Empresa": "500",
+    "Fecha de inicio": "8/9/2026",
+    "Fecha finalización": "",
+    "Cantidad Horas": "7",
+    "Frecuencia": "Renovación trimestral"
+  },
+  "adjuntar-capacitacion": {
+    "Nombre del Empleado con la Capacitación": "",
+    "Nombre de la Capacitación a la que se adjunta (opcional)": "PROBE-947113",
+    "archivo": ""
+  },
+  "eliminar-capacitacion": {
+    "Nombre de Empleado con la Capacitación a eliminar": "",
+    "Nombre de la Capacitación a eliminar (opcional)": ""
+  },
+  "eliminar-documento-capacitacion": {
+    "Nombre del Empleado con la Capacitación": "",
+    "Nombre de la Capacitación con el documento (opcional)": "PROBE-947113",
+    "Nombre del Documento a eliminar (opcional)": "capacitacion-adjunto_a0d6eeae-8fbf-469f-bd22-1021d08b58cc"
+  },
+  "descargar-documento-capacitacion": {
+    "Nombre del Empleado con la Capacitación": "",
+    "Nombre de la Capacitación con el documento (opcional)": "",
+    "Nombre del Documento a descargar (opcional)": ""
+  },
+  "crear-dependiente": {
+    "Nombre de Empleado que recibe el Dependiente": "",
+    "Parentesco": "",
+    "Tipo ID": "",
+    "Identificación": "",
+    "Nombres": "",
+    "Apellidos": "",
+    "Género": "",
+    "Fecha de nacimiento": "",
+    "Edad": "",
+    "Discapacidad": "",
+    "Proveedor de seguros": "",
+    "Plan de seguro": "",
+    "Tarifa": "",
+    "% Empresa": "",
+    "% Empleado": "",
+    "Dependiente directo": false
+  }
+}

@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { crearProyecto } = require('../support/proyectoTemporal');
+const { crearProyecto, capturandoConsola } = require('../support/proyectoTemporal');
 
 /**
  * EXECUTION CONTEXT (datos de prueba).
@@ -156,6 +156,42 @@ describe('testContext / Execution Context (unitario)', function () {
       expect(ctx.getCaso('caso')).to.deep.equal({ claveDelUsuario: 'valor', otraClave: '' });
     });
 
+    it('avisa (sin borrar) cuando una clave ya persistida no la declara el código actual — ej. tras un rename', async function () {
+      // Simula el incidente real: un caso ya registrado con "nombre", el
+      // código luego se renombra a una clave más específica.
+      const ctx = conContexto({ 'editar-empleado': { nombre: '' } });
+
+      const [linea] = await capturandoConsola(() =>
+        ctx.registrarCaso('editar-empleado', ['Nombre de Empleado a editar'])
+      );
+
+      expect(linea).to.contain('ADVERTENCIA');
+      expect(linea).to.contain('editar-empleado');
+      expect(linea).to.contain('nombre');
+      // La huérfana NO se borra (mismo criterio "nunca pisa/borra" del resto
+      // del framework) — sigue en el archivo, solo advertida.
+      expect(ctx.getCaso('editar-empleado')).to.deep.equal({
+        nombre: '',
+        'Nombre de Empleado a editar': '',
+      });
+    });
+
+    it('NO avisa sobre una clave declarada de nuevo con el mismo nombre (nada huérfano)', async function () {
+      const ctx = conContexto({ caso: { clave: 'valor' } });
+
+      const lineas = await capturandoConsola(() => ctx.registrarCaso('caso', ['clave']));
+
+      expect(lineas).to.deep.equal([]);
+    });
+
+    it('NO avisa al crear un caso nuevo (no hay nada previo con qué comparar)', async function () {
+      const ctx = conContexto({});
+
+      const lineas = await capturandoConsola(() => ctx.registrarCaso('caso-nuevo', ['clave']));
+
+      expect(lineas.some((l) => l.includes('ADVERTENCIA'))).to.equal(false);
+    });
+
     it('no reescribe el archivo si no hay nada que agregar', function () {
       const ctx = conContexto({ caso: { clave: '' } });
 
@@ -220,6 +256,15 @@ describe('testContext / Execution Context (unitario)', function () {
 
       expect(ctx.get('crear-req', 'Rotativo')).to.equal(true);
       expect(ctx.tiene('crear-req', 'Rotativo')).to.equal(true);
+    });
+
+    it('siembra un control "checkbox" con `false` igual que "switch" (mismo widget booleano, DevExtreme distinto)', function () {
+      const CONTROLES_CON_CHECKBOX = { ...CONTROLES, 'Indicador Comision': 'checkbox' };
+      const ctx = conContexto({});
+      ctx.registrarCasoDesdeFormulario('crear-req', CONTROLES_CON_CHECKBOX);
+
+      expect(ctx.getCaso('crear-req')['Indicador Comision']).to.equal(false);
+      expect(ctx.tiene('crear-req', 'Indicador Comision')).to.equal(false);
     });
 
     it('agrega las claves extra que no son del formulario', function () {

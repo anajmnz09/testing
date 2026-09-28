@@ -179,10 +179,31 @@ class DataGrid extends BaseComponent {
     return true;
   }
 
-  /** Cantidad de filas visibles en la página actual del grid. */
-  async contarFilas() {
-    const filas = await this.driver.findElements(this.dataRow);
-    return filas.length;
+  /**
+   * Cantidad de filas visibles en la página actual del grid — CON POLL.
+   *
+   * `.dx-datagrid` se monta y el overlay de carga (`esperarSinLoader`, ya
+   * esperado por `listo()`) puede desaparecer ANTES de que el grid termine de
+   * insertar sus `.dx-data-row` — confirmado con evidencia real (Empleados,
+   * 2026-09-03): refrescando la MISMA pantalla con datos reales sin tocar
+   * nada, lecturas consecutivas de esta función alternaron 0/50/0/50/50, y
+   * una lectura en 0 se corrigió sola 1-2s después sin ninguna acción
+   * adicional. Una lectura única (como era antes) no puede distinguir "el
+   * grid no tiene registros" de "el grid todavía no terminó de renderizar" —
+   * cualquier código que decida "no hay datos" a partir de una lectura en 0
+   * heredaba ese falso negativo. Reintenta hasta `timeout` antes de aceptar 0
+   * como resultado confirmado; si ya hay filas, devuelve de inmediato (sin
+   * demora agregada para el caso con datos).
+   */
+  async contarFilas(timeout = config.timeouts.explicitWaitMs) {
+    const fin = Date.now() + timeout;
+    let cantidad = 0;
+    do {
+      cantidad = (await this.driver.findElements(this.dataRow)).length;
+      if (cantidad > 0) return cantidad;
+      await this.driver.sleep(300);
+    } while (Date.now() < fin);
+    return cantidad;
   }
 
   /**
@@ -208,7 +229,7 @@ class DataGrid extends BaseComponent {
    * bien, en el tab correcto, pero esta función seguía leyendo el grid
    * equivocado y nunca encontraba la fila ya filtrada).
    */
-  async filasPorColumnas() {
+  async _leerFilasPorColumnasDom() {
     return this.driver.executeScript(() => {
       const norm = (e) => (e && e.textContent || '').replace(/\s+/g, ' ').trim();
       const esVisible = (el) => {
@@ -233,6 +254,24 @@ class DataGrid extends BaseComponent {
         return resultado;
       });
     });
+  }
+
+  /**
+   * Como antes, pero CON POLL — mismo motivo/evidencia que `contarFilas`
+   * (ver su docblock): una sola lectura no distingue "sin registros" de
+   * "todavía no terminó de renderizar". Reintenta hasta `timeout` antes de
+   * aceptar `[]` como resultado confirmado; si ya hay filas, devuelve de
+   * inmediato.
+   */
+  async filasPorColumnas(timeout = config.timeouts.explicitWaitMs) {
+    const fin = Date.now() + timeout;
+    let filas = [];
+    do {
+      filas = await this._leerFilasPorColumnasDom();
+      if (filas.length > 0) return filas;
+      await this.driver.sleep(300);
+    } while (Date.now() < fin);
+    return filas;
   }
 
   /**

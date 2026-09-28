@@ -88,6 +88,14 @@ Después de cada ejecución E2E debes indicar explícitamente el modo de ejecuci
 
 Nunca omitas esta información.
 
+## `KEEP_BROWSER_OPEN` al correr Selenium por tu cuenta
+
+Cuando vos (el asistente) lanzás un navegador para investigar/reproducir/verificar
+algo — no una corrida disparada desde el Panel — siempre pasá
+`KEEP_BROWSER_OPEN=false` como override de esa invocación puntual, sin importar lo
+que diga `.env` (nunca lo edites para esto). Ver `GUIDELINES.md §11
+KEEP_BROWSER_OPEN` para el detalle completo y el porqué.
+
 ## Evidencia mínima obligatoria
 
 Cuando informes que ejecutaste una prueba E2E debes incluir, como mínimo:
@@ -232,6 +240,98 @@ not just the write path: a boolean switch needs its own poll-and-compare (e.g.
 (`esperarValor`/`assertTextoIgual` read/compare rendered text, not a pressed/checked
 state).
 
+**Incident — grid re-sorts instead of filtering; unchanged row count is not proof the
+search is broken (2026-09-02):** Investigated Empleados' list search by comparing row
+COUNT before/after searching (full name, partial name, exact employee code) — count
+stayed the same (50) every time, over a couple seconds — and concluded the search box
+was non-functional, filing it under the same known "Horarios search is broken" pattern
+(a real, separate, already-confirmed bug elsewhere). Wrong, per the user: this screen's
+search is supposed to work by putting the best match FIRST rather than removing rows.
+Re-investigated with much longer waits (headed, native clicks, up to 20s, 4 independent
+runs): in "Modo lista" the search reliably fires a real request (loader visible ~14s)
+that this environment currently resolves to 0 rows even for an exact, on-screen name —
+while the SAME input in "Modo tarjeta" (card view) filters instantly and correctly.
+Likely an environment/API hiccup on this specific endpoint, not a mis-integration —
+left the Page Object coded for the CORRECT behavior (search, then wait for the FIRST
+row to reflect the match, then open it) with a timeout sized to the observed ~14s
+round-trip, so it starts working the moment the endpoint stabilizes; see
+`EmpleadosPage.abrirDetalle`. Lesson (still the core one): after searching, check
+whether the FIRST row eventually changes to match the query — with a REALISTIC wait,
+not 1-2s — before concluding a search is broken or has no effect. Never skip the search
+box and text-match across all rendered rows instead: that silently breaks once a
+matching record isn't on the first/only visible page, and hides a real API problem
+behind a workaround instead of surfacing it.
+
+**Incident — false PASS from an unread race between "loader gone" and "rows
+rendered" (2026-09-03), generalizing the lesson above beyond search:** the
+2026-09-02 incident above was scoped to `abrirDetalle`'s SEARCH endpoint —
+never generalized to the plain, unfiltered listing load. `DataGrid.listo()`
+only waits for the loading OVERLAY to disappear (`esperarSinLoader`); it does
+NOT guarantee the grid finished inserting its `.dx-data-row` elements.
+`contarFilas()`/`filasPorColumnas()` used to be single-shot reads (one
+`findElements`/`executeScript`, no poll, no retry). Confirmed with live
+Selenium evidence (Empleados, real data present, same login session):
+refreshing the SAME screen 5 times in a row with nothing else changing gave
+`0, 50, 0, 50, 50` — and a "0" reading fixed itself within 1-2s without any
+further action. Every `editar-*`/`consultar-*` test across all 3 modules that
+used `if (!(await grid.contarFilas())) { ...; return; }` as its "is there
+data to test" guard inherited this false negative — and because the guard
+used a plain `return` (not `this.skip()`), Mocha reported "passed" exactly
+the same as a real, fully-verified run: Selenium DID open a real browser and
+DID load a real screen (satisfying "Ejecución real de pruebas E2E" above),
+but the business flow, its assertions, and any meaningful evidence never
+ran — the screenshot from `SCREENSHOT_MODE=all` (a generic "Resultado final"
+capture, not a targeted one) was the only artifact, and it looked
+indistinguishable from a real pass in the Panel. Fixed at the root:
+`DataGrid.contarFilas()`/`filasPorColumnas()` (`core/components/DataGrid.js`)
+now poll up to `config.timeouts.explicitWaitMs` before accepting `0`/`[]` as
+a confirmed result — returning immediately once rows appear, so the
+data-present case pays no extra delay. **Lesson, now a hard rule:** a single
+`findElements`/`executeScript` read immediately after `listo()` can NEVER be
+trusted to mean "no data" — it can only mean "no data yet, as far as this one
+read could tell." Never write a NEW "is there data" check without going
+through the (now-fixed) `contarFilas`/`filasPorColumnas`, and never
+reintroduce a single-shot read as a shortcut around them.
+
+**Rule — after a confirmed empty state, decide FAIL vs SKIP explicitly, per
+entity, and say so in the docblock (established 2026-09-03, Empleados):**
+once the read above is reliable, "0 registros" still needs a decision: is
+this entity a persistent catalog the app is expected to always have at least
+one record of (FAIL — the precondition of the scenario wasn't met), or a
+genuinely optional/ephemeral one (SKIP, via `this.skip()`, never a silent
+`return`)? This is a per-entity judgment call, not a framework default —
+don't assume one without checking with the user first. Precedent: Empleados
+was classified as a persistent catalog (the suite assumes at least one
+Employee always exists); its `editar-*`/`consultar-*` guard clauses now call
+`assert.fail(...)` with a message naming the two most likely real causes (a
+new company with no seed data, or an API/environment problem) instead of
+returning silently — see any `empleados/tests/{consultar,editar}-*.test.js`
+for the exact wording to reuse. Whichever way an entity is classified, a
+silent `return` that lets the test report "passed" with zero assertions
+executed is never acceptable again.
+
+**Rule — "antes/después" evidence on every `editar-*` test, not just a final
+screenshot (established 2026-09-03, generalizing `configuracion/tests/
+editar-usuario.test.js`'s pattern, previously undocumented — it only lived as
+an unwritten convention in that module's test code):** an edit test must
+capture, explicitly:
+1. A screenshot labeled "... ANTES de editar" right after confirming the
+   record/section is open (before entering edit mode).
+2. The change, applied and saved.
+3. Re-verification of EACH changed field via `Form.esperarValor(label,
+   valorEsperado)` (poll, not a single `getValor()` read — the same
+   loader/render race as above applies to reading a value back after
+   Guardar) — never trust the plain `getValor()` immediately after a save.
+4. A screenshot labeled "... DESPUÉS de editar", taken AFTER step 3 resolves.
+5. `assertTextoIgual` against the value `esperarValor` actually settled on.
+
+`SCREENSHOT_MODE=all`'s automatic end-of-test screenshot is NOT a substitute
+for steps 1 and 4: it captures whatever the LAST screen happens to be, with a
+generic label, regardless of whether the edit actually happened — it proves
+"the test ended here," never "this is what changed." See
+`empleados/tests/editar-datos-basicos.test.js` for a second reference
+implementation of this pattern outside `configuracion`.
+
 ## Naming
 
 Descriptive names are the single source of truth. Never use TC-001, TC-002, etc.
@@ -354,6 +454,123 @@ enough — cross-check the fallback specifically against the `if (!Object.keys(c
 shape in this section, since a buggy sibling file is just as easy to copy from as a correct
 one and reads just as reasonably on its own.
 
+## `editar-*`: the SEARCH key must be named distinctly from real form fields, per entity
+
+Every `editar-*` test that lets the Panel direct WHICH record to open needs its own
+search/identify key — the label used ONLY to find the record, never applied as a form
+value. That key's name must be **descriptive and entity-specific**, spelling out both
+the entity and that it identifies the record to edit — never a bare, generic word that
+could be confused with (or collide with) a real editable field of that same form.
+
+**Established pattern to copy:** `configuracion/tests/editar-usuario.test.js` names it
+`CLAVE_BUSQUEDA = 'Nombre de Usuario a editar'` — deliberately distinct from "Nombre
+Completo" (the real, editable field on that same form), with its own comment saying so.
+For a new entity, the equivalent is `"Nombre de <Entidad> a editar"` (or whatever real
+identifying attribute that screen searches by — code, not necessarily name, if that's
+how the screen's search actually works, per "Non-form Tests"/"Discover and Verify"
+above) — never just `'nombre'`.
+
+**Incident — Empleados' `editar-*` used a bare `'nombre'` (found 2026-09-03, fixed):**
+all 4 `empleados/tests/editar-*.test.js` declared `CLAVE_BUSQUEDA = 'nombre'` — generic,
+lowercase, not entity-qualified. It didn't collide with a real field of THAT form
+("Primer Nombre"/"Segundo Nombre" are different labels), but it read ambiguously in the
+Panel among the real fields and didn't follow the established naming shape. Fixed to
+`'Nombre de Empleado a editar'` across all 4, matching `editar-usuario`'s pattern.
+**Lesson:** when writing a NEW `editar-*` case, don't default the search key to the
+entity's bare identifying word (`'nombre'`, `'código'`, etc.) just because it reads
+naturally in isolation — name it as a search key, explicitly, every time, even when
+it happens not to collide with any real field on that particular form today (a form can
+grow a same-named field later, and an ambiguous key is a foot-gun for the next person
+reading the Panel regardless).
+
+## General rule: the identifying-entity field goes FIRST, and code order ≠ persisted order
+
+This generalizes the previous section beyond naming: **whenever a case represents an
+operation on a specific person/entity (edit their data, add a child record to them,
+etc.), the parameter that identifies WHO — the search key, or "who does this new record
+belong to" — must be seeded FIRST, before every other field.** Not just for `editar-*`,
+not just for one module: any case with this shape, present or future
+(`editar-*`, `agregar-*` against an existing parent, any future pattern that fits).
+
+**Two separate mechanisms, both already correct by design — use them, don't reinvent:**
+
+- `registrarCasoDesdeFormulario(CASO, ESTRATEGIAS, clavesExtra)` seeds `clavesExtra`
+  FIRST, then the form's real controls (`core/context/testContext.js`, by design — see
+  its own docblock). Pass the search key as `clavesExtra`; you get first-position for
+  free, no extra work.
+- `registrarCaso(CASO, [...])` (non-`ESTRATEGIAS`-backed cases, e.g. a popup mini-form
+  whose fields are `<span>` instead of `<label>` — see `agregar-educacion.test.js`) has
+  no automatic ordering: the search key must be the literal first element of the array
+  you pass.
+
+**The trap that actually bit this project: code order and `execution-context.json`
+order are two DIFFERENT things, and only one of them updates automatically.**
+`registrarCaso` (the function both mechanisms above eventually call) NEVER reorders or
+deletes keys already present in `execution-context.json` — it only appends genuinely
+NEW keys, on purpose, so it never silently discards a value the user already typed. The
+consequence: renaming a key in code (e.g. `'nombre'` → `'Nombre de Empleado a editar'`,
+per the previous section's incident) does **not** move anything in a case that was
+already registered under the old name — the file keeps the OLD key exactly where it
+was, and the NEW key gets appended at the very end, since as far as `registrarCaso` can
+tell it's simply a key it's never seen before. **Panel field order is exactly
+`Object.keys()` of that JSON section** (confirmed end to end:
+`testContext._escribir` → `panel/anfitrion/contexto.js#seccion` builds `claves` via
+`Object.keys(s).map(...)` → `panel/web/js/contexto.js` renders that array with a plain
+`for` loop, no client-side sort) — so a stale key order in the FILE is a stale key
+order in the PANEL, regardless of what the code now says.
+
+**Real incident (2026-09-04):** all 4 `empleados/tests/editar-*.test.js` plus all 3
+`agregar-*.test.js` (Resumen/CV: educación, experiencia, habilidad) had `CLAVE_BUSQUEDA`
+renamed from a bare `'nombre'` to an entity-specific name earlier the same session (the
+incident in the previous section) — correctly, and correctly seeded FIRST in every
+test file's code. But `empleados/data/execution-context.json` had already been written
+once under the OLD scheme, so after the rename every one of those 7 sections still had:
+a **stale, orphaned `"nombre": ""` key sitting first** (the literal ghost field the user
+spotted — it doesn't correspond to anything real in the form, it's just what
+`registrarCaso` never had a reason to remove), and the real, correctly-named search key
+sitting **last** (appended, not moved). The code was never wrong; the persisted file
+just never got migrated. Verified this is confined to `empleados` — grepped
+`configuracion`/`reclutamiento`'s `execution-context.json` for the same
+"`nombre` key coexisting with a differently-named search key" shape and found none: they
+never went through a bare-`'nombre'` rename, so they never accumulated this debt.
+
+**Fix applied:** for each of those 7 sections, deleted the orphaned `"nombre": ""` key
+and moved the real search key to the first position, preserving every other value
+byte-for-byte — a manual, one-time reconciliation of the persisted file to match what
+the code had already been declaring correctly. **This is not a one-off cleanup to
+forget about**: `core/context/testContext.js#registrarCaso` now logs a `logger.warn`
+whenever a case's persisted section contains keys that current the declared `claves`
+list doesn't mention — so the NEXT time a key gets renamed in code, the drift shows up
+in the log instead of silently lingering until a user notices a ghost field months
+later. It still never auto-deletes anything (same "never overwrite/delete what's
+already there" principle as the rest of the framework) — the warning is the whole
+point: it turns an invisible, permanent drift into a visible, one-line fix.
+
+**Lesson for future renames of any registered key (search key or otherwise):** a code
+rename is only half the fix. Always check the actual `execution-context.json` for the
+affected case(s) afterward — don't assume the code change already reordered or cleaned
+anything there, and don't skip it because "the code is right now." If `registrarCaso`
+logs the new staleness warning for that case, that is the go/no-go signal for whether a
+manual reconciliation is still needed.
+
+## Semantic naming: never name a field after a generic label without confirming what it means
+
+Applies to any name the framework itself INVENTS — a search key, a synthetic parameter,
+anything that isn't a real, visible label already dictated by the app's own UI (real app
+labels are governed by the separate "labels REALES" rule, `GUIDELINES.md §3` — never
+renamed, never aliased). For everything the framework names on its own: before choosing
+that name, determine what the value actually represents in THIS form's context, and name
+it for that — don't default to whatever generic word first came to mind (`Nombre`,
+`Tipo`, `Estado`, `Código`) just because it "reads fine" in isolation. A bare `Nombre` as
+a search key for "which employee does this new education/experience/skill entry belong
+to" doesn't say who the name belongs to once it shows up in a Panel field list mixed in
+with other, unrelated names. Keep it natural, though — this is not license to produce
+artificially long, over-qualified names either; `"Nombre de Empleado a editar"` /
+`"Nombre de Empleado que recibe la Educación"` are the right length: specific enough to
+be unambiguous, short enough to read naturally. If a shorter, equally unambiguous name
+exists, prefer it — the goal is clarity for the person filling the Panel, not maximum
+verbosity.
+
 ## Automatic-mode default name in "crear-*" tests: Panel-directed values are never suffixed
 
 Some `crear-*` tests need the identifier field to be unique on every run (the app rejects
@@ -409,16 +626,17 @@ needs "find the first row matching some criteria" or "verify a column value befo
 opening the record", filter/read from these first. Comparisons against grid text should be
 case-insensitive — see "Text comparisons must be case-insensitive" below.
 
-## Text comparisons must be case-insensitive
+## Text comparisons must be case- and accent-insensitive
 
 Any comparison against text rendered by the app — DataGrid cell, form field, detail-page
 field, screen/popup title, notify text, anything read back from the UI — must be
-case-insensitive. The app (or a value typed from the Panel/Execution Context) may render the
-same value with different casing (`"Inactivo"` vs `"inactivo"`, `"EMPLEADO"` vs `"Empleado"`);
-that difference is NOT a real failure and must never fail a test.
+case-insensitive AND accent-insensitive. The app (or a value typed from the Panel/Execution
+Context) may render the same value with different casing (`"Inactivo"` vs `"inactivo"`,
+`"EMPLEADO"` vs `"Empleado"`) or with/without a diacritic (`"Renovación"` vs `"Renovacion"`);
+neither difference is a real failure and must never fail a test.
 
-Use the shared helper for this — do not write `.trim().toLowerCase()` by hand in a test or
-Page Object:
+Use the shared helper for this — do not write `.trim().toLowerCase()` (or your own accent
+stripping) by hand in a test or Page Object:
 
 ```js
 const { assertTextoIgual } = require('@triple/core'); // or require('@triple/core/utils/assert')
@@ -426,17 +644,110 @@ const { assertTextoIgual } = require('@triple/core'); // or require('@triple/cor
 assertTextoIgual(actual, esperado, `"${label}" no quedó en "${esperado}" (quedó "${actual}").`);
 ```
 
-`assertTextoIgual` (`core/utils/assert.js`) trims and lower-cases both sides before comparing,
-throws `AssertionError` with your message on mismatch (same assertion semantics as
+`assertTextoIgual` (`core/utils/assert.js`, via `normalizarTexto`) trims, folds diacritics
+(NFD-decompose + strip combining marks) and lower-cases both sides before comparing, throws
+`AssertionError` with your message on mismatch (same assertion semantics as
 `assert.strictEqual`), and requires both arguments to be `string` — it does NOT coerce
 numbers/booleans/other types to text. Numeric or non-text comparisons (e.g. a formatted
 salary, a star rating) keep using `assert.strictEqual`/`assert.equal` directly with their own
 normalization (e.g. `parseFloat`), never this helper.
 
+Accent-folding is a deliberate trade-off: it can equate two genuinely different Spanish words
+that differ only by a diacritic (`"año"` vs `"ano"`). Accepted because the real, observed
+failure mode (a Panel-typed value missing a tilde that the app renders WITH one) is far more
+common in this framework's actual data than a genuine semantic collision — none is known to
+exist in the system's entities today. If one is ever found for a specific field, use the
+contract test's escape hatch (`// contrato-texto-ui:permitir: <razón>`) for that one call site
+— do not revert the shared normalizer.
+
 If you find yourself writing `.trim().toLowerCase()` (or any other manual case-normalization)
 directly in a test, that is a sign it should be `assertTextoIgual` instead — the manual form
 duplicates the rule and can drift (e.g. only trimming, or forgetting the case-fold on one
 side).
+
+For the common "does this form field show X" check specifically, prefer `Form.assertValor(label,
+esperado, mensaje)` over `esperarValor()` + a separate `assertTextoIgual()` call — it fuses the
+poll and the case-insensitive comparison into one call, so there's no second step to forget (see
+the incident below for exactly what happens when that second step gets skipped).
+
+A permanent contract test (`core/tests/contrato-comparacion-texto-ui.spec.js`, runs on every
+`npm run test:unit`) statically fails the build if any `*.test.js` file compares UI-read text
+with raw `assert.strictEqual`/`assert.equal` instead of `assertTextoIgual`/`Form.assertValor` —
+do not rely on remembering this rule; the contract test is what actually enforces it now.
+
+**Incident (2026-09-09) — why the rule/helper existing wasn't enough, and what changed so it's
+now enforced mechanically, not just documented:** `empleados/tests/editar-capacitacion.test.js`
+failed on `"Frecuencia"`: expected `"Renovación trimestral"`, got `"Renovación Trimestral"` — a
+pure case difference, wrongly treated as a real mismatch. The rule above and `assertTextoIgual`
+already existed and were already used in 29 files at the time. First pass fixed the 3 call
+sites that used raw `assert.strictEqual`/`assert.equal` against UI-read text instead of
+`assertTextoIgual` (`empleados/tests/editar-capacitacion.test.js`,
+`configuracion/tests/editar-grupo.test.js`,
+`reclutamiento/tests/editar-paquete-beneficios-solicitud-empleo.test.js`) — but fixing 3 tests
+is not a fix for "why did this recur despite the rule already existing", so the investigation
+went deeper. Two separate root causes were found:
+
+1. **The comparison predicate was duplicated, and only ONE copy had ever been fixed for
+   case-insensitivity.** `Form.esperarValor()` (`core/components/Form.js`) polls
+   case-insensitively (`.trim().toLowerCase()`) — but it turned out NOT to be the only
+   "wait for a field to show a value" implementation in the framework. Four other Page Object
+   methods had each hand-rolled their OWN copy of the same wait-loop shape (literally commented
+   "mismo criterio que..." each other — copy-pasted, not reused), and every one of those copies
+   used a case-SENSITIVE `actual === esperado` predicate instead of delegating to `Form`'s fixed
+   version: `ConfiguracionEntidadDetallePage.esperarValor`/`esperarNombre`
+   (`core/pages/ConfiguracionEntidadDetallePage.js` — the base class for every `configuracion`
+   entity screen), `GrupoDetallePage.esperarValorEditar`, `HabilidadesPage.esperarValor`,
+   `GradosAcademicosPage.esperarValor`. This is the actual architectural gap the "Frecuencia"
+   bug traces back to: a prior refactor fixed the ONE canonical `Form.esperarValor`, but never
+   audited for (nor prevented) parallel, drifted copies of the same logic — "no duplicar
+   lógica" was violated silently, in a way code review of any ONE file wouldn't catch. Fixed by
+   replacing each duplicated `actual === esperado` with `textoIgual(actual, esperado)`
+   (`core/utils/assert.js`'s boolean predicate form of the same rule) — same timing/retry
+   behavior at each site, only the comparison itself changed.
+2. **Nothing made the correct helper the path of least resistance, and nothing caught it
+   mechanically when a test skipped it.** `assert` (Node core) is imported by literally every
+   test file for its OTHER assertions (`assert.ok`, `assert.fail`); reaching for
+   `assert.strictEqual` out of habit costs nothing extra, while `assertTextoIgual` requires
+   remembering it exists and importing it on purpose. A repo-wide audit for the SHAPE of the
+   bug (not just its exact error message) found 4 MORE pre-existing instances beyond the 3
+   already fixed — `reclutamiento/tests/compartir-requisicion-publicada.test.js` (public vacancy
+   name), `reclutamiento/tests/crear-req-creacion.test.js` (requisition name after reopening),
+   `reclutamiento/tests/navegacion-configuracion.test.js` (screen title),
+   `reclutamiento/tests/consultar-banco-elegibles-desde-requisicion.test.js` (screen title via a
+   local helper function) — 7 real instances total, spread across all 3 modules, and **every
+   single `assert.strictEqual`/`assert.equal` call anywhere in the test suite that compared two
+   strings turned out to be one of these bugs** — there was no legitimate string-vs-string
+   strict case to preserve.
+
+**What actually closes the gap (not just this incident, the general capacity for it to
+recur):**
+- `Form.assertValor(label, valorEsperado, mensaje)` — a new fused "wait + compare" method
+  (`core/components/Form.js`) that makes the CORRECT path shorter to write than the buggy one:
+  one call, always case-insensitive, instead of a two-step `esperarValor()` +
+  separately-remembered `assertTextoIgual()`. Prefer it for a straightforward "does this form
+  field show X" check in new tests. It does not replace `esperarValor()` — a test that collects
+  several fields' final values BEFORE asserting any of them (e.g. to guarantee a screenshot gets
+  taken even if one field is wrong) still wants the two-step form on purpose; `assertValor` is
+  for the common case with no such ordering constraint.
+- `core/tests/contrato-comparacion-texto-ui.spec.js` + `core/utils/auditoriaComparacionTexto.js`
+  — a permanent contract test, in the same family as `contrato-suite-unitaria.spec.js`, that
+  runs on every `npm run test:unit` and statically scans every `*.test.js` file for
+  `assert.strictEqual`/`assert.equal` called against text read from a known UI accessor
+  (`getValor`, `getTitulo`, `getNombre`, a DataGrid row property, etc. — see
+  `METODOS_TEXTO_UI` in that file) or a variable traced back to one. It is a documented
+  heuristic (not a full parser — the project has no AST-parsing dependency and this problem
+  didn't warrant adding one), with an explicit escape hatch (`// contrato-texto-ui:permitir:
+  <razón>` on the offending line) for a genuinely legitimate future exception. **This is the
+  piece that actually makes the rule hard to violate again**: before this, the rule lived only
+  in this document and in reviewer memory, both of which already proved insufficient once.
+  When adding a NEW Page Object method that reads business text rendered for a human (not a
+  technical value like a URL or a CSS class), add it to `METODOS_TEXTO_UI` in that file so the
+  contract test can see it too.
+
+**Lesson:** a fix that repairs the reported symptom (3 tests, one error message) is not the
+same as a fix for the architecture that allowed it — always ask, for a "we already fixed this
+class of bug before" report, whether the ORIGINAL fix was ever duplicated/drifted elsewhere in
+the codebase, and whether anything besides documentation stops it from happening a third time.
 
 The same rule applies to LOCATORS, not just assertions. A hand-rolled XPath like
 `` `//tr[.//td[contains(normalize-space(.), '${texto}')]]` `` is case-sensitive (XPath 1.0 has

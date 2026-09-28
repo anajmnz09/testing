@@ -22,6 +22,39 @@ const DIR_FIXTURES = path.join(os.tmpdir(), 'triple-fixtures');
 const PNG_1x1_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
+/**
+ * Genera un PDF de 1 página MÍNIMO pero ESTRUCTURALMENTE VÁLIDO (header
+ * `%PDF-1.4`, 4 objetos, tabla `xref` con offsets reales calculados, `trailer`
+ * y `%%EOF`) — para pantallas de carga que rechazan `.txt` y solo aceptan
+ * documentos "de verdad" (ej. "Adjuntar documento" de Capacitación, cuyo
+ * `accept` es `.pdf,.docx,.doc,.png,.jpg,.jpeg`). Sin dependencias externas.
+ */
+function _construirPdf() {
+  const objetos = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  const stream = 'BT /F1 12 Tf 20 72 Td (Documento de prueba Triple - QA E2E) Tj ET';
+  objetos.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+
+  const header = '%PDF-1.4\n';
+  let cuerpo = '';
+  const offsets = [];
+  objetos.forEach((cont, i) => {
+    offsets.push(header.length + cuerpo.length);
+    cuerpo += `${i + 1} 0 obj\n${cont}\nendobj\n`;
+  });
+
+  const inicioXref = header.length + cuerpo.length;
+  let xref = `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
+  for (const off of offsets) xref += `${String(off).padStart(10, '0')} 00000 n \n`;
+  const trailer = `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${inicioXref}\n%%EOF`;
+
+  return Buffer.from(header + cuerpo + xref + trailer, 'latin1');
+}
+
 const GENERADORES = {
   txt: {
     ext: 'txt',
@@ -36,6 +69,10 @@ const GENERADORES = {
   png: {
     ext: 'png',
     escribir: (ruta) => fs.writeFileSync(ruta, Buffer.from(PNG_1x1_BASE64, 'base64')),
+  },
+  pdf: {
+    ext: 'pdf',
+    escribir: (ruta) => fs.writeFileSync(ruta, _construirPdf()),
   },
 };
 
@@ -58,7 +95,7 @@ function _slug(texto) {
  * Devuelve la ruta ABSOLUTA de un archivo por defecto del tipo indicado,
  * generándolo si aún no existe. Reutilizable por cualquier caso de carga.
  *
- * @param {string} [tipo]  'txt' (por defecto) o 'png'
+ * @param {string} [tipo]  'txt' (por defecto), 'png' o 'pdf'
  * @param {object} [opts]
  * @param {string} [opts.base]  nombre base del archivo (sin extensión). Permite
  *        generar archivos DISTINTOS por caso/clasificación —p. ej. uno por tipo
