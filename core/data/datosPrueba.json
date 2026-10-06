@@ -1,0 +1,35 @@
+{
+  "nombres": ["Carlos", "María", "José", "Ana", "Luis", "Laura", "Miguel", "Carmen", "Pedro", "Rosa", "Juan", "Elena", "Rafael", "Sofía", "Andrés", "Patricia", "Fernando", "Daniela", "Ricardo", "Gabriela", "Manuel", "Natalia", "Héctor", "Valeria", "Eduardo", "Camila", "Javier", "Lucía", "Alberto", "Isabel", "Diego", "Marta", "Samuel", "Paola", "Raúl", "Verónica", "Víctor", "Yesenia", "Francisco", "Claudia"],
+  "apellidos": ["Pérez", "Rodríguez", "Martínez", "García", "Santos", "Fernández", "Díaz", "Reyes", "Gómez", "Jiménez", "Peña", "Castillo", "Almonte", "Báez", "Cabrera", "Núñez", "Ortiz", "Polanco", "Ramírez", "Sánchez", "Tavárez", "Vargas", "Mejía", "Guzmán", "Rosario", "Batista", "Féliz", "Medina", "Del Rosario", "Lantigua", "Paulino", "Montero", "Taveras", "Suero", "Herrera", "Cruz"],
+  "temasProyecto": ["Proyecto Aurora", "Expansión Norte", "Plan Anual", "Relevo Generacional", "Cobertura Temporal", "Nueva Sucursal", "Refuerzo de Equipo", "Proyecto Horizonte", "Crecimiento Regional", "Turno Ampliado", "Iniciativa Calidad", "Temporada Alta"],
+  "plantillas": {
+    "requisitos": [
+      "Experiencia mínima de 2 años como {puesto}. Disponibilidad para trabajar en equipo y cumplir metas.",
+      "Formación afín al cargo de {puesto}, buen manejo de herramientas ofimáticas y comunicación efectiva.",
+      "Conocimientos comprobables para el puesto de {puesto}; se valora experiencia previa en el sector."
+    ],
+    "responsabilidades": [
+      "Ejecutar las funciones propias de {puesto}, reportando avances al supervisor directo.",
+      "Cumplir los procesos y políticas del área como {puesto} y apoyar al resto del equipo.",
+      "Dar seguimiento a las tareas asignadas al cargo de {puesto} y documentar los resultados."
+    ],
+    "descripcion": [
+      "Vacante de {puesto} para cubrir necesidades del equipo ({tema}).",
+      "Se requiere {puesto} para reforzar el área durante {tema}.",
+      "Posición de {puesto} asociada a {tema}."
+    ],
+    "comentario": [
+      "Se solicita atención prioritaria para el cargo de {puesto}.",
+      "Revisar el perfil de {puesto} antes de continuar el proceso.",
+      "Seguimiento pendiente con el área solicitante de {puesto}.",
+      "Comentario de seguimiento sobre {puesto} ({tema})."
+    ],
+    "comentarioGenerico": [
+      "Seguimiento pendiente con el área solicitante.",
+      "Revisar la información antes de continuar el proceso.",
+      "Se solicita atención prioritaria a este registro.",
+      "Nota registrada durante la revisión del proceso."
+    ]
+  },
+  "puestoGenerico": "Puesto General"
+}

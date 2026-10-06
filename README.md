@@ -505,6 +505,10 @@ testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
 
 `registrarCaso` **no pisa** valores ya cargados ni borra claves que hayas agregado: solo crea lo que falta.
 
+### Datos automáticos dinámicos
+
+Sin valor del Panel, los textos/identificadores automáticos salen de `core/utils/datosPrueba.js` (catálogos en `core/data/datosPrueba.json`): nombres, correos, identificaciones y textos coherentes con el contexto del test (p. ej. el Puesto). Únicos solo donde la app lo exige. Ver GUIDELINES §3.
+
 ### Casos de formulario: sembrar desde el Input Model
 
 Un caso que llena un **formulario** no escribe su lista de claves a mano: la deriva del

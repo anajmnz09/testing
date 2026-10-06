@@ -116,6 +116,24 @@ Reglas:
   representa (ej. el empleado AL QUE se le agrega un registro), sin quedarse con lo
   genérico solo porque "andaba".
 
+### Datos automáticos dinámicos — `core/utils/datosPrueba.js` (única fuente)
+
+Cuando un campo de texto/identificador no recibió valor del Panel, el valor automático
+sale **siempre** de `@triple/core/utils/datosPrueba` (catálogos en `core/data/datosPrueba.json`),
+nunca de strings fijos ni `Automatica-<timestamp>`:
+
+- **Prioridad intacta:** el llamador sigue haciendo `testContext.get(caso, label) || generador(...)`;
+  el generador no lee ni pisa el contexto.
+- **Unicidad solo donde la app la exige:** `personaUnica()`, `correo()`, `identificacion()`,
+  `celular()`, `nombreRequisicion(puesto)` (llevan token temporal/secuencia). Textos libres
+  (`texto('requisitos'|'responsabilidades'|'descripcion'|'comentario', { puesto })`) pueden repetirse.
+- **Coherencia semántica:** el generador recibe el contexto del test (p. ej. el Puesto ya elegido
+  en el formulario) y lo incorpora; Search/Select sigue tomando la primera opción.
+- **Límites reales:** `nombreRequisicion` se acota a 45 caracteres (61 hizo fallar el Guardar con
+  "Error en el sistema"). Si un campo nuevo tiene `maxlength`, acotarlo en el generador.
+- Para ampliar: agregar catálogo/plantilla al JSON o una función a `datosPrueba.js`; no crear
+  generadores por módulo. Los helpers de módulo (`datosQA.js`, `*.data.js`) solo adaptan labels.
+
 Ver README §Selection Strategies y `docs/plataforma-de-control-arquitectura.md §18`.
 
 ---

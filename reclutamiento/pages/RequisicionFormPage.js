@@ -7,6 +7,7 @@ const config = require('@triple/core/config');
 const testContext = require('@triple/core/context/testContext');
 const { parsearValoresMultiples } = require('@triple/core/strategies');
 const datos = require('../data/requisiciones.data');
+const datosPrueba = require('@triple/core/utils/datosPrueba');
 
 const RAZON = { CREACION: 'Creacion', SUSTITUCION: 'Sustitucion' };
 
@@ -177,8 +178,7 @@ class RequisicionFormPage extends BasePage {
     await this.form.validarControlesDeclarados(ESTRATEGIAS, { etiqueta: 'crear-requisicion' });
     const val = (label) => testContext.get(caso, label); // undefined si está vacío
 
-    const nombre = val('Nombre de requisición') || datos.nombreQA(caso);
-    const resultado = { nombre };
+    const resultado = {};
 
     // Selects requeridos, en orden de dependencia (Sucursal → Departamento →
     // Puesto). Provisto → se usa (searchAndSelect); vacío → como hoy: primera
@@ -194,11 +194,17 @@ class RequisicionFormPage extends BasePage {
       }
     }
 
-    // Nombre + textos requeridos. Provisto → se usa; vacío → el texto QA de hoy.
+    // Nombre + textos requeridos. Provisto → se usa; vacío → dato dinámico del
+    // generador del Core, relacionado con el Puesto ya elegido arriba (el nombre
+    // se resuelve DESPUÉS de los selects justamente para poder usarlo).
+    const puesto = resultado['Puesto'] || val('Puesto') || (await this.form.getValor('Puesto').catch(() => ''));
+    const nombre = val('Nombre de requisición') || datos.nombreQA(caso, puesto);
+    resultado.nombre = nombre;
+    logger.info(`RequisicionForm: nombre de requisición = "${nombre}" (Puesto base: "${puesto}")`);
     await this.form.escribir('Nombre de requisición', nombre);
-    resultado.requisitos = val('Requisitos') || `Requisitos QA - ${nombre}`;
-    resultado.responsabilidades = val('Responsabilidades') || `Responsabilidades QA - ${nombre}`;
-    resultado.descripcion = val('Descripción') || `Descripción QA - ${nombre}`;
+    resultado.requisitos = val('Requisitos') || datosPrueba.texto('requisitos', { puesto });
+    resultado.responsabilidades = val('Responsabilidades') || datosPrueba.texto('responsabilidades', { puesto });
+    resultado.descripcion = val('Descripción') || datosPrueba.texto('descripcion', { puesto });
     await this.form.escribir('Requisitos', resultado.requisitos);
     await this.form.escribir('Responsabilidades', resultado.responsabilidades);
     await this.form.escribir('Descripción', resultado.descripcion);

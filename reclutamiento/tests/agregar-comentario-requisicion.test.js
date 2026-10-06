@@ -20,7 +20,7 @@ describe('Reclutamiento - Agregar comentario a requisición existente', function
   const ctx = fixtures.usarListadoRequisiciones();
 
   it(`${CASO}: agrega un comentario mediante el editor de comentarios y confirma el guardado`, async function () {
-    const comentario = testContext.get(CASO, 'comentario') || datos.comentario;
+    const comentario = testContext.get(CASO, 'comentario') || datos.comentario();
 
     const { detalle } = await fixtures.abrirRequisicionExistente(ctx, CASO);
     const guardado = await detalle.agregarComentario(comentario);

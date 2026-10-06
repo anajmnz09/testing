@@ -7,11 +7,13 @@
  * los datos genéricos coherentes (textos) y la configuración de los casos.
  */
 
-// Nombre de requisición único y reconocible: marcador QA + nombre del caso +
-// timestamp. Recibe el nombre descriptivo del caso (ej. 'crear-req-comentarios'),
-// de modo que el registro creado en la app sea rastreable hasta su test.
-function nombreQA(caso) {
-  return `QA-${caso}-${Date.now()}`;
+const datosPrueba = require('@triple/core/utils/datosPrueba');
+
+// Nombre de requisición único y relacionado con el Puesto del test
+// ("Analista de RRHH - Proyecto Aurora K3X9A", máx. 45 caracteres). Sin Puesto conocido usa un
+// nombre genérico. `caso` se conserva por compatibilidad de firma.
+function nombreQA(caso, puesto) {
+  return datosPrueba.nombreRequisicion(puesto);
 }
 
 module.exports = {
@@ -25,5 +27,6 @@ module.exports = {
     nombreCampo: 'qa_disponibilidad',
   },
   // Comentario para crear-req-comentarios.
-  comentario: 'Comentario de prueba automatizada QA.',
+  // Comentario dinámico (no único) para crear-req-comentarios/agregar-comentario.
+  comentario: (puesto) => datosPrueba.texto('comentario', { puesto }),
 };

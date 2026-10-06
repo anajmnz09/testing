@@ -591,6 +591,17 @@ as "Banco Popular 293688" — a different value than what was actually asked for
 `editar-*` bug: the random/timestamp part is confined strictly to the "nothing was directed"
 branch.
 
+## Automatic-mode data: use `core/utils/datosPrueba.js`, never fixed strings or `Automatica-<ts>`
+
+Texto/identificadores del modo automático (sin valor del Panel) se generan con
+`@triple/core/utils/datosPrueba` + `core/data/datosPrueba.json`: nombres/apellidos de catálogo,
+`correo(persona)`, `identificacion()`, `celular()`, `nombreRequisicion(puesto)`,
+`texto(tipo, { puesto })`. Panel gana siempre (`get(caso, label) || generador()`); la unicidad
+solo se exige donde la app la pide (persona, correo, identificación, nombre de requisición/entidad);
+el contexto semántico se pasa como argumento (p. ej. el Puesto elegido). Respetar largos reales:
+un nombre de requisición de 61 caracteres falló el Guardar ("Error en el sistema") — se acota a 45.
+Amplía el JSON/`datosPrueba.js`; no crees generadores por módulo.
+
 ## Non-form Tests
 
 Examples: publish requisition, pause requisition, share requisition, import documents,

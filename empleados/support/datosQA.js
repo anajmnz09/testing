@@ -1,31 +1,38 @@
 /**
- * Valores QA por defecto para los campos de texto/fecha del formulario
- * "Crear Empleado" que NO tienen un "primer valor" razonable (a diferencia de
- * un selectbox, un campo de texto libre no tiene "primera opción" — sin un
- * valor explícito, `TextInputStrategy`/`DatePickerStrategy` no tocan el
- * control, ver `builtinStrategies.js`). Un sufijo de timestamp evita choques
- * de unicidad (ej. email) entre corridas sucesivas.
+ * Valores QA por defecto (modo automático) para los campos de texto/fecha del
+ * formulario "Crear Empleado" que NO tienen un "primer valor" razonable (a
+ * diferencia de un selectbox, un campo de texto libre no tiene "primera opción"
+ * — sin un valor explícito, `TextInputStrategy`/`DatePickerStrategy` no tocan el
+ * control, ver `builtinStrategies.js`).
+ *
+ * Los valores salen del generador único del Core (`core/utils/datosPrueba.js`):
+ * nombre/apellidos de catálogo (cambian en cada corrida) e Identificación/correo
+ * únicos por construcción. El llamador (`valoresSeccion` en `crear-empleado`)
+ * sigue dando prioridad a lo dirigido desde el Panel.
  */
-function sufijo() {
-  return Date.now().toString().slice(-6);
-}
+const datosPrueba = require('@triple/core/utils/datosPrueba');
+
+// Persona de la ÚLTIMA llamada a `datosBasicosQA()`: permite que los correos de
+// `datosPersonalesQA()` se deriven del mismo nombre (coherencia dentro del test).
+let ultimaPersona = null;
 
 function datosBasicosQA() {
-  const s = sufijo();
+  const persona = datosPrueba.personaUnica();
+  ultimaPersona = persona;
   return {
-    'Primer Nombre': 'QA',
-    'Segundo Nombre': 'Automatizado',
-    'Primer Apellido': 'Prueba',
-    'Segundo Apellido': `Empleado${s}`,
+    'Primer Nombre': persona.primerNombre,
+    'Segundo Nombre': persona.segundoNombre,
+    'Primer Apellido': persona.primerApellido,
+    'Segundo Apellido': persona.segundoApellido,
     'Dimensión empleado': 'QA',
     Referencia: 'Referencia QA',
     // Cascade Tipo ID -> Identificación: 11 dígitos (formato cédula RD más común).
-    Identificación: `001${s}${s.slice(-2)}`.slice(0, 11).padEnd(11, '0'),
+    Identificación: datosPrueba.identificacion(),
   };
 }
 
 function datosPersonalesQA() {
-  const s = sufijo();
+  const persona = ultimaPersona || datosPrueba.personaUnica();
   return {
     'Fecha de nacimiento': '01/01/1990',
     'Número de hijos': '0',
@@ -35,8 +42,8 @@ function datosPersonalesQA() {
     Pulgadas: '7',
     'Condición médica': 'Ninguna',
     Discapacidad: 'Ninguna',
-    'Email corporativo': `qa.empleado.${s}@camsoft.test`,
-    'Email personal': `qa.personal.${s}@camsoft.test`,
+    'Email corporativo': datosPrueba.correo(persona),
+    'Email personal': datosPrueba.correo({ ...persona, primerApellido: persona.segundoApellido }),
     // Solo dígitos: el editor enmascarado ("(XXX) XXX-XXXX") los formatea
     // solo — con guiones en el valor, la máscara los interpreta mal y
     // termina desalineada (confirmado con Selenium real).
