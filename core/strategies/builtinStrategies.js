@@ -75,7 +75,11 @@ class SearchAndSelectStrategy extends SelectionStrategy {
         // aunque la UI ya esté cerrada — _esperarOverlayCerrado() nunca resuelve.
         // Sin ese paso, el TagBox sigue el mismo camino que sí termina siempre.
         const input = await form._inputBusqueda(label);
+        const antes = await form._textosItemsVisibles();
         await input.sendKeys(Key.chord(Key.CONTROL, 'a'), String(v));
+        // Esperar a que el filtro REALMENTE se aplique: sin esto se matchea
+        // contra la lista sin filtrar y el re-render deja el item no clickeable.
+        await form._esperarFiltroAplicado(antes);
       }
 
       // 3) esperar el filtrado + 4) seleccionar explícitamente el item, CON
@@ -97,8 +101,8 @@ class SearchAndSelectStrategy extends SelectionStrategy {
           break;
         } catch (err) {
           ultimoError = err;
-          if (!/stale element/i.test(err.message)) throw err;
-          logger.info(`SearchAndSelect: reintentando "${v}" en "${label}" tras stale element (intento ${intento}/3)`);
+          if (!/stale element|not interactable/i.test(err.message)) throw err;
+          logger.info(`SearchAndSelect: reintentando "${v}" en "${label}" tras stale/no interactable (intento ${intento}/3)`);
         }
       }
       if (ultimoError) throw ultimoError;

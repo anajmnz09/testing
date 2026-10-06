@@ -4,11 +4,11 @@
   },
   "crear-empleado": {
     "Tipo ID": "",
-    "Identificación": "",
-    "Primer Nombre": "",
-    "Segundo Nombre": "",
-    "Primer Apellido": "",
-    "Segundo Apellido": "",
+    "Identificación": "05003415526",
+    "Primer Nombre": "Carmen",
+    "Segundo Nombre": "Maria",
+    "Primer Apellido": "Arias",
+    "Segundo Apellido": "Cruz",
     "Dimensión empleado": "",
     "Sucursal": "",
     "Modalidad": "",
@@ -19,7 +19,7 @@
     "Nacionalidad": "",
     "País de nacimiento": "",
     "Fecha de nacimiento": "",
-    "Género": "",
+    "Género": "F",
     "Estado civil": "",
     "Número de hijos": "",
     "Estatura": "",
@@ -32,8 +32,8 @@
     "Camisa": "",
     "Pantalón": "",
     "Zapatos": "",
-    "Email corporativo": "",
-    "Email personal": "",
+    "Email corporativo": "gabriela.qa6@testmail.com",
+    "Email personal": "gabriela.personal6@testmail.com",
     "Teléfono de trabajo": "",
     "Teléfono personal": "",
     "País": "",
@@ -105,7 +105,7 @@
     "nombre": ""
   },
   "consultar-datos-basicos-rh": {
-    "nombre": ""
+    "nombre": "julianaz"
   },
   "consultar-paquete-salarial": {
     "nombre": ""
@@ -215,11 +215,11 @@
   },
   "agregar-educacion": {
     "Nombre de Empleado que recibe la Educación": "",
-    "Nombre programa educativo": "programa",
-    "Lugar": "qa",
-    "Fecha de inicio": "20/12/2023",
-    "Fecha finalización": "20/12/2024",
-    "Descripción": "nada"
+    "Nombre programa educativo": "",
+    "Lugar": "",
+    "Fecha de inicio": "",
+    "Fecha finalización": "",
+    "Descripción": ""
   },
   "agregar-experiencia": {
     "Nombre de Empleado que recibe la Experiencia": "",

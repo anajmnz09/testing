@@ -5,6 +5,7 @@ const Notify = require('@triple/core/components/Notify');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
 const testContext = require('@triple/core/context/testContext');
+const { datosQA } = require('../data/solicitud-empleo.data');
 
 /**
  * Mapa CONTROL -> SELECTION STRATEGY del formulario "Crear Solicitud" (panel
@@ -158,14 +159,19 @@ class SolicitudEmpleoFormPage extends BasePage {
    * selects — no se inventa un mecanismo nuevo.
    *
    * @param {string} caso
-   * @param {{incluirOpcionales?: boolean}} [opts]  con `incluirOpcionales:true`,
+   * @param {{incluirOpcionales?: boolean, defaults?: object}} [opts]  `defaults`: datos QA ya generados por el test (para reutilizarlos luego al consultar).  con `incluirOpcionales:true`,
    *   además completa los campos vacíos que el contexto NO especificó, usando
    *   la estrategia por defecto de cada uno.
    */
-  async completarConContexto(caso, { incluirOpcionales = false } = {}) {
+  async completarConContexto(caso, { incluirOpcionales = false, defaults } = {}) {
     logger.info(`SolicitudEmpleoForm: completar campos desde Execution Context (caso="${caso}")`);
     await this.form.validarControlesDeclarados(ESTRATEGIAS, { etiqueta: 'crear-solicitud-empleo' });
     const val = (label) => testContext.get(caso, label);
+    // Defaults QA para los campos de texto REQUERIDOS que `TextInputStrategy`
+    // no completa sola sin valor explícito (ver `solicitud-empleo.data.js`):
+    // sin esto, un solicitante externo (sin autollenado) deja esos campos
+    // vacíos en modo automático y la app bloquea el Guardar.
+    const defaultsQA = defaults || datosQA();
 
     const yaTratados = ['Tipo ID', 'Identificación'];
     const resultado = {};
@@ -182,7 +188,7 @@ class SolicitudEmpleoFormPage extends BasePage {
       if (provisto !== undefined) {
         resultado[label] = await this.setCampo(label, provisto);
       } else if (incluirOpcionales) {
-        resultado[label] = await this.setCampo(label);
+        resultado[label] = await this.setCampo(label, defaultsQA[label]);
       }
     }
     return resultado;

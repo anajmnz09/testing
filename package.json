@@ -10,7 +10,8 @@
     "core",
     "reclutamiento",
     "configuracion",
-    "empleados"
+    "empleados",
+    "nomina"
   ],
   "scripts": {
     "test:unit": "npm run test:unit --workspace core",

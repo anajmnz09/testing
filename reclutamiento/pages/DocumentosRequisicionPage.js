@@ -50,6 +50,14 @@ class DocumentosRequisicionPage extends BasePage {
   /**
    * Asegura que el panel "Documentos" esté abierto (idempotente): si ya está
    * visible no hace nada; si no, clickea el botón "Documentos" del header.
+   *
+   * REINTENTA si el panel se cierra de inmediato tras abrirse: confirmado con
+   * evidencia real que clickear "Documentos" muy seguido de otra acción del
+   * header (ej. "Editar", sin dejar asentar su propio re-render) puede hacer
+   * que la app interprete ese mismo click —o uno residual del paso anterior—
+   * como un click AFUERA del panel recién montado y lo cierre de inmediato
+   * (abre y cierra en el mismo instante). Por eso no alcanza con esperar a
+   * que aparezca: hay que confirmar que SIGUE visible pasado un instante.
    * @returns {Promise<{abierto:boolean, boton:object|null}>}
    */
   async abrirPanel(timeout = config.timeouts.explicitWaitMs) {
@@ -57,15 +65,39 @@ class DocumentosRequisicionPage extends BasePage {
       logger.info('DocumentosRequisicion: el panel ya estaba abierto');
       return { abierto: true, boton: null };
     }
-    const boton = await this.header.clickBoton(PATRON_DOCUMENTOS, {
-      etiqueta: 'Documentos',
-      timeout,
-      dataQa: 'boton-documentos',
-    });
-    if (!boton.accionado) {
-      return { abierto: false, boton };
+
+    const INTENTOS = 3;
+    const CONFIRMACION_MS = 400;
+    let boton = null;
+
+    for (let intento = 1; intento <= INTENTOS; intento++) {
+      boton = await this.header.clickBoton(PATRON_DOCUMENTOS, {
+        etiqueta: 'Documentos',
+        timeout,
+        dataQa: 'boton-documentos',
+      });
+      if (!boton.accionado) {
+        return { abierto: false, boton };
+      }
+
+      await this.driver.wait(async () => this.panelVisible(), timeout).catch(() => {});
+      if (!(await this.panelVisible())) {
+        // Nunca llegó a abrirse (no es el caso de "se cierra de inmediato"):
+        // no tiene sentido reintentar el mismo click.
+        break;
+      }
+
+      // Confirmar que el panel QUEDA abierto (ver nota arriba).
+      await this.driver.sleep(CONFIRMACION_MS);
+      if (await this.panelVisible()) {
+        return { abierto: true, boton };
+      }
+      logger.info(
+        `DocumentosRequisicion: el panel "Documentos" se cerró de inmediato tras abrirse ` +
+          `(intento ${intento}/${INTENTOS}), reintentando`
+      );
     }
-    await this.driver.wait(async () => this.panelVisible(), timeout).catch(() => {});
+
     return { abierto: await this.panelVisible(), boton };
   }
 
@@ -111,28 +143,58 @@ class DocumentosRequisicionPage extends BasePage {
     return ok;
   }
 
-  /** Abre el popup "Importar Documentos" desde el botón del panel. */
+  /**
+   * Abre el popup "Importar Documentos" desde el botón del panel.
+   *
+   * REINTENTA si el popup se cierra de inmediato tras abrirse: confirmado con
+   * evidencia real que clickear "Importar archivos" muy seguido de otra
+   * acción del header (ej. "Editar" justo antes de abrir "Documentos", sin
+   * dejar asentar su propio re-render) hace que la app interprete el click de
+   * apertura —o su eco inmediato— como un click AFUERA del modal recién
+   * montado y lo cierre en el mismo instante. `esperarVisible` por sí sola no
+   * alcanza (el popup SÍ llegó a estar visible); hace falta confirmar que
+   * sigue ahí pasado un instante antes de seguir con la clasificación/archivo.
+   */
   async _abrirPopupImportar(timeout = config.timeouts.explicitWaitMs) {
-    // El botón "Importar archivos" del panel es un .dx-button; se localiza por su
-    // nombre accesible entre los visibles y se clickea por JS (consistente con el
-    // resto de acciones sobre overlays sticky).
-    const clickeado = await this.driver.executeScript((patron) => {
-      const re = new RegExp(patron, 'i');
-      const vis = (el) => el && el.offsetWidth > 0 && el.offsetHeight > 0;
-      const btn = Array.from(document.querySelectorAll('.dx-button, [class*="Button"]')).find(
-        (b) => vis(b) && re.test((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || ''))
-      );
-      if (!btn) return false;
-      btn.setAttribute('data-qa', 'btn-importar-archivos');
-      btn.click();
-      return true;
-    }, SELECTORES.botonImportarArchivos);
+    const INTENTOS = 3;
+    const CONFIRMACION_MS = 400;
 
-    if (!clickeado) {
-      throw new Error('DocumentosRequisicion: no se encontró el botón "Importar archivos" en el panel');
+    for (let intento = 1; intento <= INTENTOS; intento++) {
+      // El botón "Importar archivos" del panel es un .dx-button; se localiza por su
+      // nombre accesible entre los visibles y se clickea por JS (consistente con el
+      // resto de acciones sobre overlays sticky).
+      const clickeado = await this.driver.executeScript((patron) => {
+        const re = new RegExp(patron, 'i');
+        const vis = (el) => el && el.offsetWidth > 0 && el.offsetHeight > 0;
+        const btn = Array.from(document.querySelectorAll('.dx-button, [class*="Button"]')).find(
+          (b) => vis(b) && re.test((b.textContent || '') + ' ' + (b.getAttribute('aria-label') || ''))
+        );
+        if (!btn) return false;
+        btn.setAttribute('data-qa', 'btn-importar-archivos');
+        btn.click();
+        return true;
+      }, SELECTORES.botonImportarArchivos);
+
+      if (!clickeado) {
+        throw new Error('DocumentosRequisicion: no se encontró el botón "Importar archivos" en el panel');
+      }
+      await this.popup.esperarVisible(timeout);
+
+      // Confirmar que el popup QUEDA abierto (ver nota arriba).
+      await this.driver.sleep(CONFIRMACION_MS);
+      if (await this.popup.estaVisible()) {
+        return this.popup;
+      }
+      logger.info(
+        `DocumentosRequisicion: el popup "Importar Documentos" se cerró de inmediato tras abrirse ` +
+          `(intento ${intento}/${INTENTOS}), reintentando`
+      );
     }
-    await this.popup.esperarVisible(timeout);
-    return this.popup;
+
+    throw new Error(
+      `DocumentosRequisicion: el popup "Importar Documentos" se cerró de inmediato tras abrirse en los ` +
+        `${INTENTOS} intentos (probable click afuera del modal apenas montado)`
+    );
   }
 
   /**

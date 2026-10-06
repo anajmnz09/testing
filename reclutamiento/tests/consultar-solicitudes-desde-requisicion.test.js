@@ -5,8 +5,9 @@ const fixtures = require('../support/fixtures');
 
 const CASO = 'consultar-solicitudes-desde-requisicion';
 // Entrada (Execution Context): requisición a consultar. Si no se indica, usa el
-// mismo fallback ya existente en `fixtures.abrirRequisicionExistente` (primera
-// requisición en un estado editable) — no se duplica esa lógica acá.
+// fallback de `fixtures.abrirRequisicionExistente` con `requiereEditable:false`
+// — no se duplica esa lógica acá. Este caso solo NAVEGA desde el detalle (no
+// edita nada), así que cualquier requisición sirve, sin forzar ningún estado.
 testContext.registrarCaso(CASO, ['codigo', 'nombre', 'estado']);
 
 /**
@@ -24,7 +25,9 @@ describe('Reclutamiento - Consultar Solicitudes de Empleo desde una Requisición
   const ctx = fixtures.usarListadoRequisiciones();
 
   it(`${CASO}: abre el listado de Solicitudes de Empleo filtrado desde el header de la requisición`, async function () {
-    const { detalle, identificador } = await fixtures.abrirRequisicionExistente(ctx, CASO);
+    const { detalle, identificador } = await fixtures.abrirRequisicionExistente(ctx, CASO, {
+      requiereEditable: false,
+    });
 
     const solicitudes = await detalle.irASolicitudesDeEmpleo();
     const filas = await solicitudes.grid.contarFilas();

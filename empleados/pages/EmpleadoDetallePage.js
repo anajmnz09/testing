@@ -1,5 +1,5 @@
 const { By, Key } = require('selenium-webdriver');
-const { BasePage, Notify } = require('@triple/core');
+const { BasePage, Notify, textoIgual } = require('@triple/core');
 const DataGrid = require('@triple/core/components/DataGrid');
 const Popup = require('@triple/core/components/Popup');
 const config = require('@triple/core/config');
@@ -231,6 +231,60 @@ class EmpleadoDetallePage extends BasePage {
       }, 8000)
       .catch(() => {});
     return { activada };
+  }
+
+  /**
+   * Nómina(s) a las que el empleado está asignado, leídas de la sub-sección
+   * "Nóminas en la que participa" dentro de "Datos básicos RH" (debe estar
+   * ya abierta, ver `abrirSeccion('Datos básicos RH')`) — verificado con
+   * Selenium real (módulo Nómina, "Asignar a Nómina"): estructura
+   * `<div class="nominaGrupoInfo"><h2>Nóminas en la que participa</h2>…
+   * <div class="nombreNominasAsignadas"><div class="NominasAsignada">
+   * <span>NOMINA GENERAL</span></div></div></div>` — clases propias y
+   * estables de la app (no hasheadas), nunca el hash de CSS-modules.
+   * Devuelve un array (vacío si el empleado no participa de ninguna nómina
+   * todavía, o si la sub-sección no está presente).
+   */
+  async getNominasAsignadas() {
+    const spans = await this.driver.findElements(
+      By.css('.nombreNominasAsignadas .NominasAsignada')
+    );
+    if (spans.length) {
+      // Esta sub-sección vive al final de "Datos básicos RH": se la baja a
+      // la vista (evidencia visual real en un screenshot, no solo el valor
+      // leído) — tolerante si el elemento quedó stale entre medio.
+      await this.driver
+        .executeScript('arguments[0].scrollIntoView({block:"center"})', spans[0])
+        .catch(() => {});
+    }
+    const nombres = [];
+    for (const el of spans) {
+      try {
+        const texto = (await el.getText()).trim();
+        if (texto) nombres.push(texto);
+      } catch (e) {
+        /* stale, se omite */
+      }
+    }
+    return nombres;
+  }
+
+  /**
+   * Espera (poll) a que `nombreNomina` aparezca entre las nóminas asignadas
+   * del empleado (comparación case/acento-insensitive, `textoIgual` del
+   * core). Pensado para confirmar la PERSISTENCIA de "Asignar a Nómina"
+   * (módulo Nómina) desde el propio registro del empleado — evidencia más
+   * directa que releer el listado "Empleados de Nuevo Ingreso" del origen.
+   * @returns {Promise<boolean>} true si apareció dentro del timeout.
+   */
+  async esperarNominaAsignada(nombreNomina, timeout = config.timeouts.explicitWaitMs, intervalo = 2000) {
+    const fin = Date.now() + timeout;
+    do {
+      const asignadas = await this.getNominasAsignadas();
+      if (asignadas.some((n) => textoIgual(n, nombreNomina))) return true;
+      await this.driver.sleep(intervalo);
+    } while (Date.now() < fin);
+    return false;
   }
 
   /**

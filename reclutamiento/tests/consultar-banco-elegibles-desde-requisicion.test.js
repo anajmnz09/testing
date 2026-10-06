@@ -33,9 +33,10 @@ async function tituloBancoElegibles(driver, timeout = config.timeouts.explicitWa
 const CASO = 'consultar-banco-elegibles-desde-requisicion';
 // Entrada (Execution Context): requisición a consultar. Igual que
 // "consultar-solicitudes-desde-requisicion" (mismo fixture compartido, sin
-// duplicar esa lógica): sin `codigo`/`nombre`, usa el fallback ya existente
-// en `fixtures.abrirRequisicionExistente` (primera requisición en un estado
-// editable).
+// duplicar esa lógica): sin `codigo`/`nombre`, usa el fallback de
+// `fixtures.abrirRequisicionExistente` con `requiereEditable:false` — este
+// caso solo NAVEGA desde el detalle (no edita nada), así que cualquier
+// requisición sirve, sin forzar ningún estado en particular.
 testContext.registrarCaso(CASO, ['codigo', 'nombre', 'estado']);
 
 /**
@@ -50,7 +51,7 @@ describe('Reclutamiento - Consultar Banco de Elegibles desde una Requisición', 
   const ctx = fixtures.usarListadoRequisiciones();
 
   it(`${CASO}: abre "Banco de candidatos" desde el header de la requisición`, async function () {
-    const { detalle } = await fixtures.abrirRequisicionExistente(ctx, CASO);
+    const { detalle } = await fixtures.abrirRequisicionExistente(ctx, CASO, { requiereEditable: false });
 
     await detalle.irABancoElegibles();
 

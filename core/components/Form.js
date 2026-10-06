@@ -361,6 +361,37 @@ class Form extends BaseComponent {
     );
   }
 
+  /** Textos de los items de dropdown visibles ahora (un solo round-trip). */
+  async _textosItemsVisibles() {
+    return this.driver.executeScript((sel) => {
+      return Array.from(document.querySelectorAll(sel))
+        .filter((el) => el.offsetParent !== null)
+        .map((el) => (el.textContent || '').trim())
+        .join('|');
+    }, this._opcionSelectorCss());
+  }
+
+  /**
+   * Espera a que el filtro de un dropdown YA se haya aplicado tras escribir:
+   * primero a que la lista visible cambie respecto de `antes` (snapshot previo
+   * a escribir; si el filtro no cambia nada, se sigue tras `cambioMs`), y luego
+   * a que quede estable (dos lecturas iguales). Evita matchear/clickear items
+   * de la lista SIN filtrar que el re-render deja ocultos (confirmado real:
+   * `ElementNotInteractableError` en Requisición de Crear Solicitud).
+   */
+  async _esperarFiltroAplicado(antes, { cambioMs = 1500, estableMs = 3000 } = {}) {
+    await this.driver.wait(async () => (await this._textosItemsVisibles()) !== antes, cambioMs).catch(() => {});
+    let previo = null;
+    await this.driver
+      .wait(async () => {
+        const actual = await this._textosItemsVisibles();
+        const estable = actual === previo;
+        previo = actual;
+        return estable;
+      }, estableMs)
+      .catch(() => {});
+  }
+
   /** True si hay algún item de dropdown visible en pantalla — ver nota de rendimiento en `_esperarOverlayCerrado`. */
   async _hayItemVisible() {
     return this.driver.executeScript(
@@ -483,7 +514,22 @@ class Form extends BaseComponent {
         await this._abrirDropdown(label);
         const item = await this._primerItemVisible();
         const texto = (await item.getText()).trim();
-        await item.click();
+        try {
+          await item.click();
+        } catch (clickErr) {
+          // Confirmado con evidencia real ("Puesto de trabajo" de Crear
+          // Empleado): el primer item del catálogo puede renderizar detrás de
+          // un botón sticky del header del formulario — el click NATIVO tira
+          // "element click intercepted" (otro elemento recibiría el click en
+          // ese punto) pese a que el item ubicado es el correcto. Fallback a
+          // click por JS (mismo criterio ya establecido en el framework para
+          // headers sticky, ej. `RequisicionFormPage.guardar()`), sin
+          // reintentar desde cero: el item ya está correctamente ubicado.
+          if (clickErr.name !== 'ElementClickInterceptedError') throw clickErr;
+          logger.info(`Form: click interceptado al seleccionar primera opción de "${label}", reintentando por JS`);
+          await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', item);
+          await this.driver.executeScript('arguments[0].click()', item);
+        }
         await this._esperarOverlayCerrado();
         return texto;
       } catch (e) {

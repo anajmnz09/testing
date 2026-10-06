@@ -2,6 +2,7 @@ const assert = require('assert');
 const { testContext } = require('@triple/core');
 const BancoCandidatosPage = require('../pages/BancoCandidatosPage');
 const fixtures = require('../support/fixtures');
+const { datosUnicosQA } = require('../data/solicitud-empleo.data');
 
 const CASO = 'agregar-candidato-banco';
 // Input Model del modal: se siembran en el Execution Context TODOS los
@@ -16,10 +17,7 @@ testContext.registrarCasoDesdeFormulario(CASO, BancoCandidatosPage.ESTRATEGIAS_A
 // se crea un candidato nuevo desde cero, así que no interesa disparar ningún
 // autollenado — solo se espera de forma tolerante por si el modal llegara a
 // reconocer la identificación (ver `identificarYEsperarAutollenado`).
-const IDENTIFICACION_QA = '00199999991';
-const PRIMER_NOMBRE_QA = 'CandidatoQA';
 const PRIMER_APELLIDO_QA = 'AutomatizadoQA';
-const CORREO_QA = 'candidato.qa.automatizado@example.com';
 const TELEFONO_QA = '8095551234';
 // Dos etiquetas separadas por "|" (convención del framework para campos
 // multi-valor del Execution Context, ver `parsearValoresMultiples`): valida
@@ -43,12 +41,14 @@ describe('Reclutamiento - Agregar Candidato desde Banco de candidatos', function
   const ctx = fixtures.usarListadoBancoCandidatos();
 
   it(`${CASO}: crea un candidato completando Datos de Empleado, Etiquetas y Apreciación`, async function () {
+    // Datos únicos por ejecución (identificación, nombre y correo no pueden repetirse).
+    const unicos = datosUnicosQA();
     const modal = await ctx.lista.abrirFormularioAgregar();
 
     const tipoId = testContext.get(CASO, 'Tipo ID') || 'Cedula';
     await modal.seleccionarTipoId(tipoId);
 
-    const identificacion = testContext.get(CASO, 'Identificación') || IDENTIFICACION_QA;
+    const identificacion = testContext.get(CASO, 'Identificación') || unicos.Identificación;
     await modal.identificarYEsperarAutollenado(identificacion);
 
     // Requeridos sin un "valor por defecto" razonable dentro del framework:
@@ -56,10 +56,10 @@ describe('Reclutamiento - Agregar Candidato desde Banco de candidatos', function
     // Comentario/Etiquetas. Con una identificación ficticia no se espera
     // autollenado, pero se completan igual (no pisan nada si ya vinieran
     // llenos).
-    const primerNombre = testContext.get(CASO, 'Primer Nombre') || PRIMER_NOMBRE_QA;
+    const primerNombre = testContext.get(CASO, 'Primer Nombre') || unicos['Primer Nombre'];
     const primerApellido = testContext.get(CASO, 'Primer Apellido') || PRIMER_APELLIDO_QA;
     const telefono = testContext.get(CASO, 'Teléfono') || TELEFONO_QA;
-    const correo = testContext.get(CASO, 'Correo') || CORREO_QA;
+    const correo = testContext.get(CASO, 'Correo') || unicos.Correo;
     const etiquetas = testContext.get(CASO, 'Etiquetas') || ETIQUETAS_QA;
     await modal.setCampo('Primer Nombre', primerNombre);
     await modal.setCampo('Primer Apellido', primerApellido);

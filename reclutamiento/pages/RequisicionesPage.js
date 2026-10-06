@@ -213,6 +213,11 @@ class RequisicionesPage extends BasePage {
    * (doble-click: el Nombre no es un link). Devuelve una RequisicionDetallePage
    * o null si no hay una fila en ese índice.
    *
+   * `estado` es OPCIONAL: con `null`/`undefined` no filtra por estado y toma la
+   * n-ésima fila TAL CUAL está en el listado — para casos que solo navegan/leen
+   * desde el detalle y a los que no les importa en qué estado esté la
+   * requisición (ver `fixtures.abrirRequisicionExistente`, `requiereEditable:false`).
+   *
    * El doble-click a veces entra en edición inline en lugar de abrir el detalle:
    * se reintenta un número ACOTADO de veces (política de ejecución del framework).
    */
@@ -227,9 +232,8 @@ class RequisicionesPage extends BasePage {
         (est, i) => {
           const prev = document.querySelector('tr[data-qa="fila-objetivo"]');
           if (prev) prev.removeAttribute('data-qa');
-          const filas = Array.from(document.querySelectorAll('.dx-data-row')).filter((f) =>
-            new RegExp(est, 'i').test(f.textContent || '')
-          );
+          const todas = Array.from(document.querySelectorAll('.dx-data-row'));
+          const filas = est ? todas.filter((f) => new RegExp(est, 'i').test(f.textContent || '')) : todas;
           if (!filas[i]) return false;
           filas[i].setAttribute('data-qa', 'fila-objetivo');
           return true;
@@ -245,7 +249,7 @@ class RequisicionesPage extends BasePage {
         await this.driver.actions().doubleClick(fila).perform();
         await this._esperarSinLoader(timeout);
         await this.driver.wait(until.elementLocated(labelDetalle), timeout);
-        logger.info(`RequisicionesPage: detalle abierto (estado="${estado}", índice ${indice})`);
+        logger.info(`RequisicionesPage: detalle abierto (estado="${estado || 'cualquiera'}", índice ${indice})`);
         return new RequisicionDetallePage(this.driver).estaCargado();
       } catch (err) {
         ultimoError = err;

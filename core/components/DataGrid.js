@@ -18,15 +18,35 @@ const { containsTextoIgnoreCase } = require('../utils/xpath');
  *    tamaño de página .dx-page-size, info en .dx-info
  */
 class DataGrid extends BaseComponent {
-  constructor(driver) {
+  /**
+   * @param driver
+   * @param {object} [opts]
+   * @param {string} [opts.contenedor]  selector CSS de un contenedor PROPIO que
+   *   delimita a ESTE grid en pantallas con MÁS DE UN `.dx-datagrid` montado a
+   *   la vez (ej. Nómina: el grid de arriba en CardView/ListView + "Empleados
+   *   de Nuevo Ingreso", ambos visibles juntos — sin esto, cualquier método
+   *   que recorra "el primer/único `.dx-datagrid`" puede operar el grid
+   *   equivocado). Opcional y retrocompatible: sin `contenedor`, el
+   *   comportamiento es IDÉNTICO al de siempre (busca en todo el documento).
+   */
+  constructor(driver, { contenedor = null } = {}) {
     super(driver);
 
-    this.grid = By.css('.dx-datagrid');
-    this.searchInput = By.css('input[placeholder="Buscar"]');
-    this.dataRow = By.css('.dx-data-row');
-    this.info = By.css('.dx-info');
-    this.nextPageButton = By.css('.dx-next-button');
-    this.prevPageButton = By.css('.dx-prev-button');
+    this.contenedor = contenedor;
+    const conAmbito = (selectorHijo) => (contenedor ? `${contenedor} ${selectorHijo}` : selectorHijo);
+
+    // Con `contenedor`, el contenedor PROPIO delimita la espera de "grid
+    // visible" (ver `listo()`): puede ser el `.dx-datagrid` mismo o un
+    // wrapper que lo contiene, cualquiera de los dos sirve para esperar
+    // visibilidad/loader. El resto de los selectores sí necesita el
+    // combinador descendiente (`.dx-header-row`, `.dx-data-row`, etc. viven
+    // SIEMPRE anidados varios niveles adentro del `.dx-datagrid`).
+    this.grid = By.css(contenedor || '.dx-datagrid');
+    this.searchInput = By.css(conAmbito('input[placeholder="Buscar"]'));
+    this.dataRow = By.css(conAmbito('.dx-data-row'));
+    this.info = By.css(conAmbito('.dx-info'));
+    this.nextPageButton = By.css(conAmbito('.dx-next-button'));
+    this.prevPageButton = By.css(conAmbito('.dx-prev-button'));
     // Botones de la toolbar (DevExtreme no expone id/testid: se ubican por texto)
     this.createButton = By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Crear']");
     this.filterButton = By.xpath("//div[contains(@class,'dx-button')][normalize-space(.)='Filtro']");
@@ -84,7 +104,8 @@ class DataGrid extends BaseComponent {
    * de por sí), no hace nada y no falla.
    */
   async asegurarModoLista() {
-    const botones = await this.driver.findElements(By.css('[title="Modo lista"]'));
+    const selector = this.contenedor ? `${this.contenedor} [title="Modo lista"]` : '[title="Modo lista"]';
+    const botones = await this.driver.findElements(By.css(selector));
     for (const b of botones) {
       if (await b.isDisplayed().catch(() => false)) {
         logger.info('DataGrid: cambiar a "Modo lista"');
@@ -150,7 +171,7 @@ class DataGrid extends BaseComponent {
    */
   async seleccionarFila(texto) {
     logger.info(`DataGrid: seleccionar fila ${texto ? `"${texto}"` : '(primera)'}`);
-    const marcado = await this.driver.executeScript((buscado) => {
+    const marcado = await this.driver.executeScript((buscado, contenedorSel) => {
       const esVisible = (el) => {
         const estilo = window.getComputedStyle(el);
         if (estilo.display === 'none' || estilo.visibility === 'hidden' || parseFloat(estilo.opacity) === 0) {
@@ -159,7 +180,17 @@ class DataGrid extends BaseComponent {
         const r = el.getBoundingClientRect();
         return r.width > 0 && r.height > 0;
       };
-      const grid = Array.from(document.querySelectorAll('.dx-datagrid')).find(esVisible);
+      // Con `contenedor`, el grid a operar es EXACTAMENTE el de ese ámbito (el
+      // elemento mismo si ya es `.dx-datagrid`, o el que contiene adentro) —
+      // nunca "el primer `.dx-datagrid` visible del documento", que en una
+      // pantalla con más de uno (ej. Nómina) puede ser el grid equivocado.
+      const raiz = contenedorSel ? document.querySelector(contenedorSel) : document;
+      if (!raiz) return false;
+      const grid = contenedorSel
+        ? raiz.matches('.dx-datagrid')
+          ? raiz
+          : raiz.querySelector('.dx-datagrid') || raiz
+        : Array.from(raiz.querySelectorAll('.dx-datagrid')).find(esVisible);
       if (!grid) return false;
       const filas = Array.from(grid.querySelectorAll('.dx-data-row'));
       const fila = buscado ? filas.find((f) => (f.textContent || '').includes(buscado)) : filas[0];
@@ -170,7 +201,7 @@ class DataGrid extends BaseComponent {
       if (prev) prev.removeAttribute('data-qa');
       celda.setAttribute('data-qa', 'seleccionar-fila');
       return true;
-    }, texto || null);
+    }, texto || null, this.contenedor);
 
     if (!marcado) return false;
     const celda = await this.driver.findElement(By.css('[data-qa="seleccionar-fila"]'));
@@ -230,7 +261,7 @@ class DataGrid extends BaseComponent {
    * equivocado y nunca encontraba la fila ya filtrada).
    */
   async _leerFilasPorColumnasDom() {
-    return this.driver.executeScript(() => {
+    return this.driver.executeScript((contenedorSel) => {
       const norm = (e) => (e && e.textContent || '').replace(/\s+/g, ' ').trim();
       const esVisible = (el) => {
         const estilo = window.getComputedStyle(el);
@@ -240,7 +271,15 @@ class DataGrid extends BaseComponent {
         const r = el.getBoundingClientRect();
         return r.width > 0 && r.height > 0;
       };
-      const grid = Array.from(document.querySelectorAll('.dx-datagrid')).find(esVisible);
+      // Mismo criterio que `seleccionarFila`: con `contenedor`, SIEMPRE ese
+      // grid puntual — nunca "el primer visible del documento".
+      const raiz = contenedorSel ? document.querySelector(contenedorSel) : document;
+      if (!raiz) return [];
+      const grid = contenedorSel
+        ? raiz.matches('.dx-datagrid')
+          ? raiz
+          : raiz.querySelector('.dx-datagrid') || raiz
+        : Array.from(raiz.querySelectorAll('.dx-datagrid')).find(esVisible);
       if (!grid) return [];
       const headers = Array.from(
         grid.querySelectorAll('.dx-datagrid-headers .dx-header-row td, .dx-datagrid-headers .dx-header-row th')
@@ -253,7 +292,7 @@ class DataGrid extends BaseComponent {
         });
         return resultado;
       });
-    });
+    }, this.contenedor);
   }
 
   /**
@@ -348,43 +387,104 @@ class DataGrid extends BaseComponent {
   }
 
   /**
-   * Filtra el grid por el VALOR de una columna usando el dropdown de la FILA DE
-   * FILTROS de DevExtreme (la que aparece bajo los encabezados). Es genérico:
-   * sirve para `Estado` = `Autorizada` | `Cerrada` | `Pausada`… o cualquier
-   * columna cuyo filtro sea un selectbox.
-   *
-   * Verificado en el grid real de Requisiciones: la celda de filtro de la
-   * columna es un `.dx-selectbox` que, al abrirse, lista todos los valores; al
-   * elegir uno, el grid filtra en vivo. Se localiza por el TEXTO del encabezado
-   * (no por índice fijo), así no se acopla al orden de columnas —configurable por
-   * el usuario— ni a clases específicas de una pantalla.
+   * Filtra el grid por el VALOR de una columna usando la FILA DE FILTROS de
+   * DevExtreme (la que aparece bajo los encabezados). Genérico para los DOS
+   * widgets reales que esa fila usa según el tipo de columna:
+   *  - `selectbox` (columnas categóricas, ej. `Estado` = `Autorizada` |
+   *    `Cerrada` | `Pausada`…): abre el dropdown y clickea la opción EXACTA.
+   *    Verificado en el grid real de Requisiciones.
+   *  - `texto` (columnas libres/identificadoras, ej. `Código`): escribe el
+   *    valor en el input de la celda y confirma con ENTER. Confirmado con
+   *    evidencia real (Nómina, "Empleados de Nuevo Ingreso"): la celda de
+   *    filtro de `Código` NO es un `.dx-selectbox` sino un editor de texto
+   *    con menú de operador (`dx-filter-menu`) — con el criterio anterior
+   *    (solo selectbox) esta columna nunca se encontraba.
+   * Se detecta el tipo en vivo por celda, así que un mismo llamado sirve para
+   * cualquier columna sin que el Page Object tenga que saber de antemano qué
+   * widget usa. Se localiza por el TEXTO del encabezado (no por índice fijo),
+   * así no se acopla al orden de columnas —configurable por el usuario—.
    */
   async filtrarPorColumna(nombreColumna, valor, timeout = config.timeouts.explicitWaitMs) {
     logger.info(`DataGrid: filtrar por columna "${nombreColumna}" = "${valor}"`);
 
-    // 1) Marcar el selectbox de filtro de esa columna (por índice del encabezado).
-    const encontrada = await this.driver.executeScript((col) => {
-      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-      const grid = document.querySelector('.dx-datagrid');
-      if (!grid) return false;
-      const headers = Array.from(grid.querySelectorAll('.dx-header-row > td'));
-      const idx = headers.findIndex((td) => norm(td.textContent) === norm(col));
-      if (idx < 0) return false;
-      const filterRow = grid.querySelector('.dx-datagrid-filter-row');
-      if (!filterRow) return false;
-      const cell = filterRow.querySelectorAll('td')[idx];
-      const sb = cell && cell.querySelector('.dx-selectbox, .dx-dropdowneditor');
-      if (!sb) return false;
-      const prev = document.querySelector('[data-qa="filtro-col"]');
-      if (prev) prev.removeAttribute('data-qa');
-      sb.setAttribute('data-qa', 'filtro-col');
-      return true;
-    }, nombreColumna);
+    // 1) Marcar la celda de filtro de esa columna (por índice del encabezado)
+    // y detectar su tipo de widget (selectbox/texto). CON POLL (no una sola
+    // lectura): mismo motivo/evidencia que `contarFilas`/`filasPorColumnas`
+    // — el contenedor del grid puede estar visible y sin loader (ya esperado
+    // por `listo()`) ANTES de que DevExtreme termine de insertar sus
+    // `.dx-header-row`/`.dx-datagrid-filter-row`. Confirmado con evidencia
+    // real (Nómina, justo tras `irAEmpleadosNuevoIngreso()`): una lectura
+    // única fallaba con "no se encontró el filtro de la columna" aunque la
+    // columna existiera (verificado aparte, con un poco más de margen, que
+    // sí estaba ahí un instante después).
+    let resultado = { encontrado: false, tipo: null };
+    await this.driver
+      .wait(async () => {
+        resultado = await this.driver.executeScript((col, contenedorSel) => {
+          const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          // Mismo criterio que `seleccionarFila`/`_leerFilasPorColumnasDom`: con
+          // `contenedor`, SIEMPRE ese grid puntual (nunca "el primer
+          // `.dx-datagrid` del documento", que en una pantalla con más de uno
+          // puede ser otro grid).
+          const raiz = contenedorSel ? document.querySelector(contenedorSel) : document;
+          const grid = raiz && contenedorSel
+            ? (raiz.matches('.dx-datagrid') ? raiz : raiz.querySelector('.dx-datagrid') || raiz)
+            : raiz && raiz.querySelector('.dx-datagrid');
+          if (!grid) return { encontrado: false, tipo: null };
+          // Combinador DESCENDIENTE (no `>` directo), mismo criterio que
+          // `_leerFilasPorColumnasDom`: confirmado con evidencia real (Nómina,
+          // "Empleados de Nuevo Ingreso") que el `td` de cada columna NO
+          // siempre es hijo DIRECTO de `.dx-header-row`.
+          const headers = Array.from(
+            grid.querySelectorAll('.dx-datagrid-headers .dx-header-row td, .dx-datagrid-headers .dx-header-row th')
+          );
+          const idx = headers.findIndex((td) => norm(td.textContent) === norm(col));
+          if (idx < 0) return { encontrado: false, tipo: null };
+          const filterRow = grid.querySelector('.dx-datagrid-filter-row');
+          if (!filterRow) return { encontrado: false, tipo: null };
+          const cell = filterRow.querySelectorAll('td')[idx];
+          if (!cell) return { encontrado: false, tipo: null };
 
-    if (!encontrada) {
+          const marcar = (el, tipo) => {
+            const prev = document.querySelector('[data-qa="filtro-col"]');
+            if (prev) prev.removeAttribute('data-qa');
+            el.setAttribute('data-qa', 'filtro-col');
+            return { encontrado: true, tipo };
+          };
+          const sb = cell.querySelector('.dx-selectbox, .dx-dropdowneditor');
+          if (sb) return marcar(sb, 'selectbox');
+          const input = cell.querySelector('.dx-texteditor-input');
+          if (input) return marcar(cell, 'texto');
+          return { encontrado: false, tipo: null };
+        }, nombreColumna, this.contenedor);
+        return resultado.encontrado;
+      }, timeout)
+      .catch(() => {});
+
+    if (!resultado.encontrado) {
       throw new Error(`DataGrid: no se encontró el filtro de la columna "${nombreColumna}"`);
     }
 
+    if (resultado.tipo === 'texto') {
+      // Filtro de TEXTO LIBRE: escribir el valor en el input de la celda y
+      // confirmar con ENTER (mismo mecanismo que el buscador global
+      // `buscar()`, acotado a esta columna puntual).
+      const celda = await this.driver.findElement(By.css('[data-qa="filtro-col"]'));
+      // Ctrl+A + escribir, NO `.clear()`: mismo criterio que el resto del
+      // framework para editores DevExtreme controlados (ej.
+      // `SearchAndSelectStrategy`) — `.clear()` nativo de Selenium puede
+      // vaciar el input visualmente sin sincronizar el estado interno del
+      // widget, dejando el filtro "pegado" al valor anterior (confirmado con
+      // evidencia real: re-filtrar por el MISMO valor tras una asignación no
+      // refrescaba el conteo de filas, como si el filtro nunca se reaplicara).
+      const input = await celda.findElement(By.css('.dx-texteditor-input'));
+      await input.sendKeys(Key.chord(Key.CONTROL, 'a'), String(valor), Key.ENTER);
+      await this._esperarSinLoaderDelGrid(timeout);
+      logger.info(`DataGrid: filtro de texto aplicado "${nombreColumna}" = "${valor}"`);
+      return this;
+    }
+
+    // tipo === 'selectbox': comportamiento ya verificado, sin cambios.
     // 2) Abrir el dropdown (click por JS: la fila de filtros es sticky en el header).
     const sb = await this.driver.findElement(By.css('[data-qa="filtro-col"]'));
     const boton = await sb.findElement(By.css('.dx-dropdowneditor-button, .dx-texteditor-input'));
@@ -410,8 +510,36 @@ class DataGrid extends BaseComponent {
     await this.driver.actions({ bridge: true }).move({ origin: item }).click().perform();
 
     // 4) Esperar a que el grid re-filtre (overlay de carga fuera).
-    await this.esperarSinLoader(timeout);
+    await this._esperarSinLoaderDelGrid(timeout);
     logger.info(`DataGrid: filtro aplicado "${nombreColumna}" = "${valor}"`);
+    return this;
+  }
+
+  /**
+   * Como `esperarSinLoader` (UiContext), pero ACOTADO a `this.contenedor`
+   * cuando está definido, en vez de buscar en TODA la página. Confirmado con
+   * evidencia real (Nómina, tras filtrar "Empleados de Nuevo Ingreso" por
+   * "Código"): el filtro de ESTE grid aplicaba al instante, pero
+   * `esperarSinLoader()` sin acotar agotaba igual el timeout completo —
+   * esperando un loader de OTRO widget de la misma pantalla (hay más de un
+   * `.dx-datagrid`/overlay montado a la vez), irrelevante para saber si
+   * ESTE grid ya terminó de refiltrar. Sin `contenedor`, se comporta IGUAL
+   * que `esperarSinLoader` (retrocompatible).
+   */
+  async _esperarSinLoaderDelGrid(timeout = config.timeouts.explicitWaitMs) {
+    if (!this.contenedor) return this.esperarSinLoader(timeout);
+    const selector = `${this.contenedor} [class*="loader_manager"], ${this.contenedor} [class*="loader-manager"]`;
+    await this.driver.wait(async () => {
+      const loaders = await this.driver.findElements(By.css(selector));
+      for (const l of loaders) {
+        try {
+          if (await l.isDisplayed()) return false;
+        } catch (e) {
+          /* stale = ya no está */
+        }
+      }
+      return true;
+    }, timeout);
     return this;
   }
 

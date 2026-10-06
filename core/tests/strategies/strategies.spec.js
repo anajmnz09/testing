@@ -64,6 +64,8 @@ function formSimulado({ textoItem = 'Opción Real', staleClicksAntesDeExito = 0 
     setSwitch: async (...args) => registrar('setSwitch')(...args),
     _abrirDropdown: async (...args) => registrar('_abrirDropdown')(...args),
     _inputBusqueda: async () => elemento,
+    _textosItemsVisibles: async () => "",
+    _esperarFiltroAplicado: async () => {},
     _itemVisiblePorTexto: async (...args) => {
       llamadas.push({ nombre: '_itemVisiblePorTexto', args });
       return elemento;

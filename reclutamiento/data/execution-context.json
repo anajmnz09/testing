@@ -101,19 +101,19 @@
     "Rotativo": ""
   },
   "publicar-requisicion": {
-    "nombreRequisicion": "QA-crear-req-pregunta-personalizada-1785368652224",
+    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
     "estado": ""
   },
   "cerrar-requisicion": {
     "codigo": ""
   },
   "pausar-requisicion": {
-    "nombreRequisicion": "QA-crear-req-sustitucion-requeridos-1785368792392",
+    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
     "idRequisicion": "",
     "estado": ""
   },
   "agregar-archivos-requisicion": {
-    "nombreRequisicion": "",
+    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
     "idRequisicion": "",
     "estado": "",
     "archivo": "",
@@ -123,7 +123,7 @@
     "estado": ""
   },
   "compartir-requisicion-publicada": {
-    "nombreRequisicion": "QA-crear-req-sustitucion-requeridos-1785368792392",
+    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
     "idRequisicion": "",
     "estado": ""
   },
@@ -134,19 +134,19 @@
     "Supervisor": "",
     "Ubicación": "",
     "Fecha de Creación": "",
-    "Puesto": "",
+    "Puesto": "ANALISTA DE ASEGURAMIENTO DE LA CALIDAD",
     "Sucursal": "",
     "Departamento": "",
     "Reclutador": "",
     "Horario": "",
     "Tipo de contrato": "",
     "Modalidad": "",
-    "Nombre de requisición": "",
+    "Nombre de requisición": "ANALISTA DE ASEGURAMIENTO DE LA CALIDAD",
     "Requisitos": "",
     "Responsabilidades": "",
     "Descripción": "",
     "Comentario": "",
-    "Cantidad de empleado": "4",
+    "Cantidad de empleado": "",
     "Rotativo": ""
   },
   "crear-req-sustitucion": {
@@ -173,13 +173,13 @@
   },
   "agregar-comentario-requisicion": {
     "codigo": "",
-    "nombre": "REQ DESDE PANEL SUST pt 3",
-    "comentario": "HOLAAAAA 2",
+    "nombre": "gerente de proyecto",
+    "comentario": "",
     "estado": ""
   },
   "agregar-pregunta-personalizada": {
     "codigo": "",
-    "nombre": "REQ DESDE PANEL SUST pt 3",
+    "nombre": "QA-crear-req-creacion-1790888158778",
     "pregunta": "Cual es el software que mas ha utilizado?",
     "tipo": "SelecciOn de una opcion",
     "nombreCampo": "hce3",
@@ -188,20 +188,20 @@
   },
   "consultar-solicitudes-desde-requisicion": {
     "codigo": "",
-    "nombre": "ADMINISTRADOR DE REDES2",
+    "nombre": "gerente de proyecto",
     "estado": ""
   },
   "consultar-banco-elegibles-desde-requisicion": {
-    "codigo": "1166",
+    "codigo": "",
     "nombre": "",
     "estado": ""
   },
   "agregar-valoracion-solicitud-empleo": {
-    "codigo": "1816",
-    "estrellas": "3"
+    "codigo": "8718",
+    "estrellas": "4"
   },
   "agregar-foto-solicitud-empleo": {
-    "codigo": "1815",
+    "codigo": "8718",
     "archivo": ""
   },
   "editar-paquete-beneficios-solicitud-empleo": {
@@ -211,30 +211,30 @@
     "beneficios": "viaticos"
   },
   "cambiar-solicitud-primera-entrevista": {
-    "codigo": ""
+    "codigo": "8719"
   },
   "cambiar-solicitud-segunda-entrevista": {
-    "codigo": "1816"
+    "codigo": "8719"
   },
   "cambiar-solicitud-tercera-entrevista": {
-    "codigo": ""
+    "codigo": "8719"
   },
   "cambiar-solicitud-oferta-empleo": {
-    "codigo": ""
+    "codigo": "8719"
   },
   "cambiar-solicitud-crear-empleado": {
-    "codigo": "1812",
-    "salario": "40000"
+    "codigo": "8719",
+    "salario": "35000"
   },
   "agregar-otros-beneficios-solicitud-empleo": {
-    "codigo": "1817",
-    "salario": "",
+    "codigo": "8718",
+    "salario": "2000",
     "beneficios": "bono desempeño anual | Transporte",
     "montos": "1000 | 800"
   },
   "agregar-comentario-solicitud-empleo": {
-    "codigo": "1817",
-    "comentario": "Hola como esta pt 2"
+    "codigo": "8718",
+    "comentario": "Hola como esta pt 3"
   },
   "validacion-solicitud-empleo": {
     "Primer Nombre": "",
@@ -247,14 +247,14 @@
   "crear-solicitud-empleo": {
     "Tipo ID": "",
     "Identificación": "",
-    "Primer Nombre": "",
+    "Primer Nombre": "Juancito",
     "Segundo Nombre": "",
-    "Primer Apellido": "",
+    "Primer Apellido": "Lopez",
     "Segundo Apellido": "",
     "Grado académico": "",
     "Celular": "",
     "Correo": "",
-    "Requisición": "",
+    "Requisición": "ANALISTA DE ASEGURAMIENTO DE LA CALIDAD",
     "Fecha Ingreso": "",
     "Etiquetas": "",
     "Comentario": ""
@@ -277,5 +277,11 @@
   },
   "enviar-candidato-descartados": {
     "nombre": "Aderlin Rosario"
+  },
+  "_camposMultivalor": {
+    "crear-req-creacion": [
+      "Persona(s) a sustituir",
+      "Documentos Requeridos"
+    ]
   }
 }

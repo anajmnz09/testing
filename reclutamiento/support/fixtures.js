@@ -72,22 +72,36 @@ async function erroresJs(driver) {
 }
 
 /**
- * Localiza y abre el DETALLE de una requisición YA EXISTENTE para los casos que
- * NO crean requisición (agregar comentario / pregunta a una existente).
+ * Localiza y abre el DETALLE de una requisición YA EXISTENTE.
  *
  * Entrada (Execution Context del `caso`): `codigo` y/o `nombre`. Si el usuario
- * indicó alguno, se abre esa requisición puntual. Si no indicó ninguno, se toma
- * como fallback la primera requisición en estado "Autorizada" del listado (se
- * reutilizan `filtrarPorEstado` + `abrirPorEstado`, ya existentes).
+ * indicó alguno, se abre esa requisición puntual (sea cual sea su estado: el
+ * usuario sabe lo que pidió). Si no indicó ninguno, aplica el fallback según
+ * `requiereEditable`.
+ *
+ * @param {{lista: RequisicionesPage}} ctx  contexto de `usarListadoRequisiciones`
+ * @param {string} caso                     nombre del caso (sección del contexto)
+ * @param {object} [opts]
+ * @param {boolean} [opts.requiereEditable=true]  el caso va a EDITAR la
+ *   requisición (agregar comentario/pregunta): el fallback, sin `codigo`/
+ *   `nombre` en el contexto, necesita una requisición en un estado editable.
+ *   Verificado en la app: una "Autorizada" tiene el formulario con campos
+ *   deshabilitados (p. ej. "Comentario"), mientras que una "Pausada" es
+ *   totalmente editable — por eso el fallback usa "Pausada".
+ *   Con `false` (casos que solo NAVEGAN/CONSULTAN desde el detalle, ej.
+ *   "B. Elegibles", "Solicitudes de Empleo": no editan nada) el fallback NO
+ *   fuerza ningún estado — abre la primera requisición del listado tal cual
+ *   está, porque a esos casos el estado no les importa. Confirmado bug real:
+ *   antes de este parámetro, estos casos heredaban el filtro "Pausada" del
+ *   fallback de edición sin necesitarlo (`DataGrid: filtrar por columna
+ *   "Estado" = "Pausada"` en CADA corrida, aunque ningún test declare esa
+ *   condición).
  *
  * Devuelve `{ detalle, identificador }`, donde `identificador` es el texto por el
  * que reabrir la requisición después de guardar (código/nombre provisto, o el
  * nombre leído del detalle en el caso fallback).
- *
- * @param {{lista: RequisicionesPage}} ctx  contexto de `usarListadoRequisiciones`
- * @param {string} caso                     nombre del caso (sección del contexto)
  */
-async function abrirRequisicionExistente(ctx, caso) {
+async function abrirRequisicionExistente(ctx, caso, { requiereEditable = true } = {}) {
   const codigo = testContext.get(caso, 'codigo');
   const nombre = testContext.get(caso, 'nombre');
   const identificador = codigo || nombre;
@@ -97,20 +111,20 @@ async function abrirRequisicionExistente(ctx, caso) {
     return { detalle, identificador };
   }
 
-  // Fallback: sin entrada explícita, editar la primera requisición en un estado
-  // EDITABLE. Verificado en la app: una requisición "Autorizada" tiene el
-  // formulario de edición con campos deshabilitados (p. ej. "Comentario"), mientras
-  // que una "Pausada" es totalmente editable. Por eso el fallback usa "Pausada"
-  // (sirve tanto para agregar comentario como pregunta). El estado se puede dirigir
-  // con la clave "estado" del Execution Context. Si no hay ninguna, se falla claro.
-  const estado = testContext.get(caso, 'estado') || 'Pausada';
+  // El estado se puede dirigir con la clave "estado" del Execution Context
+  // (sirve para ambos casos: dirigir el estado a editar, o dirigir qué estado
+  // consultar). Sin dirección explícita, el default depende de si el caso
+  // necesita edición.
+  const estadoDirigido = testContext.get(caso, 'estado');
+  const estado = estadoDirigido || (requiereEditable ? 'Pausada' : null);
+
   await ctx.lista.esperarFilas();
-  await ctx.lista.filtrarPorEstado(estado);
+  if (estado) await ctx.lista.filtrarPorEstado(estado);
   const detalle = await ctx.lista.abrirPorEstado(estado, 0);
   if (!detalle) {
     throw new Error(
       `${caso}: no se indicó "codigo"/"nombre" en el Execution Context y no hay ` +
-        `requisiciones en estado "${estado}" para editar.`
+        `requisiciones${estado ? ` en estado "${estado}"` : ''} para abrir.`
     );
   }
   return { detalle, identificador: (await detalle.getNombre()).trim() };

@@ -1,0 +1,11 @@
+{
+  "_camposMultivalor": {
+    "asignar-empleado-nomina": [
+      "codigos"
+    ]
+  },
+  "asignar-empleado-nomina": {
+    "codigos": "",
+    "nomina": ""
+  }
+}
