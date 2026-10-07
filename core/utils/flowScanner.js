@@ -367,7 +367,7 @@ function escanearFuente(src) {
   }
 
   const reg = leerRegistrarCaso(src, sc, em);
-  return { produces, lecturas, camposPublicados, claves: reg.claves, declaraciones: reg.declaraciones, estructurales: [], invalidas: reg.invalidas, indeterminado };
+  return { produces, lecturas, camposPublicados, claves: reg.claves, declaraciones: reg.declaraciones, estructurales: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [], invalidas: reg.invalidas, indeterminado };
 }
 
 /** Rutas relativas que el test importa con `require('./...')` (un salto, sin seguir más). */
@@ -401,6 +401,12 @@ function escanearArchivo(ruta) {
   // requires que demuestra la ESTRUCTURA (Page Object con ENTIDAD_FLUJO), ver flowEstructura.js
   const est = require('./flowEstructura').detectarEstructurales(ruta);
   r.estructurales = est.estructurales;
+  r.creaciones = est.creaciones;
+  r.ediciones = est.ediciones;
+  r.eliminaciones = est.eliminaciones;
+  r.confirmaciones = est.confirmaciones;
+  r.confirmables = est.confirmables;
+  r.exclusiones = est.exclusiones;
   r.invalidas.push(...est.invalidas);
   return r;
 }

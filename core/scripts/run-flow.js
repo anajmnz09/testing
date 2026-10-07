@@ -110,6 +110,7 @@ async function main() {
       avisos: plan.avisos,
       errores: plan.errores,
       produce: plan.produce,
+      elimina: plan.elimina,
       requiere: plan.requiere,
       // ¿el caso declara metadata de flujo? (sin ella corre como paso independiente)
       conMetadata: Object.fromEntries(seleccion.map((x) => [x.caso, !!declarada[x.caso] || metadata[x.caso].produces.length > 0 || (metadata[x.caso].requires || []).length > 0])),

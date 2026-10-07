@@ -1,9 +1,9 @@
 const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const fixtures = require('../support/fixtures');
+const bancos = require('../support/bancos');
 
 const CASO = 'agregar-comentario-solicitud-empleo';
-const COMENTARIO_POR_DEFECTO = 'Comentario agregado desde QA (Execution Context)';
 
 // Sin restricción de etapa/estado: se le puede agregar un comentario a
 // CUALQUIER Solicitud de Empleo. Por eso no hay descubrimiento automático
@@ -28,7 +28,7 @@ describe('Reclutamiento - Agregar comentario a Solicitud de Empleo', function ()
         `${CASO}: se requiere indicar el "codigo" de la Solicitud de Empleo (Execution Context/Panel) — no aplica descubrimiento automático.`
       );
     }
-    const comentario = testContext.get(CASO, 'comentario') || COMENTARIO_POR_DEFECTO;
+    const comentario = bancos.comentario.valor(testContext.get(CASO, 'comentario'), 'texto');
 
     const detalle = await ctx.lista.abrirDetalle(codigo);
     await detalle.estaCargado();

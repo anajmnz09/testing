@@ -11,6 +11,7 @@
  * sigue dando prioridad a lo dirigido desde el Panel.
  */
 const datosPrueba = require('@triple/core/utils/datosPrueba');
+const bancos = require('./bancos');
 
 // Persona de la ÚLTIMA llamada a `datosBasicosQA()`: permite que los correos de
 // `datosPersonalesQA()` se deriven del mismo nombre (coherencia dentro del test).
@@ -24,8 +25,8 @@ function datosBasicosQA() {
     'Segundo Nombre': persona.segundoNombre,
     'Primer Apellido': persona.primerApellido,
     'Segundo Apellido': persona.segundoApellido,
-    'Dimensión empleado': 'QA',
-    Referencia: 'Referencia QA',
+    'Dimensión empleado': bancos.datosEmpleado.texto('dimension'),
+    Referencia: bancos.datosEmpleado.texto('referencia'),
     // Cascade Tipo ID -> Identificación: 11 dígitos (formato cédula RD más común).
     Identificación: datosPrueba.identificacion(),
   };
@@ -50,8 +51,8 @@ function datosPersonalesQA() {
     'Teléfono de trabajo': '8095550100',
     'Teléfono personal': '8095550101',
     // Cascade País -> Ciudad -> Sector -> Calle:
-    Calle: 'Calle QA Automatizada 1',
-    Nombre: 'Contacto QA',
+    Calle: bancos.datosEmpleado.texto('calle'),
+    Nombre: bancos.datosEmpleado.texto('contacto'),
     Teléfono: '8095550102',
     Parentesco: 'Amigo',
   };

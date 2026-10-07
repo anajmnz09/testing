@@ -73,6 +73,8 @@ function casoDe(test) {
 function motivoBloqueo(caso) {
   const plan = flowContext.plan();
   for (const r of (plan.requiere || {})[caso] || []) {
+    const quien = flowContext.eliminadaPor(r.tipo);
+    if (quien) return `requiere "${r.tipo}", pero ya fue eliminada por "${quien}" y no está disponible`;
     for (const p of ((plan.productores || {})[r.tipo] || []).filter((x) => x !== caso)) {
       const e = estados.get(p);
       if (e && e !== 'passed') {
@@ -130,6 +132,7 @@ exports.mochaHooks = {
     if (!caso || estados.get(caso) === 'bloqueado') return;
 
     if (test.state !== 'passed') {
+      flowContext.restaurarEliminacionesDe(caso); // si el test falló, la eliminación no está confirmada
       estados.set(caso, 'failed');
       marcarCaso(caso, {
         estado: 'failed',
@@ -138,6 +141,7 @@ exports.mochaHooks = {
       });
       return;
     }
+    if (flowContext.resolverPendienteGuardado()) logger.info(`flujo: "${caso}" guardó y pasó sin pedir el resultado del guardado: la entidad se publica/actualiza con lo capturado`);
     const faltan = ((flowContext.plan().produce || {})[caso] || []).filter((t) => {
       const e = flowContext.entidad(t);
       return !e || e.productor !== caso;

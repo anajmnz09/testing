@@ -35,6 +35,11 @@ class CategoriaActividadDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Categorías';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'categoria-actividad';
   }

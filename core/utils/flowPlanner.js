@@ -15,6 +15,9 @@
  *    el orden en que el usuario los eligió; los que no lo declaran se ordenan por selección.
  *  - Más de un originador del mismo tipo con algún consumidor → error de
  *    ambigüedad (nunca se elige uno al azar).
+ *  - `elimina: [tipo]` (el test elimina una entidad que consume): se ejecuta DESPUÉS de todos los demás
+ *    que la requieren o producen (la entidad deja de estar disponible al eliminarla). Dos tests que
+ *    eliminan el mismo tipo → error (el segundo operaría sobre una entidad ya eliminada).
  *  - Orden: topológico estable (desempata por orden de selección).
  *
  * @param {Array<{caso:string, modulo?:string, archivo?:string}>} seleccion
@@ -39,6 +42,7 @@ function planificar(seleccion, metadata, { claveConocida = () => null } = {}) {
     return p && typeof p.orden === 'number' ? p.orden : null;
   };
   const requiere = (c) => meta(c).requires || [];
+  const elimina = (c) => meta(c).elimina || [];
 
   const dup = casos.filter((c, i) => casos.indexOf(c) !== i);
   if (dup.length) errores.push(`Caso(s) seleccionado(s) más de una vez: ${[...new Set(dup)].join(', ')}.`);
@@ -83,6 +87,20 @@ function planificar(seleccion, metadata, { claveConocida = () => null } = {}) {
     // Cada grupo se encadena aparte: los de orden declarado por su número, el resto por selección.
     for (const grupo of [conOrden, sinOrden]) for (let i = 1; i < grupo.length; i++) arista(grupo[i - 1], grupo[i]);
     for (const c of consumidoresPuros) prods.forEach((p) => arista(p, c));
+  }
+
+  // eliminadores: van después de todo lo demás que use la entidad
+  const eliminadoresDe = new Map();
+  for (const c of casos) for (const t of elimina(c)) eliminadoresDe.set(t, [...(eliminadoresDe.get(t) || []), c]);
+  for (const [t, ds] of eliminadoresDe) {
+    if (ds.length > 1) {
+      errores.push(`Eliminación múltiple: "${t}" la eliminan varios tests (${ds.join(', ')}); el segundo operaría sobre una entidad ya eliminada. Deje seleccionado solo uno.`);
+      continue;
+    }
+    const d = ds[0];
+    for (const c of casos) {
+      if (c !== d && (requiere(c).some((r) => r.tipo === t) || produce(c).includes(t))) arista(c, d);
+    }
   }
 
   // requires: bindings + ¿hay otra fuente si no hay productor?
@@ -138,6 +156,7 @@ function planificar(seleccion, metadata, { claveConocida = () => null } = {}) {
     orden: ordenCasos.map((c) => porCaso.get(c)),
     bindings,
     produce: Object.fromEntries(casos.map((c) => [c, produce(c)])),
+    elimina: Object.fromEntries(casos.map((c) => [c, elimina(c)])),
     requiere: Object.fromEntries(casos.map((c) => [c, requiere(c).map((r) => ({ tipo: r.tipo, clave: r.clave }))])),
     productores: Object.fromEntries(productores),
     avisos,

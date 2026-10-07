@@ -46,6 +46,21 @@ const { textoIgual } = require('../utils/assert');
  * `ESTRATEGIAS` — no hace falta excluirlo acá.
  */
 class ConfiguracionEntidadDetallePage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). La pantalla de un registro abre la edición con `editar`; al guardar captura el valor del control `CAMPO_IDENTIFICADOR` y, cuando
+   * `resultadoGuardado` confirma el éxito, publica/actualiza la entidad `NOMBRE_ENTIDAD` con ese nombre.
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return {
+      tipo: this.NOMBRE_ENTIDAD,
+      referencia: 'nombre',
+      metodos: [],
+      editores: ['editar'],
+      confirmadores: [{ metodo: 'guardar', leer: 'antes', capturar: true }, { metodo: 'resultadoGuardado', datos: null }],
+    };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);
@@ -200,6 +215,20 @@ class ConfiguracionEntidadDetallePage extends BasePage {
       }
     }
     return resultado;
+  }
+
+  /**
+   * Control que IDENTIFICA al registro (su nombre en el listado). Cada entidad lo declara si no se llama "Nombre"; debe ser una
+   * clave de `ESTRATEGIAS` (lo vigila el contrato de flujos). El flujo publica su valor como referencia de la entidad.
+   */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Nombre';
+  }
+
+  /** Datos de referencia para el flujo: el valor del control identificador, leído ANTES de guardar (después el formulario se recarga). */
+  async _datosFlujo() {
+    const nombre = String(await this.form.getValor(this.constructor.CAMPO_IDENTIFICADOR, { intentos: 1, timeoutMs: 5000 })).trim();
+    return nombre ? { nombre } : null;
   }
 
   /**

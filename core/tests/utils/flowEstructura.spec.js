@@ -113,7 +113,93 @@ describe('utils/flowEstructura — requires demostrados por la estructura (unita
       escribir('pages/Pagina.js', PO('Pagina', "{ tipo: 'solicitud' }"));
       const r = detectar("const Pagina = require('../pages/Pagina');\nit('x', async () => {\n  const p = new Pagina(d);\n  await p.abrirDetalle(testContext.get(CASO, 'c'));\n});\n");
       expect(r.estructurales).to.deep.equal([]);
-      expect(r.invalidas[0].motivo).to.contain('ENTIDAD_FLUJO exige tipo y referencia');
+      expect(r.invalidas[0].motivo).to.contain('exige referencia');
+    });
+  });
+
+  describe('creadores, editores, eliminadores y subentidades (estructura)', function () {
+    const FORM = `class Form { static get ENTIDAD_FLUJO() { return { tipo: 'cap', referencia: 'nombre', metodos: [], confirmadores: [{ metodo: 'guardar' }] }; } async guardar() {} }
+module.exports = Form;
+`;
+    const PADRE = `const Form = require('./Form');
+class Detalle {
+  static get ENTIDAD_FLUJO() {
+    return [
+      { tipo: 'cap', referencia: 'nombre', metodos: ['adjuntar'], creadores: ['abrirAgregar'], editores: ['abrirEditar'], eliminadores: ['eliminar'] },
+      { tipo: 'edu', referencia: 'nombre', metodos: [], creadores: [{ metodo: 'agregarMixto', argumento: 0, valor: 'Educación', persiste: true, referenciaArg: '1.t' }] },
+      { tipo: 'exp', referencia: 'nombre', metodos: [], creadores: [{ metodo: 'agregarMixto', argumento: 0, valor: 'Experiencia', persiste: true, referenciaArg: '1.t' }] },
+    ];
+  }
+  static get ACCIONES_FLUJO() { return [{ metodo: 'subirFoto', clase: 'atributo' }]; }
+  async abrirAgregar() { return new Form(); }
+  async abrirEditar(o) { return new Form(); }
+  async eliminar(n) {}
+  async adjuntar(n) {}
+  async agregarMixto(t, d) {}
+  async subirFoto() {}
+}
+module.exports = Detalle;
+`;
+    const LISTADO = `const Detalle = require('./Detalle');
+class Lista {
+  static get ENTIDAD_FLUJO() { return { tipo: 'emp', referencia: 'nombre', creadores: ['crear'] }; }
+  async abrirDetalle(x) { return new Detalle(); }
+  async abrirPrimero() { return new Detalle(); }
+  async crear() { return new Detalle(); }
+}
+module.exports = Lista;
+`;
+    const armar = (test) => {
+      escribir('pages/Detalle.js', PADRE);
+      escribir('pages/Form.js', FORM);
+      escribir('pages/Lista.js', LISTADO);
+      return detectarEstructurales(escribir('tests/caso.test.js', `const Lista = require('../pages/Lista');\nconst CASO = 'c';\n${test}`));
+    };
+
+    it('subentidad: el detalle se resuelve por lo que devuelve abrirDetalle (alternativa con ternario) y su creador se detecta', function () {
+      const r = armar("it('x', async () => {\n  const lista = new Lista(d);\n  const n = testContext.get(CASO, 'emp');\n  const detalle = n ? await lista.abrirDetalle(n) : await lista.abrirPrimero();\n  await detalle.abrirAgregar();\n});\n");
+      expect(r.estructurales.map((e) => [e.clave, e.entidad])).to.deep.equal([['emp', 'emp']]);
+      expect(r.creaciones.map((e) => e.entidad)).to.deep.equal(['cap']);
+    });
+
+    it('editar y eliminar localizan por referencia (consumen) y se detectan como edición / eliminación', function () {
+      const r = armar("it('x', async () => {\n  const lista = new Lista(d);\n  const detalle = await lista.abrirDetalle('x');\n  const c = testContext.get(CASO, 'cap');\n  await detalle.abrirEditar(c);\n  await detalle.eliminar(c);\n});\n");
+      expect(r.estructurales.map((e) => [e.clave, e.entidad]).sort()).to.deep.equal([['cap', 'cap']]);
+      expect(r.ediciones.map((e) => e.entidad)).to.deep.equal(['cap']);
+      expect(r.eliminaciones.map((e) => e.entidad)).to.deep.equal(['cap']);
+    });
+
+    it('un método compartido por dos entidades se distingue por el argumento LITERAL (o constante); si no es literal, no se adivina', function () {
+      const r = armar("const TIPO = 'Experiencia';\nit('x', async () => {\n  const lista = new Lista(d);\n  const detalle = await lista.abrirDetalle('x');\n  await detalle.agregarMixto(TIPO, { t: 'a' });\n  await detalle.agregarMixto(tipoDinamico(), { t: 'b' });\n});\n");
+      expect(r.creaciones.map((e) => e.entidad)).to.deep.equal(['exp']);
+    });
+
+    it('la creación desde el listado (crear) y el guardado confirmado se detectan; sin confirmar, el resolver no la cuenta', function () {
+      const r = armar("it('x', async () => {\n  const lista = new Lista(d);\n  const detalle = await lista.crear();\n});\n");
+      expect(r.creaciones.map((e) => e.entidad)).to.deep.equal(['emp']);
+      expect(r.confirmaciones).to.deep.equal([]);
+    });
+
+    it('un guardado del formulario hijo se detecta como confirmación de SU entidad', function () {
+      const r = armar("it('x', async () => {\n  const lista = new Lista(d);\n  const detalle = await lista.abrirDetalle('x');\n  const form = await detalle.abrirAgregar();\n  await form.guardar();\n});\n");
+      expect(r.confirmaciones.map((e) => e.entidad)).to.deep.equal(['cap']);
+      expect(r.confirmables).to.include('cap');
+    });
+
+    it('una acción declarada en ACCIONES_FLUJO (atributo) se detecta como exclusión, no como entidad', function () {
+      const r = armar("it('x', async () => {\n  const lista = new Lista(d);\n  const detalle = await lista.abrirDetalle('x');\n  await detalle.subirFoto();\n});\n");
+      expect(r.exclusiones.map((e) => e.clase)).to.deep.equal(['atributo']);
+      expect(r.creaciones).to.deep.equal([]);
+    });
+
+    it('un helper del módulo de fixtures que devuelve { detalle } tipa la variable del test (desestructuración)', function () {
+      escribir('pages/Detalle.js', PADRE);
+      escribir('pages/Form.js', FORM);
+      escribir('pages/Lista.js', LISTADO);
+      escribir('support/fx.js', "const Lista = require('../pages/Lista');\nfunction usar() { const ctx = {}; beforeEach(async () => { ctx.lista = new Lista(ctx.driver); }); return ctx; }\nasync function abrir(ctx, caso) {\n  const detalle = await ctx.lista.abrirDetalle(testContext.get(caso, 'emp'));\n  return { detalle, id: 1 };\n}\nmodule.exports = { usar, abrir };\n");
+      const r = detectarEstructurales(escribir('tests/caso.test.js', "const fx = require('../support/fx');\nit('x', async () => {\n  const ctx = fx.usar();\n  const { detalle } = await fx.abrir(ctx, CASO);\n  await detalle.abrirAgregar();\n});\n"));
+      expect(r.estructurales.map((e) => e.clave)).to.deep.equal(['emp']);
+      expect(r.creaciones.map((e) => e.entidad)).to.deep.equal(['cap']);
     });
   });
 

@@ -81,6 +81,45 @@ const SECCIONES = {
  * convención, no se asume.
  */
 class EmpleadoDetallePage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Las subentidades del empleado son entidades de flujo propias (no se
+   * mezclan con el empleado): el formulario hijo confirma capacitación/dependiente al guardar; educación, experiencia
+   * y habilidad persisten dentro del propio método (Educación y Experiencia comparten método y se distinguen por su
+   * primer argumento literal).
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return [
+      {
+        tipo: 'capacitacion',
+        referencia: 'nombre',
+        metodos: ['abrirAdjuntarCapacitacion'],
+        creadores: ['abrirAgregarCapacitacion'],
+        editores: ['abrirEditarCapacitacion'],
+        eliminadores: ['eliminarCapacitacion'],
+      },
+      { tipo: 'dependiente', referencia: 'identificacion', metodos: [], creadores: ['abrirAgregarDependiente'] },
+      {
+        tipo: 'educacion',
+        referencia: 'nombre',
+        metodos: [],
+        creadores: [{ metodo: 'agregarEducacionOExperiencia', argumento: 0, valor: 'Educación', persiste: true, referenciaArg: '1.nombreOPuesto' }],
+      },
+      {
+        tipo: 'experiencia',
+        referencia: 'nombre',
+        metodos: [],
+        creadores: [{ metodo: 'agregarEducacionOExperiencia', argumento: 0, valor: 'Experiencia', persiste: true, referenciaArg: '1.nombreOPuesto' }],
+      },
+      {
+        tipo: 'habilidad',
+        referencia: 'habilidad',
+        metodos: [],
+        creadores: [{ metodo: 'agregarHabilidad', persiste: true, referenciaArg: '0.habilidad' }],
+      },
+    ];
+  }
+
   constructor(driver) {
     super(driver);
     // Confirma "detalle cargado": mismo locator genérico que usa

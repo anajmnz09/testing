@@ -1,135 +1,36 @@
 /**
- * Detección ESTRUCTURAL de `requires` (sin ejecutar nada): relaciona las entradas de un test con la
- * entidad que consume a partir de la arquitectura compartida, no de nombres ni labels.
+ * Detección ESTRUCTURAL (sin ejecutar nada) de lo que un test hace con las entidades de un flujo, a partir de
+ * la arquitectura compartida —los contratos `ENTIDAD_FLUJO` de los Page Objects—, nunca de nombres ni labels.
  *
- *   clave del test ──(valor)──► `<listado>.abrirDetalle(x)` ──► Page Object ──► ENTIDAD_FLUJO
+ *   clave del test ──(valor)──► `<receptor>.<localizador>(x)` ──► Page Object ──► ENTIDAD_FLUJO
  *
- * El contrato se declara UNA vez en el Page Object que implementa el localizador:
+ * El contrato se declara UNA vez en el Page Object que implementa la operación (ver `flowContratos.js`):
  *
- *   static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo' }; }
- *   // metodos (opcional, por defecto ['abrirDetalle']): métodos que reciben la `referencia`
- *   // un array de contratos es válido si la clase localiza varias entidades.
+ *   static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo', creadores: ['crear'] }; }
+ *   // metodos (por defecto ['abrirDetalle']): localizadores que reciben la `referencia`
+ *   // creadores / editores / eliminadores: crean, abren la edición o eliminan un registro de esa entidad
  *
  * Cada eslabón debe ser demostrable en el código (todo literal; si no, no se deduce nada):
- *   1. el test obtiene un listado: `const ctx = <modulo>.<fn>()` (fixture: su cuerpo asigna
- *      `ctx.<prop> = <PageObject…>`), o instancia un Page Object: `const p = new PO(...)` / `PO.<fn>()`;
- *   2. el Page Object importado (ruta relativa, un salto) declara ENTIDAD_FLUJO;
- *   3. el valor de `testContext.get(CASO, 'clave')` llega, directo o por alias simple, al primer
- *      argumento de `<receptor>.<metodo>(…)` (también a través de un helper de ese módulo, un salto:
- *      `<modulo>.<helper>(ctx, CASO)`, analizando el cuerpo del helper).
+ *   1. el test obtiene un receptor: `const ctx = <modulo>.<fn>()` (fixture: su cuerpo asigna `ctx.<prop> = <PO…>`),
+ *      `new PO(...)` / `PO.<fn>()`, o la variable asignada con lo que DEVUELVE un método de otro receptor
+ *      (`detalle = await ctx.lista.abrirDetalle(x)`; la clase se resuelve por `return new X(...)`, no por nombre);
+ *   2. el Page Object (importado con ruta relativa o `@triple/core`, un salto por eslabón) declara ENTIDAD_FLUJO;
+ *   3. el test llama a un localizador/creador/editor/eliminador declarado, y/o el valor de
+ *      `testContext.get(CASO, 'clave')` llega, directo o por alias simple, a su primer argumento (también a través
+ *      de un helper del módulo de fixtures, un salto: `<modulo>.<helper>(ctx, CASO)`).
  *
  * La clave puede ser un string literal o una constante de módulo `const CLAVE = 'literal';`.
- * El flujo de datos se sigue solo por: asignaciones simples, `a || b` / `a ?? b`, paréntesis,
- * `await`, `parsearValoresMultiples(…)`/`String(…)` y `for (const x of …)`. Cualquier otra forma no
- * propaga la clave (queda SUGERIDO/NO DETERMINADO, nunca una dependencia).
+ * El flujo de datos se sigue solo por: asignaciones simples, `a || b` / `a ?? b`, paréntesis, `await`,
+ * `parsearValoresMultiples(…)`/`String(…)` y `for (const x of …)`. Cualquier otra forma no propaga la clave
+ * (queda SUGERIDO/NO DETERMINADO, nunca una dependencia). Un creador que sirve a varias entidades se filtra por
+ * `argumento` + `valor` literales (p. ej. `agregarEducacionOExperiencia('Educación', …)`).
  */
-const fs = require('fs');
 const path = require('path');
-const { analizar, bloqueBalanceado, partesDeNivel, literal } = require('./flowScanner');
+const { bloqueBalanceado, partesDeNivel } = require('./flowScanner');
+const C = require('./flowContratos');
 
+const { leer, lineaDe, escapar, enCodigo, importaciones, contratosDeClase, accionesDeClase, retornoDeMetodo } = C;
 const ENVOLTORIOS = ['parsearValoresMultiples', 'String'];
-const METODOS_POR_DEFECTO = ['abrirDetalle'];
-const cache = new Map();
-
-function leer(archivo) {
-  if (!cache.has(archivo)) {
-    const src = fs.readFileSync(archivo, 'utf8');
-    const a = analizar(src);
-    cache.set(archivo, { src, sc: a.sinComentarios, em: a.enmascarado });
-  }
-  return cache.get(archivo);
-}
-
-const lineaDe = (src, idx) => src.slice(0, idx).split('\n').length;
-const escapar = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const enCodigo = (f, idx) => f.em[idx] === f.sc[idx]; // false si el índice cae en un string/comentario
-
-function resolverArchivo(base) {
-  return [base, `${base}.js`, path.join(base, 'index.js')].find((c) => fs.existsSync(c) && fs.statSync(c).isFile());
-}
-
-/** nombre → ruta, de los `require` con ruta relativa (`const X = require('./x')`, `const { X } = require('./x')`). */
-function importaciones(f, archivo) {
-  const out = new Map();
-  const anadir = (nombre, ruta) => {
-    const r = resolverArchivo(path.resolve(path.dirname(archivo), ruta));
-    if (r) out.set(nombre, r);
-  };
-  let m;
-  const re1 = /(?:const|let|var)\s+(\w+)\s*=\s*require\(\s*(['"])(\.{1,2}\/[^'"]+)\2\s*\)/g;
-  while ((m = re1.exec(f.sc))) if (enCodigo(f, m.index)) anadir(m[1], m[3]);
-  const re2 = /(?:const|let|var)\s+\{([^}]*)\}\s*=\s*require\(\s*(['"])(\.{1,2}\/[^'"]+)\2\s*\)/g;
-  while ((m = re2.exec(f.sc))) {
-    if (!enCodigo(f, m.index)) continue;
-    for (const p of m[1].split(',')) {
-      const n = p.split(':').pop().trim();
-      if (n) anadir(n, m[3]);
-    }
-  }
-  return out;
-}
-
-/** Contratos ENTIDAD_FLUJO de un Page Object: `{ contratos: [{tipo, referencia, metodos}], invalidas: [...] }`. */
-function leerContratos(archivo) {
-  const f = leer(archivo);
-  const contratos = [];
-  const invalidas = [];
-  const re = /static\s+get\s+ENTIDAD_FLUJO\s*\(\s*\)\s*\{\s*return\s*/g;
-  let m;
-  while ((m = re.exec(f.sc))) {
-    const pos = m.index + m[0].length;
-    const abre = f.sc[pos];
-    const linea = lineaDe(f.src, m.index);
-    const cuerpo = abre === '{' || abre === '[' ? bloqueBalanceado(f.sc, pos) : null;
-    if (cuerpo === null) {
-      invalidas.push({ linea, motivo: `${path.basename(archivo)}: ENTIDAD_FLUJO debe devolver un objeto o un array de objetos literales` });
-      continue;
-    }
-    const objetos = abre === '[' ? partesDeNivel(cuerpo) : [`{${cuerpo}}`];
-    for (const o of objetos) {
-      const tipo = literal(o, 'tipo');
-      const referencia = literal(o, 'referencia');
-      const lista = /(?:^|[\s,{])metodos\s*:\s*\[([^\]]*)\]/.exec(o);
-      const metodos = lista ? [...lista[1].matchAll(/(['"`])([\w$]+)\1/g)].map((x) => x[2]) : METODOS_POR_DEFECTO;
-      if (!tipo || !referencia || !metodos.length) {
-        invalidas.push({ linea, motivo: `${path.basename(archivo)}: ENTIDAD_FLUJO exige tipo y referencia como strings literales (y metodos como array literal)` });
-      } else contratos.push({ tipo, referencia, metodos, archivo });
-    }
-  }
-  return { contratos, invalidas };
-}
-
-/** Contratos del Page Object que una variable/nombre referencia (por `new X`, `X.fn()` o `ctx.prop = X…`). */
-function contratosDe(nombre, imports, invalidas) {
-  const archivo = imports.get(nombre);
-  if (!archivo) return [];
-  const r = leerContratos(archivo);
-  for (const i of r.invalidas) if (!invalidas.some((x) => x.motivo === i.motivo)) invalidas.push(i);
-  return r.contratos;
-}
-
-/** Texto de `function nombre(...) {...}` en un módulo: `{ params, sc, em }` o null. */
-function funcionDe(archivo, nombre) {
-  const f = leer(archivo);
-  const m = new RegExp(`function\\s+${escapar(nombre)}\\s*\\(`).exec(f.sc);
-  if (!m || !enCodigo(f, m.index)) return null;
-  const abreParen = m.index + m[0].length - 1;
-  const params = bloqueBalanceado(f.sc, abreParen);
-  if (params === null) return null;
-  const llave = f.sc.indexOf('{', abreParen + params.length + 1);
-  const cuerpo = llave < 0 ? null : bloqueBalanceado(f.sc, llave);
-  if (cuerpo === null) return null;
-  const ini = llave + 1;
-  const fin = ini + cuerpo.length;
-  return {
-    archivo,
-    params: partesDeNivel(params).map((p) => (/^(\w+)/.exec(p) || [])[1] || null),
-    sc: f.sc.slice(ini, fin),
-    em: f.em.slice(ini, fin),
-    src: f.src,
-    base: ini,
-  };
-}
 
 /** Divide por operadores de primer nivel (`||`, `??`), respetando paréntesis y strings. */
 function dividirTop(expr) {
@@ -226,76 +127,235 @@ function propagar(sc, em, consts) {
   return tainted;
 }
 
+/** Texto de `function nombre(...) {...}` en un módulo: `{ params, sc, em }` o null. */
+function funcionDe(archivo, nombre) {
+  const f = leer(archivo);
+  const m = new RegExp(`function\\s+${escapar(nombre)}\\s*\\(`).exec(f.sc);
+  if (!m || !enCodigo(f, m.index)) return null;
+  const abreParen = m.index + m[0].length - 1;
+  const params = bloqueBalanceado(f.sc, abreParen);
+  if (params === null) return null;
+  const llave = f.sc.indexOf('{', abreParen + params.length + 1);
+  const cuerpo = llave < 0 ? null : bloqueBalanceado(f.sc, llave);
+  if (cuerpo === null) return null;
+  const ini = llave + 1;
+  const fin = ini + cuerpo.length;
+  return {
+    archivo,
+    params: partesDeNivel(params).map((p) => (/^(\w+)/.exec(p) || [])[1] || null),
+    sc: f.sc.slice(ini, fin),
+    em: f.em.slice(ini, fin),
+    src: f.src,
+    base: ini,
+  };
+}
+
+/** Información de un Page Object como receptor: sus contratos efectivos (con herencia). */
+function infoDe(archivo, invalidas, concreto = archivo) {
+  const r = contratosDeClase(archivo, concreto);
+  for (const i of r.invalidas) if (!invalidas.some((x) => x.motivo === i.motivo)) invalidas.push(i);
+  return { archivo, concreto, contratos: r.contratos, acciones: accionesDeClase(archivo) };
+}
+
+/** ¿El argumento (texto) es el literal `valor` o una constante que lo contiene? */
+function esLiteral(texto, valor, consts) {
+  const t = String(texto || '').trim();
+  const m = /^(['"`])([^'"`]*)\1$/.exec(t);
+  if (m) return m[2] === valor;
+  return consts.has(t) && consts.get(t) === valor;
+}
+
 /**
- * Consumos `{ clave, tipo, campo, via }` dentro de un texto, dado un mapa receptor → contratos.
- * @param {Map<string, object[]>} receptores  p. ej. 'ctx.lista' → contratos del Page Object
+ * Lo que un texto (cuerpo del test o de un helper) hace con los receptores conocidos:
+ *  - consumos   `{ clave, entidad, campo, via }`: la clave del contexto llega al argumento de un localizador
+ *               (`metodos`, y también editores/eliminadores, que localizan por referencia);
+ *  - creaciones / ediciones / eliminaciones `{ entidad, via }`: llamadas a creadores / editores / eliminadores
+ *               declarados (con filtro `argumento`+`valor` cuando el método sirve a varias entidades).
+ * @param {Map<string, object[]>} receptores  receptor (texto, p. ej. 'ctx.lista') → [info de Page Object]
  */
-function consumos(sc, em, receptores, linea, consts) {
+function analizarUso(sc, em, receptores, linea, consts) {
   const tainted = propagar(sc, em, consts);
-  const out = [];
-  for (const [receptor, contratos] of receptores) {
-    for (const c of contratos) {
-      for (const metodo of c.metodos) {
-        const re = new RegExp(`(?<![\\w$.])${escapar(receptor).replace(/\\\./g, '\\s*\\.\\s*')}\\s*\\.\\s*${escapar(metodo)}\\s*\\(`, 'g');
-        let m;
-        while ((m = re.exec(sc))) {
-          if (em[m.index] !== sc[m.index]) continue;
-          const args = bloqueBalanceado(sc, m.index + m[0].length - 1);
-          if (args === null) continue;
-          const primero = partesDeNivel(args)[0];
-          if (!primero) continue;
-          for (const clave of clavesDe(primero, tainted, consts)) {
-            out.push({ clave, entidad: c.tipo, campo: c.referencia, via: `${path.basename(c.archivo, '.js')}.${metodo}`, linea });
+  const out = { consumos: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [] };
+  for (const [receptor, infos] of receptores) {
+    for (const info of infos) {
+      for (const a of info.acciones || []) {
+        const re = new RegExp(`(?<![\\w$.])${escapar(receptor).replace(/\\\./g, '\\s*\\.\\s*')}\\s*\\.\\s*${escapar(a.metodo)}\\s*\\(`);
+        const m = re.exec(sc);
+        if (m && em[m.index] === sc[m.index]) out.exclusiones.push({ clase: a.clase, via: `${path.basename(a.archivo, '.js')}.${a.metodo}`, linea });
+      }
+      for (const c of info.contratos) {
+        if (!c.tipo) continue;
+        const via = (metodo) => `${path.basename(c.archivo, '.js')}.${metodo}`;
+        const llamadas = (metodo) => {
+          const re = new RegExp(`(?<![\\w$.])${escapar(receptor).replace(/\\\./g, '\\s*\\.\\s*')}\\s*\\.\\s*${escapar(metodo)}\\s*\\(`, 'g');
+          const res = [];
+          let m;
+          while ((m = re.exec(sc))) {
+            if (em[m.index] !== sc[m.index]) continue;
+            const args = bloqueBalanceado(sc, m.index + m[0].length - 1);
+            if (args !== null) res.push(partesDeNivel(args));
+          }
+          return res;
+        };
+        const localizadores = [...c.metodos, ...c.editores.map((e) => e.metodo), ...c.eliminadores.map((e) => e.metodo)];
+        for (const metodo of [...new Set(localizadores)]) {
+          if (!c.referencia) continue;
+          for (const args of llamadas(metodo)) {
+            if (!args[0]) continue;
+            for (const clave of clavesDe(args[0], tainted, consts)) out.consumos.push({ clave, entidad: c.tipo, campo: c.referencia, via: via(metodo), linea });
           }
         }
+        for (const e of c.creadores) {
+          for (const args of llamadas(e.metodo)) {
+            if (e.argumento !== undefined && !esLiteral(args[e.argumento], e.valor, consts)) continue;
+            out.creaciones.push({ entidad: c.tipo, via: via(e.metodo), linea, ...(e.persiste ? { persiste: true } : {}) });
+          }
+        }
+        // guardado confirmado de la entidad (un formulario con confirmador): sin él, abrir la edición/creación no persiste nada
+        if (c.confirmadores.length) out.confirmables.push(c.tipo);
+        for (const e of c.confirmadores) for (const args of llamadas(e.metodo)) out.confirmaciones.push({ entidad: c.tipo, via: via(e.metodo), linea, args: args.length });
+        for (const e of c.editores) for (const args of llamadas(e.metodo)) out.ediciones.push({ entidad: c.tipo, via: via(e.metodo), linea, args: args.length });
+        for (const e of c.eliminadores) for (const args of llamadas(e.metodo)) out.eliminaciones.push({ entidad: c.tipo, via: via(e.metodo), linea, args: args.length });
       }
     }
   }
   return out;
 }
 
+/** Ramas de una expresión condicional / alternativa: `c ? a : b`, `a || b`, `a ?? b` → [a, b] (la condición se descarta). */
+function ramasDe(expr) {
+  const cortes = [];
+  let prof = 0;
+  let comilla = '';
+  for (let i = 0; i < expr.length; i += 1) {
+    const ch = expr[i];
+    if (comilla) {
+      if (ch === '\\') i += 1;
+      else if (ch === comilla) comilla = '';
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') comilla = ch;
+    else if ('([{'.includes(ch)) prof += 1;
+    else if (')]}'.includes(ch)) prof -= 1;
+    else if (prof === 0) {
+      if (expr.startsWith('||', i) || expr.startsWith('??', i)) {
+        cortes.push([i, 2]);
+        i += 1;
+      } else if (ch === '?' && expr[i + 1] !== '.') cortes.push([i, 1, 'q']);
+      else if (ch === ':') cortes.push([i, 1]);
+    }
+  }
+  const piezas = [];
+  let ini = 0;
+  let descartarPrimera = false;
+  for (const [pos, largo, tipo] of cortes) {
+    piezas.push(expr.slice(ini, pos));
+    if (tipo === 'q' && piezas.length === 1) descartarPrimera = true; // lo anterior al `?` es la condición
+    ini = pos + largo;
+  }
+  piezas.push(expr.slice(ini));
+  return (descartarPrimera ? piezas.slice(1) : piezas).map((p) => p.trim()).filter(Boolean);
+}
+
 /**
- * Detecta, para un test, los requires que demuestra la estructura.
- * @returns {{ estructurales: Array<{clave:string, entidad:string, campo:string, via:string, linea:number}>, invalidas: Array<{linea:number, motivo:string}> }}
+ * Variables asignadas con lo que DEVUELVE un método de un receptor conocido (`detalle = await ctx.lista.abrirDetalle(x)`, también
+ * en una alternativa `c ? await a.m() : await b.n()` o `a.m() || b.n()`): la clase devuelta se resuelve por
+ * `return new X(...)` (un salto o vía `return this.otro()`), nunca por el nombre.
+ */
+function propagarRetornos(sc, em, receptores, agregar, invalidas) {
+  const reAsign = /(?:^|[;{}\s])(?:(?:const|let|var)\s+)?(\w+)\s*=(?![=>])\s*([^;]+);/g;
+  for (let pasada = 0; pasada < 4; pasada += 1) {
+    let cambio = false;
+    reAsign.lastIndex = 0;
+    let m;
+    while ((m = reAsign.exec(sc))) {
+      const idx = m.index + m[0].indexOf('=');
+      if (em[idx] !== sc[idx]) continue;
+      const variable = m[1];
+      for (const rama of ramasDe(m[2])) {
+        const r = /^(?:await\s+)?([\w$]+(?:\s*\.\s*[\w$]+)*?)\s*\.\s*(\w+)\s*\(/.exec(rama);
+        if (!r) continue;
+        const abre = rama.indexOf('(', r[0].length - 1);
+        if (bloqueBalanceado(rama, abre) === null || rama.slice(abre).trim().length !== rama.slice(abre).trim().length) continue;
+        const clave = r[1].replace(/\s+/g, '');
+        for (const info of receptores.get(clave) || []) {
+          for (const archivoClase of retornoDeMetodo(info.archivo, r[2], info.concreto)) {
+            const devuelta = infoDe(archivoClase, invalidas, archivoClase);
+            if ((devuelta.contratos.length || devuelta.acciones.length) && agregar(variable, [devuelta])) cambio = true;
+          }
+        }
+      }
+    }
+    if (!cambio) break;
+  }
+}
+
+const unicos = (lista, clave) => {
+  const vistos = new Set();
+  return lista.filter((x) => {
+    const k = clave(x);
+    if (vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+};
+
+/**
+ * Detecta, para un test, lo que demuestra la ESTRUCTURA (contratos `ENTIDAD_FLUJO` de los Page Objects):
+ * requires por clave (`estructurales`), creaciones (produces), ediciones (transformaciones), eliminaciones y confirmaciones del
+ * guardado (`confirmaciones`; `confirmables` = entidades cuyo guardado confirma una capa común: crear/editar solo cuenta si el test lo confirma).
+ * @returns {{ estructurales: object[], creaciones: object[], ediciones: object[], eliminaciones: object[], invalidas: Array<{linea:number, motivo:string}> }}
  */
 function detectarEstructurales(archivoTest) {
   const f = leer(archivoTest);
   const imports = importaciones(f, archivoTest);
   const invalidas = [];
-  const receptores = new Map(); // receptor (texto) → contratos
-  const ctxVars = new Map(); // variable → Map(prop → contratos)
+  const receptores = new Map(); // receptor (texto) → [info]
+  const ctxVars = new Map(); // variable → Map(prop → [info])
   const helpers = [];
+  const agregar = (clave, infos) => {
+    const previo = receptores.get(clave) || [];
+    const nuevos = infos.filter((i) => !previo.some((p) => p.archivo === i.archivo));
+    if (!nuevos.length) return false;
+    receptores.set(clave, [...previo, ...nuevos]);
+    return true;
+  };
 
-  const reAsig = /(?:const|let|var)\s+(\w+)\s*=\s*(?:await\s+)?(?:(new)\s+)?(\w+)(?:\s*\.\s*(\w+))?\s*\(/g;
+  // 1) Page Object instanciado (`new PO(...)`, `PO.fn()`) o fixture (`const ctx = modulo.fn()` → ctx.<prop> = <PO…>)
+  const reAsig = /(?:(?:const|let|var)\s+)?(\w+)\s*=\s*(?:await\s+)?(?:(new)\s+)?(\w+)(?:\s*\.\s*(\w+))?\s*\(/g;
   let m;
   while ((m = reAsig.exec(f.sc))) {
-    if (!enCodigo(f, m.index)) continue;
-    const [, variable, esNew, nombre, miembro] = m;
-    const propios = contratosDe(nombre, imports, invalidas);
-    if (propios.length) {
-      receptores.set(variable, propios);
-      continue;
+    if (!enCodigo(f, m.index + m[0].indexOf(m[1]))) continue;
+    const [, variable, esNew, nombre, miembroLlamado] = m;
+    if (imports.has(nombre)) {
+      const info = infoDe(imports.get(nombre), invalidas);
+      if (info.contratos.length || info.acciones.length) {
+        agregar(variable, [info]);
+        continue;
+      }
     }
-    // fixture: `const ctx = modulo.fn(...)` cuyo cuerpo asigna `ctx.prop = <PageObject…>`
-    if (esNew || !miembro || !imports.has(nombre)) continue;
-    const fn = funcionDe(imports.get(nombre), miembro);
+    if (esNew || !miembroLlamado || !imports.has(nombre)) continue;
+    const fn = funcionDe(imports.get(nombre), miembroLlamado);
     if (!fn) continue;
     const modImports = importaciones(leer(imports.get(nombre)), imports.get(nombre));
     const props = new Map();
     const reProp = /(\w+)\s*\.\s*(\w+)\s*=(?![=>])\s*(?:await\s+)?(?:new\s+)?(\w+)/g;
     let p;
     while ((p = reProp.exec(fn.sc))) {
-      if (fn.em[p.index] !== fn.sc[p.index]) continue;
-      const cs = contratosDe(p[3], modImports, invalidas);
-      if (cs.length) props.set(p[2], cs);
+      if (fn.em[p.index] !== fn.sc[p.index] || !modImports.has(p[3])) continue;
+      const info = infoDe(modImports.get(p[3]), invalidas);
+      if (info.contratos.length || info.acciones.length) props.set(p[2], [info]);
     }
     if (props.size) {
       ctxVars.set(variable, props);
-      for (const [prop, cs] of props) receptores.set(`${variable}.${prop}`, cs);
+      for (const [prop, infos] of props) agregar(`${variable}.${prop}`, infos);
     }
   }
 
-  // helpers del mismo módulo: `modulo.helper(ctx, CASO, …)` con un ctx conocido
+  // 2) variable asignada con lo que DEVUELVE un método de un receptor conocido (`detalle = await ctx.lista.abrirDetalle(x)`)
+  propagarRetornos(f.sc, f.em, receptores, agregar, invalidas);
+
+  // 3) helpers del módulo de fixtures: `modulo.helper(ctx, CASO, …)` con un ctx conocido
   const reHelper = /(?<![\w$.])(\w+)\s*\.\s*(\w+)\s*\(([^()]*)\)/g;
   while ((m = reHelper.exec(f.sc))) {
     if (!enCodigo(f, m.index) || !imports.has(m[1]) || !ctxVars.size) continue;
@@ -306,30 +366,60 @@ function detectarEstructurales(archivoTest) {
     const rec = new Map();
     args.forEach((a, i) => {
       if (!ctxVars.has(a) || !fn.params[i]) return;
-      for (const [prop, cs] of ctxVars.get(a)) rec.set(`${fn.params[i]}.${prop}`, cs);
+      for (const [prop, infos] of ctxVars.get(a)) rec.set(`${fn.params[i]}.${prop}`, infos);
     });
-    if (rec.size) helpers.push({ fn, rec, linea: lineaDe(f.src, m.index) });
+    if (rec.size) {
+      // variables locales del helper tipadas por lo que devuelven los métodos de sus receptores
+      const local = new Map(rec);
+      propagarRetornos(fn.sc, fn.em, local, (clave, infos) => {
+        const previo = local.get(clave) || [];
+        const nuevos = infos.filter((i) => !previo.some((p) => p.archivo === i.archivo));
+        if (nuevos.length) local.set(clave, [...previo, ...nuevos]);
+        return nuevos.length > 0;
+      }, invalidas);
+      helpers.push({ fn, rec: local, linea: lineaDe(f.src, m.index), modulo: m[1], nombre: m[2] });
+    }
   }
 
-  const estructurales = [];
-  const vistos = new Set();
-  const anadir = (lista) => {
-    for (const c of lista) {
-      const k = `${c.clave}|${c.entidad}|${c.campo}`;
-      if (!vistos.has(k)) {
-        vistos.add(k);
-        estructurales.push(c);
-      }
+  // 3b) `const { detalle } = await modulo.helper(ctx, CASO)`: si el helper devuelve `{ detalle }` y esa variable local
+  //     tiene un Page Object conocido, la variable del test también.
+  const reDestruct = /(?:const|let|var)\s+\{([^}]*)\}\s*=\s*(?:await\s+)?(\w+)\s*\.\s*(\w+)\s*\(/g;
+  while ((m = reDestruct.exec(f.sc))) {
+    if (!enCodigo(f, m.index)) continue;
+    const h = helpers.find((x) => x.modulo === m[2] && x.nombre === m[3]);
+    if (!h) continue;
+    const ret = [...h.fn.sc.matchAll(/\breturn\s*\{([^}]*)\}/g)].flatMap((r) => r[1].split(',').map((x) => x.trim()).filter(Boolean));
+    const devueltas = new Map(ret.map((x) => { const [k, v] = x.split(':').map((y) => y.trim()); return [k, v || k]; }));
+    for (const d of m[1].split(',').map((x) => x.trim()).filter(Boolean)) {
+      const [propiedad, alias] = d.split(':').map((y) => y.trim());
+      const local = devueltas.get(propiedad);
+      if (local && h.rec.has(local)) agregar(alias || propiedad, h.rec.get(local));
     }
+  }
+  propagarRetornos(f.sc, f.em, receptores, agregar, invalidas);
+
+  const todo = { consumos: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [] };
+  const sumar = (u, linea) => {
+    for (const k of Object.keys(todo)) todo[k].push(...u[k].map((x) => (typeof x === 'string' ? x : { ...x, linea })));
   };
-  anadir(consumos(f.sc, f.em, receptores, 0, constantes(f)).map((c) => ({ ...c, linea: 0 })));
-  for (const h of helpers) anadir(consumos(h.fn.sc, h.fn.em, h.rec, h.linea, constantes(leer(h.fn.archivo))).map((c) => ({ ...c, linea: h.linea })));
-  return { estructurales, invalidas };
+  sumar(analizarUso(f.sc, f.em, receptores, 0, constantes(f)), 0);
+  for (const h of helpers) sumar(analizarUso(h.fn.sc, h.fn.em, h.rec, h.linea, constantes(leer(h.fn.archivo))), h.linea);
+
+  return {
+    estructurales: unicos(todo.consumos, (c) => `${c.clave}|${c.entidad}|${c.campo}`),
+    creaciones: unicos(todo.creaciones, (c) => `${c.entidad}|${c.via}`),
+    ediciones: unicos(todo.ediciones, (c) => `${c.entidad}|${c.via}`),
+    eliminaciones: unicos(todo.eliminaciones, (c) => `${c.entidad}|${c.via}`),
+    confirmaciones: unicos(todo.confirmaciones, (c) => `${c.entidad}|${c.via}`),
+    confirmables: [...new Set(todo.confirmables)],
+    exclusiones: unicos(todo.exclusiones, (c) => `${c.clase}|${c.via}`),
+    invalidas,
+  };
 }
 
-/** Todos los contratos ENTIDAD_FLUJO de los Page Objects de un directorio (para el contrato del repo). */
+/** Contratos de un Page Object (con herencia). Para el contrato del repo. */
 function contratosEnArchivo(archivo) {
-  return leerContratos(archivo);
+  return contratosDeClase(archivo, archivo);
 }
 
 module.exports = { detectarEstructurales, contratosEnArchivo };

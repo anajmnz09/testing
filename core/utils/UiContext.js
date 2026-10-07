@@ -15,6 +15,8 @@ const config = require('../config');
 class UiContext {
   constructor(driver) {
     this.driver = driver;
+    // Publicación común de entidades de flujo según `ENTIDAD_FLUJO` (inerte fuera de un flujo).
+    require('./flowInstrumentar').instrumentar(this);
   }
 
   /** Espera a que el elemento exista y sea visible, y lo devuelve. */

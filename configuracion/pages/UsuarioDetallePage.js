@@ -89,6 +89,15 @@ const SEL_DROPDOWN_ACCIONES = By.id('usuario-form-dropdown-acciones');
 const SEL_OPCION_EDITAR = By.xpath("//*[normalize-space(.)='Editar'][not(.//*)]");
 
 class UsuarioDetallePage extends ConfiguracionEntidadDetallePage {
+  /**
+   * Acciones que, por DECISIÓN DE NEGOCIO, no crean ni transforman una entidad de flujo (ver GUIDELINES §12).
+   */
+  static get ACCIONES_FLUJO() {
+    return [
+      { metodo: 'subirFoto', clase: 'atributo' },
+    ];
+  }
+
   constructor(driver) {
     super(driver);
     // Por defecto asume el mapa de CREAR: es lo correcto para
@@ -178,6 +187,11 @@ class UsuarioDetallePage extends ConfiguracionEntidadDetallePage {
 
   static get ESTRATEGIAS_EDITAR() {
     return ESTRATEGIAS_EDITAR;
+  }
+
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Nombre Completo';
   }
 
   static get NOMBRE_ENTIDAD() {

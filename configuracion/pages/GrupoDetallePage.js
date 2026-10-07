@@ -108,6 +108,16 @@ const PLACEHOLDER_NOMBRE = 'Nombre';
 const PLACEHOLDER_DESCRIPCION = 'Descripción';
 
 class GrupoDetallePage extends ConfiguracionEntidadDetallePage {
+  /**
+   * Acciones que, por DECISIÓN DE NEGOCIO, no crean ni transforman una entidad de flujo (ver GUIDELINES §12).
+   */
+  static get ACCIONES_FLUJO() {
+    return [
+      { metodo: 'agregarMiembro', clase: 'relacion' },
+      { metodo: 'agregarPermiso', clase: 'relacion' },
+    ];
+  }
+
   static get ESTRATEGIAS() {
     return ESTRATEGIAS;
   }
@@ -149,6 +159,13 @@ class GrupoDetallePage extends ConfiguracionEntidadDetallePage {
         logger.info(`GrupoDetallePage: "${placeholder}" "stale" (intento ${intento}/${intentos}), reintentando`);
       }
     }
+  }
+
+  /** Datos de referencia para el flujo: en modo Editar el nombre vive en un input por placeholder (ver `getValorEditar`). */
+  async _datosFlujo() {
+    const input = await this._inputEditar(PLACEHOLDER_NOMBRE, 1500).catch(() => null);
+    const editando = input ? String((await input.getAttribute('value').catch(() => '')) || '').trim() : '';
+    return editando ? { nombre: editando } : super._datosFlujo();
   }
 
   /** Valor actual de "Nombre"/"Descripción" DURANTE Editar. Reintenta ante "stale" — mismo motivo que `setCampoEditar`. */

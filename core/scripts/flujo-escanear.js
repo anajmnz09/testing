@@ -8,11 +8,16 @@
  *
  * Separa SIEMPRE cuatro cosas; solo las dos primeras crean dependencias:
  *   DETECTADO CON CERTEZA    lo que el código demuestra: publish/update y get/entidad con tipo literal, y la
- *                            ESTRUCTURA (la clave llega a un localizador de un Page Object con ENTIDAD_FLUJO)
+ *                            ESTRUCTURA (contratos ENTIDAD_FLUJO de los Page Objects: la clave llega a un localizador,
+ *                            o el test llama a un creador / editor / eliminador declarado)
  *   DECLARADO EXPLÍCITAMENTE entidad+campo escritos junto a las claves del test (registrarCaso), en el
  *                            ESTRATEGIAS de un Page Object, o `requires`/`orden` de flujo-tests.js
  *   SUGERIDO                 señales débiles (fixture, claves sueltas): solo informativo, NUNCA una dependencia
- *   NO DETERMINADO           lo que el código no permite probar (uso dinámico de flowContext, declaración inválida)
+ *   NO DETERMINADO           lo que el código no permite probar (uso dinámico de flowContext, declaración inválida,
+ *                            persistencia sin contrato de entidad)
+ *
+ * Rol de cada test (derivado, nunca por nombre): productor estructural | productor explícito | transformación |
+ * eliminador | consumidor | sin rol de flujo.
  */
 const fs = require('fs');
 const path = require('path');
@@ -27,7 +32,7 @@ function metadataDe(ws) {
   return fs.existsSync(f) ? require(f) : {};
 }
 
-/** Clasifica un test en las cuatro categorías (estructura reutilizada por el detalle y por --todo). */
+/** Clasifica un test (estructura reutilizada por el detalle y por --todo). */
 function clasificar(ws, caso) {
   const archivo = path.join(RAIZ, ws, 'tests', `${caso}.test.js`);
   if (!fs.existsSync(archivo)) throw new Error(`No existe ${ws}/tests/${caso}.test.js`);
@@ -35,47 +40,78 @@ function clasificar(ws, caso) {
   const esc = escanearArchivo(archivo);
   const meta = metadataDe(ws)[caso] || {};
   const r = resolverMetadata([{ caso, archivo }], { [caso]: meta });
+  const d = r.derivado[caso];
+  const efectivo = r.metadata[caso];
+  const consume = [...new Set((efectivo.requires || []).map((q) => q.tipo))];
+
+  const productorEstructural = d.creadas;
+  const productorExplicito = esc.produces.filter((t) => !d.creadas.includes(t) && !consume.includes(t));
+  const transformacion = [...new Set([...d.editadas, ...esc.produces.filter((t) => consume.includes(t))])];
 
   const detectado = {
     produces: esc.produces,
     requires: esc.lecturas,
-    estructura: esc.estructurales.map((d) => `${d.clave} ← ${d.entidad}.${d.campo} (vía ${d.via})`),
+    estructura: esc.estructurales.map((x) => `${x.clave} ← ${x.entidad}.${x.campo} (vía ${x.via})`),
+    creaciones: esc.creaciones.map((x) => `${x.entidad} (vía ${x.via})`),
+    ediciones: esc.ediciones.map((x) => `${x.entidad} (vía ${x.via})`),
+    eliminaciones: esc.eliminaciones.map((x) => `${x.entidad} (vía ${x.via})`),
   };
   const declarado = {
-    enPageObject: esc.declaraciones.filter((d) => d.via === 'ESTRATEGIAS').map((d) => `${d.clave} ← ${d.entidad}.${d.campo} (ESTRATEGIAS del Page Object)`),
-    redundantes: r.derivado[caso].redundantes,
-    enCodigo: esc.declaraciones.filter((d) => d.via !== 'ESTRATEGIAS').map((d) => `${d.clave} ← ${d.entidad}.${d.campo}${d.auto === false ? ' (sin automático)' : ''}`),
+    enPageObject: esc.declaraciones.filter((x) => x.via === 'ESTRATEGIAS').map((x) => `${x.clave} ← ${x.entidad}.${x.campo} (ESTRATEGIAS del Page Object)`),
+    redundantes: d.redundantes,
+    enCodigo: esc.declaraciones.filter((x) => x.via !== 'ESTRATEGIAS').map((x) => `${x.clave} ← ${x.entidad}.${x.campo}${x.auto === false ? ' (sin automático)' : ''}`),
     enMetadata: (meta.requires || []).map((q) => `${q.clave || '(sin clave)'} ← ${q.tipo}${q.campo ? `.${q.campo}` : ''}`),
     orden: ordenesDeclarados(meta),
   };
   const sugerido = [];
   const fixture = (src.match(/fixtures\.(usar\w+|abrir\w+)/) || [])[1];
   if (fixture) sugerido.push(`usa el fixture ${fixture} (opera sobre un listado; el tipo de entidad NO se infiere del nombre)`);
-  const declaradas = new Set(esc.declaraciones.map((d) => d.clave));
-  const sueltas = esc.claves.filter((k) => !declaradas.has(k));
+  const declaradas = new Set(esc.declaraciones.map((x) => x.clave));
+  const estructurales = new Set(esc.estructurales.map((x) => x.clave));
+  const sueltas = esc.claves.filter((k) => !declaradas.has(k) && !estructurales.has(k));
   if (sueltas.length) sugerido.push(`claves de entrada sin entidad: ${sueltas.join(', ')} (una clave no dice de qué entidad es)`);
+
+  const guarda = /\.(guardar|resultadoGuardado)\(/.test(src);
   const noDeterminado = [
     ...esc.indeterminado.map((x) => `uso de flowContext no determinable (línea ${x.linea}: ${x.motivo})`),
     ...esc.invalidas.map((x) => `${x.motivo} (línea ${x.linea})`),
     ...r.errores,
   ];
-  const tieneRequires = r.metadata[caso].requires && r.metadata[caso].requires.length > 0;
-  return { ws, caso, detectado, declarado, sugerido, noDeterminado, tieneRequires, requiresEfectivos: r.metadata[caso].requires || [] };
+  const sinRolDeEscritura = !productorEstructural.length && !productorExplicito.length && !transformacion.length && !d.eliminadas.length && !esc.exclusiones.length;
+  if (guarda && sinRolDeEscritura) noDeterminado.push('guarda un registro pero ningún Page Object que usa declara de qué entidad es (sin contrato ENTIDAD_FLUJO para esa operación)');
+
+  let rol = 'sin rol de flujo';
+  if (productorEstructural.length) rol = 'productor estructural';
+  else if (productorExplicito.length) rol = 'productor explícito';
+  else if (transformacion.length) rol = 'transformación';
+  else if (d.eliminadas.length) rol = 'eliminador';
+  else if (esc.exclusiones.length) rol = { atributo: 'acción/atributo', relacion: 'relación', traslado: 'traslado' }[esc.exclusiones[0].clase] || 'acción/atributo';
+  else if (consume.length) rol = 'consumidor';
+
+  return {
+    ws, caso, rol, exclusiones: esc.exclusiones, detectado, declarado, sugerido, noDeterminado, consume,
+    productorEstructural, productorExplicito, transformacion, eliminadas: d.eliminadas, respaldo: d.respaldo,
+    tieneRequires: consume.length > 0, requiresEfectivos: efectivo.requires || [],
+  };
 }
 
 function detalle(ws, caso) {
   const c = clasificar(ws, caso);
-  const L = [`Analizando ${caso}.test.js (${ws})`, '', 'DETECTADO CON CERTEZA'];
-  L.push(c.detectado.produces.length ? `  ✓ produces: ${c.detectado.produces.join(', ')} (flowContext.publish/update en el código)` : '  ✓ produces: nada');
+  const L = [`Analizando ${caso}.test.js (${ws})  →  rol: ${c.rol}`, '', 'DETECTADO CON CERTEZA'];
+  c.detectado.produces.forEach((t) => L.push(`  ✓ publica "${t}" (flowContext.publish/update en el código)`));
+  c.detectado.creaciones.forEach((x) => L.push(`  ✓ CREA ${x}${c.respaldo.includes(x.split(' ')[0]) ? ' — creación de respaldo (el test también la consume): no lo vuelve productor' : ''}`));
+  c.detectado.ediciones.forEach((x) => L.push(`  ✓ EDITA ${x}`));
+  c.detectado.eliminaciones.forEach((x) => L.push(`  ✓ ELIMINA ${x}`));
+  c.exclusiones.forEach((x) => L.push(`  ✓ ACCIÓN sin entidad de flujo (${x.clase}): ${x.via} — decisión de negocio declarada en ACCIONES_FLUJO`));
   c.detectado.requires.forEach((t) => L.push(`  ✓ requires: ${t} (flowContext.get/entidad('${t}') en el código)`));
-  c.detectado.estructura.forEach((d) => L.push(`  ✓ requires por estructura: ${d}`));
-  if (!c.detectado.requires.length && !c.detectado.estructura.length) L.push('  - requires: ninguno demostrable');
+  c.detectado.estructura.forEach((x) => L.push(`  ✓ requires por estructura: ${x}`));
+  if (L.length === 3 && !c.exclusiones.length) L.push('  (nada demostrable por código o estructura)');
 
   L.push('', 'DECLARADO EXPLÍCITAMENTE');
-  c.declarado.enPageObject.forEach((d) => L.push(`  ✓ en el Page Object: ${d}`));
-  c.declarado.enCodigo.forEach((d) => L.push(`  ✓ en el test: ${d}`));
-  c.declarado.redundantes.forEach((d) => L.push(`  ✗ REDUNDANTE (quitar): ${d}`));
-  c.declarado.enMetadata.forEach((d) => L.push(`  ✓ en flujo-tests.js (forma antigua): ${d}`));
+  c.declarado.enPageObject.forEach((x) => L.push(`  ✓ en el Page Object: ${x}`));
+  c.declarado.enCodigo.forEach((x) => L.push(`  ✓ en el test: ${x}`));
+  c.declarado.redundantes.forEach((x) => L.push(`  ✗ REDUNDANTE (quitar): ${x}`));
+  c.declarado.enMetadata.forEach((x) => L.push(`  ✓ en flujo-tests.js (forma antigua): ${x}`));
   if (Object.keys(c.declarado.orden).length) L.push(`  ✓ orden de negocio (flujo-tests.js): ${JSON.stringify(c.declarado.orden)}`);
   if (!c.declarado.enCodigo.length && !c.declarado.enPageObject.length && !c.declarado.enMetadata.length && !Object.keys(c.declarado.orden).length) L.push('  (nada declarado)');
 
@@ -85,13 +121,8 @@ function detalle(ws, caso) {
 
   L.push('', 'NO DETERMINADO');
   c.noDeterminado.forEach((x) => L.push(`  ! ${x}`));
-  if (!c.noDeterminado.length) L.push('  (nada: el código no tiene formas indeterminables)');
-  L.push(
-    '',
-    c.tieneRequires
-      ? `Requires efectivos: ${c.requiresEfectivos.map((q) => (q.clave ? `${q.clave} ← ${q.tipo}.${q.campo}` : q.tipo)).join(', ')}`
-      : 'Requires efectivos: ninguno (si este test consume una entidad de un flujo, declare entidad+campo junto a su clave: ver GUIDELINES §12)'
-  );
+  if (!c.noDeterminado.length) L.push('  (nada)');
+  L.push('', c.tieneRequires ? `Requires efectivos: ${c.requiresEfectivos.map((q) => (q.clave ? `${q.clave} ← ${q.tipo}.${q.campo}` : q.tipo)).join(', ')}` : 'Requires efectivos: ninguno');
   return L.join('\n');
 }
 
@@ -103,31 +134,48 @@ function todo() {
     for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.test.js'))) filas.push(clasificar(ws, f.replace('.test.js', '')));
   }
   const id = (c) => `${c.ws}/${c.caso}`;
+  const por = (rol) => filas.filter((c) => c.rol === rol);
   const conLectura = filas.filter((c) => c.detectado.requires.length || c.detectado.estructura.length);
-  const soloEstructura = filas.filter((c) => c.detectado.estructura.length);
   const conDeclaracion = filas.filter((c) => c.declarado.enCodigo.length || c.declarado.enPageObject.length || c.declarado.enMetadata.length);
   const sugeridos = filas.filter((c) => c.sugerido.length && !c.tieneRequires);
   const noDet = filas.filter((c) => c.noDeterminado.length);
-  const sinRequires = filas.filter((c) => !c.tieneRequires);
-  const conFixture = sugeridos.filter((c) => c.sugerido.some((x) => x.startsWith('usa el fixture')));
+  const tipos = (lista, campo) => [...new Set(lista.flatMap((c) => c[campo]))].sort();
   const L = [
     `Total de tests: ${filas.length}`,
-    `  requires DETECTADOS con certeza (lectura tipada o estructura): ${conLectura.length}  [por estructura: ${soloEstructura.length}]`,
-    `  requires DECLARADOS explícitamente (test, ESTRATEGIAS del Page Object o metadata): ${conDeclaracion.length}`,
-    `  SUGERIDOS (señales débiles, sin requires; no crean dependencias): ${sugeridos.length}`,
-    `  NO DETERMINADOS (uso dinámico de flowContext, declaración inválida o contradicción): ${noDet.length}`,
-    `  tests SIN requires: ${sinRequires.length}`,
     '',
-    'Con requires detectado:',
-    ...(conLectura.length ? conLectura.map((c) => `  ${id(c)}  ← ${[...c.detectado.requires, ...c.detectado.estructura].join(', ')}`) : ['  (ninguno)']),
-    'Con requires declarado:',
+    'REQUIRES',
+    `  detectados con certeza (lectura tipada o estructura): ${conLectura.length}`,
+    `  declarados explícitamente (test, ESTRATEGIAS del Page Object o metadata): ${conDeclaracion.length}`,
+    `  sugeridos (señales débiles, sin requires; no crean dependencias): ${sugeridos.length}`,
+    `  tests sin requires: ${filas.filter((c) => !c.tieneRequires).length}`,
+    '',
+    'PRODUCES / ROL (derivado de la estructura, nunca del nombre)',
+    `  productor estructural: ${por('productor estructural').length}   [${tipos(por('productor estructural'), 'productorEstructural').length} entidades]`,
+    `  productor explícito (publish sin operación estructural): ${por('productor explícito').length}   [${por('productor explícito').map((c) => `${id(c)} → ${c.productorExplicito.join(',')}`).join('; ')}]`,
+    `  transformación (requiere y produce la misma entidad): ${por('transformación').length}`,
+    `  eliminador: ${por('eliminador').length}`,
+    `  acción/atributo (decisión de negocio declarada): ${por('acción/atributo').length}   relación: ${por('relación').length}   traslado: ${por('traslado').length}`,
+    `  consumidor puro: ${por('consumidor').length}`,
+    `  sin rol de flujo: ${por('sin rol de flujo').length}`,
+    `  no determinado (guarda sin contrato / uso indeterminable / contradicción): ${noDet.length}`,
+    '',
+    'Entidades producidas estructuralmente:',
+    `  ${tipos(por('productor estructural'), 'productorEstructural').join(', ')}`,
+    'Productores estructurales:',
+    ...(por('productor estructural').length ? por('productor estructural').map((c) => `  ${id(c)}  → ${c.productorEstructural.join(', ')}${c.respaldo.length ? `   (respaldo: ${c.respaldo.join(', ')})` : ''}`) : ['  (ninguno)']),
+    'Transformaciones:',
+    ...(por('transformación').length ? por('transformación').map((c) => `  ${id(c)}  ↻ ${c.transformacion.join(', ')}`) : ['  (ninguna)']),
+    'Eliminadores:',
+    ...(por('eliminador').length ? por('eliminador').map((c) => `  ${id(c)}  ✕ ${c.eliminadas.join(', ')}`) : ['  (ninguno)']),
+    'Con requires declarado (lo que la estructura no demuestra):',
     ...(conDeclaracion.length ? conDeclaracion.map((c) => `  ${id(c)}  ← ${[...c.declarado.enCodigo, ...c.declarado.enPageObject, ...c.declarado.enMetadata].join(', ')}`) : ['  (ninguno)']),
     ...(filas.some((c) => c.declarado.redundantes.length) ? ['Declaraciones REDUNDANTES (la estructura ya las demuestra; quitar):', ...filas.filter((c) => c.declarado.redundantes.length).map((c) => `  ${id(c)}  — ${c.declarado.redundantes.join('; ')}`)] : []),
-    `Sugeridos que operan sobre un listado vía fixture: ${conFixture.length} (informativo; solo necesitan declaración si un autor decide que participen en un flujo consumiendo una entidad)`,
-    ...(process.argv.includes('--sugeridos') ? conFixture.map((c) => `  ${id(c)}  — ${c.sugerido[0]}`) : ['  (use --todo --sugeridos para listarlos)']),
-    'No determinados:',
-    ...(noDet.length ? noDet.map((c) => `  ${id(c)}  — ${c.noDeterminado.join('; ')}`) : ['  (ninguno)']),
+    'No determinados (revisar: ¿necesitan contrato de entidad?):',
+    ...(noDet.length ? noDet.map((c) => `  ${id(c)}  — ${c.noDeterminado.join('; ')}`.slice(0, 260)) : ['  (ninguno)']),
   ];
+  if (process.argv.includes('--sugeridos')) {
+    L.push('Sugeridos con fixture:', ...sugeridos.map((c) => `  ${id(c)}  — ${c.sugerido[0]}`));
+  }
   return L.join('\n');
 }
 

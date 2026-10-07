@@ -17,7 +17,7 @@ class SolicitudEmpleoPage extends BasePage {
    * Lo lee el escáner estático; en ejecución individual no se usa.
    */
   static get ENTIDAD_FLUJO() {
-    return { tipo: 'solicitud', referencia: 'codigo' };
+    return { tipo: 'solicitud', referencia: 'codigo', creadores: ['crear'] };
   }
 
   constructor(driver) {

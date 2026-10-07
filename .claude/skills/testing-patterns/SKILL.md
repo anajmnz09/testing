@@ -591,16 +591,28 @@ as "Banco Popular 293688" — a different value than what was actually asked for
 `editar-*` bug: the random/timestamp part is confined strictly to the "nothing was directed"
 branch.
 
-## Automatic-mode data: use `core/utils/datosPrueba.js`, never fixed strings or `Automatica-<ts>`
+## Automatic-mode data: `datosPrueba.js` for identifiers/contextual data, text banks for free text — never fixed strings or `Automatica-<ts>`
 
-Texto/identificadores del modo automático (sin valor del Panel) se generan con
-`@triple/core/utils/datosPrueba` + `core/data/datosPrueba.json`: nombres/apellidos de catálogo,
+Personas e identificadores del modo automático (sin valor del Panel), y los textos que dependen del contexto
+del test, se generan con `@triple/core/utils/datosPrueba` + `core/data/datosPrueba.json`: nombres/apellidos de catálogo,
 `correo(persona)`, `identificacion()`, `celular()`, `nombreRequisicion(puesto)`,
 `texto(tipo, { puesto })`. Panel gana siempre (`get(caso, label) || generador()`); la unicidad
 solo se exige donde la app la pide (persona, correo, identificación, nombre de requisición/entidad);
 el contexto semántico se pasa como argumento (p. ej. el Puesto elegido). Respetar largos reales:
 un nombre de requisición de 61 caracteres falló el Guardar ("Error en el sistema") — se acota a 45.
-Amplía el JSON/`datosPrueba.js`; no crees generadores por módulo.
+Amplía el JSON/`datosPrueba.js`; no crees *generadores* por módulo.
+
+### Text banks (free `input`/`textarea` text only) — procedure
+
+Rules and scope: GUIDELINES §3 "Bancos de texto". Steps:
+1. **Use a bank** when a text/textarea default would otherwise be a literal (`'QA …'`, `'… de prueba'`). **Don't** for
+   selects, dates, numbers, files, identifiers (→ `datosPrueba.js`) or entity data a flow needs (→ `FlowContext`).
+2. **Consume:** `const bancos = require('../support/bancos'); bancos.<banco>.valor(testContext.get(CASO, label), '<clave>')`
+   (the Panel value is passed first, so it wins). Unique names: `nombreUnicoQA(dirigido, bancos.<banco>.texto('<clave>'))`.
+3. **Add data:** append options to a category (or a text) in the module's `support/bancos.js`; no new file if the
+   domain already has one, no copied lists. New domain → `<modulo>/support/bancos.js` with `definirBanco`.
+4. **Reproduce:** the log prints the run seed and each chosen value; rerun with `DATOS_SEMILLA=<seed>`.
+5. Existing literal-based tests are migrated when touched, not in bulk.
 
 ## Non-form Tests
 
@@ -620,33 +632,35 @@ scenario.
 ## Flows: making a test usable inside a flow (only when it actually exchanges data)
 
 Most tests never need this: a test with no flow metadata stays valid, alone or as an independent step of a flow. The normative
-rules (what a flow is, individual vs flow execution, priority, planner errors, blocking) live in `GUIDELINES.md §12` — don't
-restate them here. This is the authoring procedure.
+rules (what a flow is, individual vs flow execution, priority, planner errors, blocking, what counts as an entity) live in
+`GUIDELINES.md §12` — don't restate them here. This is the authoring procedure. The framework must DISCOVER dependencies when there is
+structural evidence and must never infer them from names, labels or ambiguous heuristics. Order of preference: **structural detection →
+minimal explicit declaration (once, in the Page Object) → undetermined**.
 
-1. **Producing an entity:** call `flowContext.publish('<tipo>', { ...campos })` (or `update` if it transforms an existing one) right
-   after the final success assert, with the type as a **string literal** and an object literal. That is the whole declaration:
-   `produces` is read from this call statically (`core/utils/flowScanner.js`, no execution). Never declare `produces` in
-   `flujo-tests.js`; a dynamic type (variable, alias, spread) is not provable and forces a manual declaration.
-2. **Consuming an entity by key — structure first.** If the test opens/selects the record through a listing Page Object
-   (`ctx.lista.abrirDetalle(testContext.get(CASO, 'codigo'))`, directly, via an alias, a constant key or a fixture helper), declare
-   nothing in the test: the Page Object that implements the locator declares ONCE
-   `static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo' }; }` (`metodos: [...]` for locators other than
-   `abrirDetalle`) and the scanner derives `requires { tipo, clave, campo }` for every test that uses it. When you create a new listing
-   Page Object whose entity some test publishes, add its `ENTIDAD_FLUJO`; don't copy `requires` into each test or `flujo-tests.js`.
-   Only if the structure can't prove it (e.g. a form select), declare `entidad` and `campo` once next to the key —
-   `registrarCaso(CASO, [{ clave, entidad, campo }])` or the Page Object's `ESTRATEGIAS` entry (`{ estrategia: 'searchAndSelect',
-   entidad: 'requisicion', campo: 'nombre' }`). A manual declaration the structure already proves is redundant and fails the
-   contract. Entity, reference field and consumed key are three different things: never infer `campo` from the key or the entity from
-   a name. Extra props are ignored outside a flow, so the individual run is unchanged.
-3. **Typed read:** `flowContext.get('<tipo>')` with a literal type is detected as "consumes <tipo>" on its own (orders, no values).
-   If it disagrees with the structural/declared entity of a key, the plan fails before opening the browser.
-4. **Business order** that no code can prove (Primera → Segunda → Tercera) is the only thing that goes in
-   `<modulo>/data/flujo-tests.js` (`orden: { solicitud: n }`).
-5. **Do not** treat file/test/Page Object names, labels, fixtures, generic keys (`codigo`) or previous results as a contract, and
-   never convert a scanner SUGGESTION into a dependency. Flows receive no specific data: no `flowData`, no profiles; inside a flow
-   values resolve `flowContext → automatic`, and the individual `execution-context.json` is ignored.
-6. **Check:** `node core/scripts/flujo-escanear.js <modulo>/<caso>` (DETECTED / DECLARED / SUGGESTED / UNDETERMINED) and the unit
-   suite — `core/tests/contrato-flujo-metadata.spec.js` fails on contradictions, invalid entities/fields or unknown keys.
+1. **A test needs no flow lines.** Don't call `flowContext.publish` to announce a creation and don't add `produces`/`requires` to
+   `flujo-tests.js`: what the test *does* (open a record through a listing, create, edit, delete) is read from the Page Objects it
+   uses. Explicit `flowContext.publish/update('<tipo>', {…})` (literal type, object literal, right after the final success assert) is only
+   for what structure can't prove — e.g. a stage transition that creates something.
+2. **Declare the entity once, in the Page Object that implements the operation** (`ENTIDAD_FLUJO`, see GUIDELINES §12): the listing
+   (`abrirDetalle`, `crear`…), the detail of a parent (`abrirAgregarX`, `eliminarX`… for sub-entities), the shared form (`confirmadores`
+   + `_datosFlujo()` with the reference you can really read), or a method that persists by itself (`persiste` + `referenciaArg`). A new
+   test that uses an already-declared Page Object needs nothing. Choose the entity per Page Object, never per test; a method serving several
+   entities is told apart by a literal argument. Configuration entities inherit the contract: declare `NOMBRE_ENTIDAD` and, if the identifying
+   control isn't "Nombre", `CAMPO_IDENTIFICADOR` (must be an `ESTRATEGIAS` key).
+3. **Decide with business, don't guess:** if an action persists something but it isn't clear whether it is an entity, a relation or an
+   attribute (photo, rating, group member/permission, moving data), list it in `ACCIONES_FLUJO` only after the decision — or ask. An attachment is an
+   entity only if it has a stable reference and later operations.
+4. **Consuming by key** needs nothing in the test when the key reaches a declared locator (even through an alias or a fixture helper). Only if the
+   structure can't prove it (e.g. a form select), declare `entidad` and `campo` once next to the key (`registrarCaso` object entry or the Page Object's
+   `ESTRATEGIAS` entry). Entity, reference field and consumed key are three different things: never infer one from another or from a name. A manual
+   declaration the structure already proves is redundant and fails the contract.
+5. **Business order** no code can prove (Primera → Segunda → Tercera) is the only thing for `<modulo>/data/flujo-tests.js` (`orden: { solicitud: n }`).
+6. **Do not** treat file/test/Page Object names, labels, fixtures, generic keys or previous results as a contract, and never convert a scanner
+   SUGGESTION into a dependency. Flows receive no specific data: inside a flow values resolve `flowContext → automatic`, and the individual
+   `execution-context.json` is ignored. Individual execution must not change (the contract and the publication layer are inert outside a flow).
+7. **Check:** `node core/scripts/flujo-escanear.js <modulo>/<caso>` (role + DETECTED / DECLARED / SUGGESTED / UNDETERMINED) and the unit suite —
+   `core/tests/contrato-flujo-metadata.spec.js` fails on contradictions, ghost producers (structural producer nobody publishes), invalid
+   entities/fields, missing methods or redundant declarations.
 
 ## Selectors
 
@@ -944,7 +958,7 @@ Execution Context updated **and confirmed** (read `execution-context.json` or th
 declaring it in code is not enough); evidence generated; compatibility preserved;
 documentation updated; new case registered in `organizacion-tests.js` (section, category,
 one-sentence description) unless it's a pure flow test; if the test exchanges data in a flow,
-its `produces`/`requires` are declared in code as described in "Flows" above and the scanner/contract pass.
+the Page Object contract (`ENTIDAD_FLUJO`) already covers it or is added once, as described in "Flows" above, and the scanner/contract pass.
 
 ## Expected Output
 

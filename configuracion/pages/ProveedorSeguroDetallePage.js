@@ -30,6 +30,11 @@ class ProveedorSeguroDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Proveedor';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'proveedor-de-seguro';
   }

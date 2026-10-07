@@ -155,6 +155,17 @@ const SEL_ENVIO = {
 };
 
 class BancoCandidatosPage extends BasePage {
+  /**
+   * Acciones que, por DECISIÓN DE NEGOCIO, no crean ni transforman una entidad de flujo (ver GUIDELINES §12).
+   */
+  static get ACCIONES_FLUJO() {
+    return [
+      { metodo: 'abrirFormularioAgregar', clase: 'traslado' },
+      { metodo: 'enviarAElegibles', clase: 'traslado' },
+      { metodo: 'enviarADescartados', clase: 'traslado' },
+    ];
+  }
+
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);

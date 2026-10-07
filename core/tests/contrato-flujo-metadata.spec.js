@@ -4,6 +4,7 @@ const { expect } = require('chai');
 const { escanearArchivo } = require('../utils/flowScanner');
 const { tiposDeclarados, ordenesDeclarados, resolverMetadata } = require('../utils/flowMetadata');
 const { contratosEnArchivo } = require('../utils/flowEstructura');
+const { metodoExiste } = require('../utils/flowContratos');
 
 /**
  * CONTRATO de la metadata de flujos (`<modulo>/data/flujo-tests.js`) frente al CÓDIGO de los tests.
@@ -136,7 +137,14 @@ describe('contrato de la metadata de flujos (flujo-tests.js) vs el código', fun
   const resueltos = tests.map((t) => {
     const archivo = path.join(RAIZ, t.ws, 'tests', `${t.caso}.test.js`);
     const r = resolverMetadata([{ caso: t.caso, archivo }], { [t.caso]: metaDe(t.ws, t.caso) });
-    return { ...t, requires: r.metadata[t.caso].requires || [], errores: r.errores, derivado: r.derivado[t.caso] };
+    return {
+      ...t,
+      requires: r.metadata[t.caso].requires || [],
+      produce: (r.metadata[t.caso].produces || []).map((p) => p.tipo),
+      elimina: r.metadata[t.caso].elimina || [],
+      errores: r.errores,
+      derivado: r.derivado[t.caso],
+    };
   });
 
   it('ningún test tiene contradicciones ni declaraciones inválidas (requires detectado vs declarado en código y metadata)', function () {
@@ -144,14 +152,14 @@ describe('contrato de la metadata de flujos (flujo-tests.js) vs el código', fun
     expect(errores, errores.join('\n')).to.deep.equal([]);
   });
 
+  /** Tipos que produce algún test: publicación explícita (código/metadata) o creación estructural (resolver). */
+  const producidos = () => new Set(resueltos.flatMap((r) => r.produce));
+
   it('toda entidad requerida (detectada o declarada) la produce algún test', function () {
-    const producidos = new Set();
-    for (const t of tests) {
-      for (const p of t.indeterminado.length ? tiposDeclarados(metaDe(t.ws, t.caso)) : t.produces) producidos.add(p);
-    }
+    const prod = producidos();
     const sinProductor = resueltos
       .flatMap((r) => r.requires.map((q) => ({ id: `${r.ws}/${r.caso}`, tipo: q.tipo })))
-      .filter((x) => !producidos.has(x.tipo))
+      .filter((x) => !prod.has(x.tipo))
       .map((x) => `${x.id} requiere la entidad "${x.tipo}", que ningún test produce`);
     expect(sinProductor, sinProductor.join('; ')).to.deep.equal([]);
   });
@@ -200,43 +208,60 @@ describe('contrato de la metadata de flujos (flujo-tests.js) vs el código', fun
     expect(redundantes, redundantes.join(' | ')).to.deep.equal([]);
   });
 
-  /** Page Objects (`<ws>/pages/*.js`) que declaran ENTIDAD_FLUJO. */
+  /** Page Objects concretos (`<ws>/pages/*.js`, sin las bases abstractas del core) con contrato ENTIDAD_FLUJO, propio o heredado. */
   const pagesConContrato = () => {
     const out = [];
-    for (const ws of workspaces) {
+    for (const ws of workspaces.filter((w) => w !== 'core')) {
       const dir = path.join(RAIZ, ws, 'pages');
       if (!fs.existsSync(dir)) continue;
       for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.js'))) {
         const archivo = path.join(dir, f);
-        if (!/ENTIDAD_FLUJO/.test(fs.readFileSync(archivo, 'utf8'))) continue;
-        out.push({ id: `${ws}/pages/${f}`, archivo, ...contratosEnArchivo(archivo) });
+        const r = contratosEnArchivo(archivo);
+        if (r.contratos.length || r.invalidas.length) out.push({ id: `${ws}/pages/${f}`, archivo, ...r });
       }
     }
     return out;
   };
 
   it('cada ENTIDAD_FLUJO es válida: tipo producido por algún test, referencia publicada y métodos existentes', function () {
-    const publicados = {};
+    const publicados = {}; // solo publicaciones EXPLÍCITAS (código): la capa común publica la referencia del contrato
     for (const t of tests) {
       for (const [tipo, campos] of Object.entries(t.camposPublicados || {})) {
         if (campos === null || publicados[tipo] === null) publicados[tipo] = null;
         else publicados[tipo] = new Set([...(publicados[tipo] || []), ...campos]);
       }
     }
+    const prod = producidos();
     const pos = pagesConContrato();
     expect(pos.length, 'al menos un Page Object declara ENTIDAD_FLUJO').to.be.greaterThan(0);
     const problemas = [];
     for (const po of pos) {
       po.invalidas.forEach((i) => problemas.push(`${po.id}: ${i.motivo}`));
-      const src = fs.readFileSync(po.archivo, 'utf8');
       for (const c of po.contratos) {
-        if (!(c.tipo in publicados)) problemas.push(`${po.id}: la entidad "${c.tipo}" no la produce ningún test`);
-        else if (publicados[c.tipo] && !publicados[c.tipo].has(c.referencia)) {
+        if (c.tipo && !prod.has(c.tipo)) problemas.push(`${po.id}: la entidad "${c.tipo}" no la produce ningún test`);
+        else if (c.tipo && publicados[c.tipo] && !publicados[c.tipo].has(c.referencia)) {
           problemas.push(`${po.id}: referencia "${c.referencia}" no está entre los campos que publica "${c.tipo}" [${[...publicados[c.tipo]].join(', ')}]`);
         }
-        for (const m of c.metodos) {
-          if (!new RegExp(String.raw`\n\s*(?:static\s+)?(?:async\s+)?${m}\s*\(`).test(src)) problemas.push(`${po.id}: el método "${m}" no existe en el Page Object`);
+        const metodos = [...c.metodos, ...[...c.creadores, ...c.editores, ...c.eliminadores, ...c.confirmadores].map((e) => e.metodo)];
+        for (const m of new Set(metodos)) {
+          if (!metodoExiste(po.archivo, m)) problemas.push(`${po.id}: el método "${m}" no existe en el Page Object (ni en sus ancestros)`);
         }
+      }
+    }
+    expect(problemas, problemas.join(' | ')).to.deep.equal([]);
+  });
+
+  it('todo productor estructural tiene una publicación REAL: capa común (confirmador / persiste) o publish del propio test', function () {
+    const comunes = new Set(); // tipos cuya publicación garantiza la capa común
+    for (const po of pagesConContrato()) {
+      for (const c of po.contratos) {
+        if (c.tipo && (c.confirmadores.length || c.creadores.some((e) => e.persiste))) comunes.add(c.tipo);
+      }
+    }
+    const problemas = [];
+    for (const r of resueltos) {
+      for (const t of [...r.derivado.creadas, ...r.derivado.editadas]) {
+        if (!comunes.has(t) && !r.produces.includes(t)) problemas.push(`${r.ws}/${r.caso}: produce "${t}" por estructura pero nadie lo publica (productor fantasma)`);
       }
     }
     expect(problemas, problemas.join(' | ')).to.deep.equal([]);
@@ -283,5 +308,117 @@ describe('contrato de la metadata de flujos (flujo-tests.js) vs el código', fun
       const [ws, caso] = id.split('/');
       expect(escaneo(ws, caso).produces, id).to.deep.equal(tipos);
     }
+  });
+
+  describe('producción de entidades: creación, edición, eliminación y decisiones de negocio', function () {
+    const rol = (id) => resueltos.find((x) => `${x.ws}/${x.caso}` === id);
+
+    it('cada entidad de Configuración declara un CAMPO_IDENTIFICADOR que existe en sus ESTRATEGIAS (lectura estática)', function () {
+      const { bloqueBalanceado, partesDeNivel } = require('../utils/flowScanner');
+      const dir = path.join(RAIZ, 'configuracion', 'pages');
+      const problemas = [];
+      for (const f of fs.readdirSync(dir).filter((x) => /DetallePage\.js$/.test(x))) {
+        const src = fs.readFileSync(path.join(dir, f), 'utf8');
+        const id = (/static\s+get\s+CAMPO_IDENTIFICADOR\s*\(\s*\)\s*\{\s*return\s*(['"])([^'"]+)\1/.exec(src) || [])[2] || 'Nombre'; // default de la base
+        const claves = [];
+        for (const m of src.matchAll(/const\s+ESTRATEGIAS\w*\s*=\s*\{/g)) {
+          const cuerpo = bloqueBalanceado(src, m.index + m[0].length - 1);
+          if (cuerpo === null) continue;
+          for (const p of partesDeNivel(cuerpo)) {
+            const k = /^(?:(['"])([^'"]+)\1|([^\s:'"]+))\s*:/.exec(p);
+            if (k) claves.push(k[2] || k[3]);
+          }
+        }
+        if (!claves.includes(id)) problemas.push(`${f}: CAMPO_IDENTIFICADOR "${id}" no es un control de sus ESTRATEGIAS [${claves.join(', ')}]`);
+      }
+      expect(problemas, problemas.join(' | ')).to.deep.equal([]);
+    });
+
+    it('las acciones de ACCIONES_FLUJO (atributo / relación / traslado) existen en su Page Object', function () {
+      const { accionesDeClase } = require('../utils/flowContratos');
+      const problemas = [];
+      for (const ws of workspaces.filter((w) => w !== 'core')) {
+        const dir = path.join(RAIZ, ws, 'pages');
+        if (!fs.existsSync(dir)) continue;
+        for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.js'))) {
+          const archivo = path.join(dir, f);
+          for (const a of accionesDeClase(archivo)) {
+            if (!['atributo', 'relacion', 'traslado'].includes(a.clase)) problemas.push(`${ws}/pages/${f}: clase "${a.clase}" inválida en ACCIONES_FLUJO`);
+            if (!metodoExiste(archivo, a.metodo)) problemas.push(`${ws}/pages/${f}: la acción "${a.metodo}" no existe`);
+          }
+        }
+      }
+      expect(problemas, problemas.join(' | ')).to.deep.equal([]);
+    });
+
+    it('crear / agregar → produce la entidad que demuestra la ESTRUCTURA (subentidades incluidas y distintas entre sí)', function () {
+      const esperado = {
+        'reclutamiento/crear-req-creacion': ['requisicion'],
+        'reclutamiento/crear-req-sustitucion': ['requisicion'],
+        'reclutamiento/crear-solicitud-empleo': ['solicitud'],
+        'reclutamiento/agregar-comentario-requisicion': ['comentario-requisicion'],
+        'reclutamiento/agregar-comentario-solicitud-empleo': ['comentario-solicitud'],
+        'reclutamiento/agregar-pregunta-personalizada': ['pregunta'],
+        'empleados/crear-empleado': ['empleado'],
+        'empleados/crear-dependiente': ['dependiente'],
+        'empleados/agregar-capacitacion': ['capacitacion'],
+        'empleados/agregar-educacion': ['educacion'],
+        'empleados/agregar-experiencia': ['experiencia'],
+        'empleados/agregar-habilidad': ['habilidad'],
+        'empleados/adjuntar-capacitacion': ['documento-capacitacion'],
+        'configuracion/crear-banco': ['banco'],
+        'configuracion/crear-grupo': ['grupo'],
+        'configuracion/crear-grado-academico': ['grado-academico'],
+      };
+      for (const [id, tipos] of Object.entries(esperado)) expect(rol(id).derivado.creadas, id).to.deep.equal(tipos);
+    });
+
+    it('editar = transformación (requiere y produce la misma entidad); eliminar requiere e INVALIDA (no produce)', function () {
+      for (const [id, tipo] of [['empleados/editar-capacitacion', 'capacitacion'], ['configuracion/editar-banco', 'banco']]) {
+        const r = rol(id);
+        expect(r.produce, id).to.include(tipo);
+        expect(r.requires.map((q) => q.tipo), id).to.include(tipo);
+      }
+      for (const [id, tipo] of [['empleados/eliminar-capacitacion', 'capacitacion'], ['empleados/eliminar-documento-capacitacion', 'documento-capacitacion']]) {
+        const r = rol(id);
+        expect(r.elimina, id).to.deep.equal([tipo]);
+        expect(r.produce, id).to.not.include(tipo);
+        expect(r.requires.map((q) => q.tipo), id).to.include(tipo);
+      }
+    });
+
+    it('decisiones de negocio: atributos, relaciones y traslados NO son entidades de flujo (no producen)', function () {
+      const noProducen = [
+        'reclutamiento/agregar-foto-solicitud-empleo', 'reclutamiento/agregar-valoracion-solicitud-empleo',
+        'reclutamiento/agregar-otros-beneficios-solicitud-empleo', 'reclutamiento/agregar-candidato-banco',
+        'reclutamiento/enviar-candidato-descartados', 'reclutamiento/enviar-candidato-elegibles',
+        'configuracion/agregar-miembro-grupo', 'configuracion/agregar-permiso-grupo', 'nomina/asignar-empleado-nomina',
+      ];
+      for (const id of noProducen) expect(rol(id).produce, id).to.deep.equal([]);
+      // miembros y permisos trabajan sobre el grupo producido por el flujo
+      for (const id of ['configuracion/agregar-miembro-grupo', 'configuracion/agregar-permiso-grupo']) {
+        expect(rol(id).requires.map((q) => q.tipo), id).to.deep.equal(['grupo']);
+      }
+    });
+
+    it('una creación de respaldo (el test también consume ese tipo) no lo convierte en productor', function () {
+      for (const id of ['empleados/eliminar-documento-capacitacion', 'empleados/descargar-documento-capacitacion']) {
+        expect(rol(id).derivado.respaldo, id).to.deep.equal(['documento-capacitacion']);
+        expect(rol(id).produce, id).to.not.include('documento-capacitacion');
+      }
+    });
+
+    it('EXCEPCIÓN explícita: cambiar-solicitud-crear-empleado produce "empleado" por publish aunque la estructura no lo demuestre', function () {
+      const r = rol('reclutamiento/cambiar-solicitud-crear-empleado');
+      expect(r.derivado.creadas).to.deep.equal([]);
+      expect(r.produces).to.deep.equal(['empleado']);
+      expect(r.produce).to.deep.equal(['empleado']);
+      expect(r.errores).to.deep.equal([]);
+    });
+
+    it('ningún creador estructural queda como paso independiente: toda creación demostrada es parte de produces', function () {
+      const huerfanos = resueltos.filter((r) => r.derivado.creadas.some((t) => !r.produce.includes(t))).map((r) => `${r.ws}/${r.caso}`);
+      expect(huerfanos, huerfanos.join(', ')).to.deep.equal([]);
+    });
   });
 });

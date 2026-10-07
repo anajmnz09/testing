@@ -70,6 +70,20 @@ const SEL_ENVIO_CANDIDATOS = {
  * que reutiliza el componente Form del core para leer los valores.
  */
 class RequisicionDetallePage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Agregar un comentario a una requisición persiste un comentario propio
+   * (entidad distinta del comentario de una solicitud: lo diferencia este Page Object).
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return {
+      tipo: 'comentario-requisicion',
+      referencia: 'texto',
+      metodos: [],
+      creadores: [{ metodo: 'agregarComentario', persiste: true, referenciaArg: '0' }],
+    };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);

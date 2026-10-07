@@ -25,7 +25,7 @@ class RequisicionesPage extends BasePage {
    * Lo lee el escáner estático; en ejecución individual no se usa.
    */
   static get ENTIDAD_FLUJO() {
-    return { tipo: 'requisicion', referencia: 'nombre' };
+    return { tipo: 'requisicion', referencia: 'nombre', creadores: ['abrirFormularioCrear'] };
   }
 
   constructor(driver) {

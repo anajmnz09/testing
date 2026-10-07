@@ -48,6 +48,11 @@ class PlanDeSeguroDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Nombre Plan de seguro';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'plan-de-seguro';
   }

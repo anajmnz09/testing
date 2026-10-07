@@ -38,6 +38,21 @@ const config = require('@triple/core/config');
  *    de `descargar()`.
  */
 class CapacitacionAdjuntosPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Un documento adjunto a una capacitación se identifica por el nombre de su
+   * archivo SIN extensión (la app lo renombra con un sufijo, así que el nombre completo no sirve de referencia); `adjuntar` lo crea, `descargar` lo consume y `eliminar` lo elimina.
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return {
+      tipo: 'documento-capacitacion',
+      referencia: 'nombre',
+      metodos: ['descargar'],
+      creadores: [{ metodo: 'adjuntar', persiste: true, referenciaArg: '0:stem' }],
+      eliminadores: ['eliminar'],
+    };
+  }
+
   constructor(driver) {
     super(driver);
     this.pagina = By.css('.capacitaciones-docs-page');

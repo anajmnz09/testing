@@ -137,6 +137,32 @@ class DataGrid extends BaseComponent {
   }
 
   /**
+   * Espera a que el grid termine de cargar: que no quede visible su panel de carga propio
+   * (`.dx-loadpanel-wrapper`, un overlay de DevExtreme que se monta en el body). Es DISTINTO del overlay
+   * `loader-manager` de la app (`esperarSinLoader`) y NO muestra ningún "Cargando": mientras una búsqueda
+   * está en curso el wrapper (transparente) queda encima de las filas e intercepta los clicks, así que un
+   * doble click sobre una fila que ya se ve filtrada se pierde y el test esperaría 30 s un detalle que
+   * nunca abre. Medido con Selenium real: `elementFromPoint` sobre la celda devolvía ese wrapper.
+   * Devuelve en cuanto el panel no está visible (inmediato si no hay carga pendiente).
+   */
+  async esperarCarga(timeout = config.timeouts.explicitWaitMs) {
+    await this.driver.wait(
+      () =>
+        this.driver.executeScript(() => {
+          const visible = (el) => {
+            const s = window.getComputedStyle(el);
+            const r = el.getBoundingClientRect();
+            return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0;
+          };
+          return !Array.from(document.querySelectorAll('.dx-loadpanel-wrapper')).some(visible);
+        }),
+      timeout,
+      'DataGrid: el panel de carga del grid (dx-loadpanel) sigue visible'
+    );
+    return this;
+  }
+
+  /**
    * True si existe una fila que contenga `texto`. Poll con timeout (maneja el
    * filtrado asíncrono del grid); devuelve false si no aparece en el tiempo dado
    * en vez de lanzar excepción.

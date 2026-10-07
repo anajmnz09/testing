@@ -507,11 +507,11 @@ testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
 
 ### Flujos (varios tests, un navegador)
 
-`node core/scripts/run-flow.js <modulo>/<caso> [...]` ejecuta los casos en un solo proceso/navegador, ordenados por `requires`/`produces` y pasando entidades por `flowContext`. Un flujo no recibe datos específicos (valores: `flowContext` → automático; el `execution-context.json` individual se ignora). `produces` y `requires` se descubren leyendo el código (`node core/scripts/flujo-escanear.js <modulo>/<caso>`); `<modulo>/data/flujo-tests.js` solo guarda el `orden` de negocio que el código no puede demostrar. Los tests individuales no cambian. Ver GUIDELINES §12.
+`node core/scripts/run-flow.js <modulo>/<caso> [...]` ejecuta los casos en un solo proceso/navegador, ordenados por `requires`/`produces` y pasando entidades por `flowContext`. Un flujo no recibe datos específicos (valores: `flowContext` → automático; el `execution-context.json` individual se ignora). `produces` y `requires` se descubren leyendo el código (`node core/scripts/flujo-escanear.js <modulo>/<caso>`) a partir del contrato `ENTIDAD_FLUJO` de los Page Objects (qué entidad localizan, crean, editan o eliminan; la publicación a `flowContext` la hace una capa común, sin líneas en los tests); `<modulo>/data/flujo-tests.js` solo guarda el `orden` de negocio que el código no puede demostrar. Los tests individuales no cambian. Ver GUIDELINES §12.
 
 ### Datos automáticos dinámicos
 
-Sin valor del Panel, los textos/identificadores automáticos salen de `core/utils/datosPrueba.js` (catálogos en `core/data/datosPrueba.json`): nombres, correos, identificaciones y textos coherentes con el contexto del test (p. ej. el Puesto). Únicos solo donde la app lo exige. Ver GUIDELINES §3.
+Sin valor del Panel, los textos/identificadores automáticos salen de `core/utils/datosPrueba.js` (catálogos en `core/data/datosPrueba.json`): nombres, correos, identificaciones y textos coherentes con el contexto del test (p. ej. el Puesto). Únicos solo donde la app lo exige. El texto libre (`input` de texto / `textarea`) sale de bancos pequeños y deterministas por módulo (`<modulo>/support/bancos.js`, mecanismo `core/utils/bancoDatos.js`, reproducible con `DATOS_SEMILLA`); el valor del Panel gana siempre. Ver GUIDELINES §3.
 
 ### Casos de formulario: sembrar desde el Input Model
 

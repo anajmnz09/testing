@@ -30,6 +30,11 @@ class BeneficioDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Beneficio';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'beneficio';
   }

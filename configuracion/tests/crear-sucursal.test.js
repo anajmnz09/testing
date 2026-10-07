@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const SucursalDetallePage = require('../pages/SucursalDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
+const bancos = require('../support/bancos');
 
 const CASO = 'crear-sucursal';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -15,7 +16,6 @@ testContext.registrarCasoDesdeFormulario(CASO, SucursalDetallePage.ESTRATEGIAS);
 const NOMBRE_BASE_QA = 'SUCURSAL QA';
 const CORREO_QA = 'sucursal.qa.automatizado@example.com';
 const TELEFONO_QA = '8095551234';
-const DIRECCION_QA = 'Dirección de prueba automatizada QA.';
 
 /**
  * Crea una Sucursal nueva desde Configuración > Administración > Sucursales,
@@ -48,7 +48,7 @@ describe('Configuración - Crear Sucursal', function () {
 
     const correo = testContext.get(CASO, 'Correo') || CORREO_QA;
     const telefono = testContext.get(CASO, 'Teléfono') || TELEFONO_QA;
-    const direccion = testContext.get(CASO, 'Dirección') || DIRECCION_QA;
+    const direccion = bancos.sucursal.valor(testContext.get(CASO, 'Dirección'), 'direccion');
     await form.setCampo('Correo', correo);
     await form.setCampo('Teléfono', telefono);
     await form.setCampo('Dirección', direccion);

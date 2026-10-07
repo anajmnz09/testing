@@ -96,6 +96,11 @@ class HorarioDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Descripción';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'horario';
   }

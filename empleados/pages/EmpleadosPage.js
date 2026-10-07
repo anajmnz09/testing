@@ -39,7 +39,7 @@ class EmpleadosPage extends BasePage {
    * Lo lee el escáner estático; en ejecución individual no se usa.
    */
   static get ENTIDAD_FLUJO() {
-    return { tipo: 'empleado', referencia: 'nombre' };
+    return { tipo: 'empleado', referencia: 'nombre', creadores: ['crear'] };
   }
 
   constructor(driver) {
@@ -109,6 +109,9 @@ class EmpleadosPage extends BasePage {
     let ultimoError;
     for (let intento = 0; intento < 3; intento++) {
       try {
+        // El panel de carga del grid (búsqueda en curso) cubre las filas e intercepta el doble click: sin esta
+        // espera el click se perdía y el test esperaba 30 s a un detalle que nunca abría (ver `DataGrid.esperarCarga`).
+        await this.grid.esperarCarga(timeout);
         const fila = await this.driver.wait(until.elementLocated(filaLoc), timeout);
         await this.driver.wait(until.elementIsVisible(fila), timeout);
         const celdas = await fila.findElements(By.css('td:not(.dx-command-select)'));

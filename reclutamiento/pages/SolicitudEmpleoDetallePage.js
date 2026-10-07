@@ -223,6 +223,31 @@ const SEL_OTROS_BENEFICIOS = {
 };
 
 class SolicitudEmpleoDetallePage extends BasePage {
+  /**
+   * Acciones que, por DECISIÓN DE NEGOCIO, no crean ni transforman una entidad de flujo (ver GUIDELINES §12).
+   */
+  static get ACCIONES_FLUJO() {
+    return [
+      { metodo: 'subirFoto', clase: 'atributo' },
+      { metodo: 'setValoracion', clase: 'atributo' },
+      { metodo: 'agregarBeneficios', clase: 'atributo' },
+    ];
+  }
+
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Agregar un comentario a una solicitud persiste un comentario propio
+   * (entidad distinta del comentario de una requisición: lo diferencia este Page Object).
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return {
+      tipo: 'comentario-solicitud',
+      referencia: 'texto',
+      metodos: [],
+      creadores: [{ metodo: 'agregarComentario', persiste: true, referenciaArg: '0' }],
+    };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);

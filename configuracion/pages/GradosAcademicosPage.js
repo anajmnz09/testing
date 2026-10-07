@@ -68,6 +68,21 @@ const ESTRATEGIAS = {
 };
 
 class GradosAcademicosPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12): este listado-modal crea y edita registros de "grado-academico" (`crear` abre el modal;
+   * su guardado confirmado publica el nombre). No declara localizadores: su buscador está roto y opera por posición.
+   */
+  static get ENTIDAD_FLUJO() {
+    return {
+      tipo: 'grado-academico',
+      referencia: 'nombre',
+      metodos: [],
+      creadores: ['crear'],
+      editores: ['editarPrimero', 'editarPorNombre'],
+      confirmadores: [{ metodo: 'resultadoGuardado', leer: 'antes' }],
+    };
+  }
+
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);
@@ -242,6 +257,12 @@ class GradosAcademicosPage extends BasePage {
   }
 
   /** Guarda el popup (botón "Guardar"). */
+  /** Datos de referencia para el flujo: el nombre que tiene el modal al guardar. */
+  async _datosFlujo() {
+    const nombre = String(await this.form.getValor('Nombre')).trim();
+    return nombre ? { nombre } : null;
+  }
+
   async guardar() {
     logger.info('GradosAcademicosPage: Guardar');
     const btn = await this.driver.wait(require('selenium-webdriver').until.elementLocated(this.btnGuardar), config.timeouts.explicitWaitMs);

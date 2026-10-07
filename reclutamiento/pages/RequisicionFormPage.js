@@ -62,6 +62,29 @@ const ESTRATEGIAS = {
  *   Con Razón="Sustitucion", "Persona(s) a sustituir" pasa a requerido.
  */
 class RequisicionFormPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Su guardado confirmado publica la requisición recién creada (nombre) o la
+   * pregunta personalizada agregada (texto, tomado del argumento del creador).
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return [
+      {
+        tipo: 'requisicion',
+        referencia: 'nombre',
+        metodos: [],
+        confirmadores: [{ metodo: 'resultadoGuardado', leer: 'antes', datos: '_datosRequisicion' }],
+      },
+      {
+        tipo: 'pregunta',
+        referencia: 'pregunta',
+        metodos: [],
+        creadores: [{ metodo: 'agregarPreguntaPersonalizada', referenciaArg: '0.pregunta' }],
+        confirmadores: [{ metodo: 'resultadoGuardado', leer: 'antes', datos: null }],
+      },
+    ];
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);
@@ -450,6 +473,12 @@ class RequisicionFormPage extends BasePage {
     );
     await (await this.waitVisible(guardarModal)).click();
     await this.form._esperarOverlayCerrado();
+  }
+
+  /** Datos de referencia para el flujo: el nombre de la requisición que el formulario tiene al guardar. */
+  async _datosRequisicion() {
+    const nombre = String(await this.form.getValor('Nombre de requisición')).trim();
+    return nombre ? { nombre } : null;
   }
 
   /**

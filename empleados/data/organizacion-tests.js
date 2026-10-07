@@ -3,7 +3,7 @@
  * criterio que `reclutamiento/data/organizacion-tests.js`/
  * `configuracion/data/organizacion-tests.js`: agrupa cada CASO (nombre =
  * archivo `tests/<nombre>.test.js`, sin la extensión) por Sección de la app
- * y luego por Categoría (Agregar, Crear, Consultar, Editar, Otros).
+ * y luego por Categoría. Como la sección 'Empleados' lleva el nombre del módulo, sus categorías cuelgan directo del módulo: Crear (solo crear-empleado), Dependientes, Resumen-CV, Consultar, Editar, junto a la carpeta plana Capacitación. No hay una categoría genérica 'Agregar': cada test va con su funcionalidad.
  *
  * `plano: true` en vez de `categoria`: la sección se muestra como UNA carpeta
  * con sus casos al mismo nivel, sin subcarpetas por categoría — para una
@@ -54,7 +54,7 @@ module.exports = {
   },
   'crear-dependiente': {
     seccion: 'Empleados',
-    categoria: 'Crear',
+    categoria: 'Dependientes',
     descripcion:
       'Agrega un Dependiente a un Empleado ya existente, en la sección "Dependientes" del detalle. Requeridos: Parentesco, Tipo ID, Identificación, Nombres, Apellidos, Género y Fecha de nacimiento.',
   },
@@ -160,17 +160,17 @@ module.exports = {
   },
   'agregar-educacion': {
     seccion: 'Empleados',
-    categoria: 'Agregar',
+    categoria: 'Resumen-CV',
     descripcion: 'Agrega una entrada de Educación en "Resumen/CV" (Educación y experiencia) de un Empleado ya existente.',
   },
   'agregar-experiencia': {
     seccion: 'Empleados',
-    categoria: 'Agregar',
+    categoria: 'Resumen-CV',
     descripcion: 'Agrega una entrada de Experiencia en "Resumen/CV" (Educación y experiencia) de un Empleado ya existente.',
   },
   'agregar-habilidad': {
     seccion: 'Empleados',
-    categoria: 'Agregar',
+    categoria: 'Resumen-CV',
     descripcion: 'Agrega una Habilidad en "Resumen/CV" de un Empleado ya existente.',
   },
   'agregar-capacitacion': {

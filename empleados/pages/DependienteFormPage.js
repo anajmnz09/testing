@@ -106,6 +106,15 @@ const ESTRATEGIAS = {
 };
 
 class DependienteFormPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Su guardado confirmado publica el dependiente con su identificación
+   * (la misma que el listado muestra para verificar el alta) y su nombre.
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: 'dependiente', referencia: 'identificacion', metodos: [], confirmadores: [{ metodo: 'guardar', leer: 'antes' }] };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);
@@ -170,6 +179,14 @@ class DependienteFormPage extends BasePage {
    * `CapacitacionFormPage.guardar()` (reintento acotado, click por JS,
    * popup de confirmación opcional).
    */
+  /** Datos de referencia para el flujo: identificación y nombre completo del dependiente al guardar. */
+  async _datosFlujo() {
+    const leer = async (label) => String(await this.form.getValor(label).catch(() => '')).trim();
+    const identificacion = await leer('Identificación');
+    const nombre = [await leer('Nombres'), await leer('Apellidos')].filter(Boolean).join(' ');
+    return identificacion || nombre ? { ...(identificacion ? { identificacion } : {}), ...(nombre ? { nombre } : {}) } : null;
+  }
+
   async guardar() {
     await this.esperarSinLoader().catch(() => {});
 

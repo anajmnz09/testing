@@ -111,10 +111,25 @@ function resolverMetadata(seleccion, metadata, { escanear = escanearArchivo } = 
         esc = { produces: [], lecturas: [], claves: [], declaraciones: [], invalidas: [], indeterminado: [{ linea: 0, motivo: `no se pudo leer el test: ${e.message}` }] };
       }
     }
-    esc = { lecturas: [], declaraciones: [], estructurales: [], invalidas: [], ...esc };
+    esc = { lecturas: [], declaraciones: [], estructurales: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [], invalidas: [], ...esc };
     const req = unirRequires(s.caso, esc, meta.requires || []);
     errores.push(...req.errores);
-    derivado[s.caso] = { produces: esc.produces, indeterminado: esc.indeterminado, requires: req.requires, detectados: esc.lecturas, estructurales: esc.estructurales || [], redundantes: req.redundantes };
+    // Operaciones que demuestra la estructura. Una CREACIÓN de un tipo que el propio test también consume (por clave) es
+    // un respaldo (p. ej. "si no hay documento, adjunta uno"): no convierte al test en productor, se publica si ocurre.
+    const consume = new Set(req.requires.map((r) => r.tipo));
+    // Abrir una creación/edición solo persiste si el test confirma el guardado de ESA entidad, cuando una capa común lo
+    // confirma (`confirmables`); un creador `persiste` (el propio método guarda) no lo necesita.
+    const confirmadas = new Set(esc.confirmaciones.map((c) => c.entidad));
+    const cuenta = (o) => o.persiste || !esc.confirmables.includes(o.entidad) || confirmadas.has(o.entidad);
+    const creaciones = [...new Set(esc.creaciones.filter(cuenta).map((c) => c.entidad))];
+    const creadas = creaciones.filter((t) => !consume.has(t));
+    const respaldo = creaciones.filter((t) => consume.has(t));
+    const editadas = [...new Set(esc.ediciones.filter(cuenta).map((c) => c.entidad))];
+    const eliminadas = [...new Set(esc.eliminaciones.map((c) => c.entidad))];
+    derivado[s.caso] = {
+      produces: esc.produces, indeterminado: esc.indeterminado, requires: req.requires, detectados: esc.lecturas,
+      estructurales: esc.estructurales || [], redundantes: req.redundantes, creadas, respaldo, editadas, eliminadas,
+    };
 
     let produces;
     if (!s.archivo) {
@@ -132,7 +147,7 @@ function resolverMetadata(seleccion, metadata, { escanear = escanearArchivo } = 
       produces = esc.produces;
       if (declarados.length || (meta.produces && meta.produces.length === 0 && esc.produces.length)) {
         const a = [...declarados].sort().join(', ');
-        const b = [...esc.produces].sort().join(', ');
+        const b = [...new Set([...esc.produces, ...creadas, ...editadas])].sort().join(', ');
         if (a !== b) {
           errores.push(
             `Discrepancia de produces en "${s.caso}": el código publica [${b || 'nada'}] pero flujo-tests.js declara [${a || 'nada'}]. ` +
@@ -141,6 +156,24 @@ function resolverMetadata(seleccion, metadata, { escanear = escanearArchivo } = 
         }
       }
     }
+
+    // Producción estructural: crear → produces; editar → transformación (requires + produces la misma entidad).
+    // Una publicación explícita que no corresponde a ninguna operación estructural del test (ni a una entidad que
+    // consume) contradice la estructura: error de plan. Sin operación estructural, la publicación explícita es la
+    // fuente (p. ej. un cambio de etapa que crea un empleado: la estructura no lo demuestra).
+    const estructurales = [...new Set([...creadas, ...editadas])];
+    if (estructurales.length) {
+      const permitidos = new Set([...estructurales, ...consume]);
+      for (const t of esc.produces) {
+        if (!permitidos.has(t)) {
+          errores.push(
+            `Contradicción de produces en "${s.caso}": su estructura crea/edita [${estructurales.join(', ')}] pero publica "${t}" con flowContext. ` +
+              'Corrija la publicación o el contrato ENTIDAD_FLUJO.'
+          );
+        }
+      }
+    }
+    produces = [...new Set([...produces, ...estructurales])];
 
     for (const tipo of Object.keys(ordenes)) {
       if (!produces.includes(tipo)) {
@@ -151,6 +184,7 @@ function resolverMetadata(seleccion, metadata, { escanear = escanearArchivo } = 
     efectiva[s.caso] = {
       ...(req.requires.length ? { requires: req.requires } : {}),
       produces: produces.map((tipo) => (typeof ordenes[tipo] === 'number' ? { tipo, orden: ordenes[tipo] } : { tipo })),
+      ...(eliminadas.length ? { elimina: eliminadas } : {}),
     };
   }
   return { metadata: efectiva, derivado, errores, avisos };

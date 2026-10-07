@@ -46,6 +46,11 @@ class CuentaContableDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'No. cuenta';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'cuenta-contable';
   }

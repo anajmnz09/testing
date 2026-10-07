@@ -19,6 +19,15 @@ const config = require('../config');
  * vez.
  */
 class ConfiguracionEntidadListadoPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). El listado localiza (`abrirDetalle`) y crea (`crear`) registros de la
+   * entidad que declara su `DetallePageClass.NOMBRE_ENTIDAD`; lo heredan todas las entidades de Configuración.
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: this.DetallePageClass.NOMBRE_ENTIDAD, referencia: 'nombre', creadores: ['crear'] };
+  }
+
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);

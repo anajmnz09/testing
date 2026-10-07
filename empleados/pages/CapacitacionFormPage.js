@@ -51,6 +51,15 @@ const ESTRATEGIAS = {
 };
 
 class CapacitacionFormPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Su guardado confirmado (alta o edición, según la operación pendiente)
+   * publica/actualiza la capacitación con su nombre.
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: 'capacitacion', referencia: 'nombre', metodos: [], confirmadores: [{ metodo: 'guardar', leer: 'antes' }] };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);
@@ -139,6 +148,12 @@ class CapacitacionFormPage extends BasePage {
    * — el test decide el assert (mismo criterio que
    * `EmpleadoFormPage.resultadoGuardado`).
    */
+  /** Datos de referencia para el flujo: el nombre de la capacitación que el formulario tiene al guardar. */
+  async _datosFlujo() {
+    const nombre = String(await this.form.getValor('Nombre')).trim();
+    return nombre ? { nombre } : null;
+  }
+
   async guardar() {
     await this.esperarSinLoader().catch(() => {});
 

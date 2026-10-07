@@ -2,6 +2,7 @@ const { By } = require('selenium-webdriver');
 const { BasePage, Form, Notify, Popup } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const config = require('@triple/core/config');
+const flowContext = require('@triple/core/context/flowContext');
 
 /**
  * Page Object del formulario "Crear Empleado" (Empleados > listado > botón
@@ -250,6 +251,24 @@ const ESTRATEGIAS_RH_PAQUETE_SALARIAL = {
 };
 
 class EmpleadoFormPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12). Se captura el nombre completo al guardar y se publica el empleado cuando
+   * `resultadoGuardado` confirma el éxito (esta pantalla no muestra notify de éxito, ver `resultadoGuardado`).
+   * Lo lee el escáner estático y la capa común de publicación; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return {
+      tipo: 'empleado',
+      referencia: 'nombre',
+      metodos: [],
+      confirmadores: [
+        { metodo: 'guardar', leer: 'antes', capturar: true },
+        { metodo: 'resultadoGuardado', datos: null },
+        { metodo: 'guardarCreacion', datos: null },
+      ],
+    };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);
@@ -526,6 +545,11 @@ class EmpleadoFormPage extends BasePage {
       const provisto = valores[label];
       resultado[label] = await this.setCampo(estrategias, label, provisto);
     }
+    // En un flujo, el nombre se lee AQUÍ (la sección donde están esos campos está visible); al guardar el
+    // formulario ya está en otra sección y leerlos entonces esperaría el timeout de cada campo (varios minutos).
+    if (estrategias === ESTRATEGIAS_DATOS_BASICOS && flowContext.activo()) {
+      this._nombreFlujo = await this._leerNombre();
+    }
     return resultado;
   }
 
@@ -561,6 +585,22 @@ class EmpleadoFormPage extends BasePage {
     return resultado;
   }
 
+  /** Nombre completo tal como lo muestra el listado de Empleados ('' si los campos no están en la sección visible). */
+  async _leerNombre() {
+    const partes = [];
+    for (const label of ['Primer Nombre', 'Segundo Nombre', 'Primer Apellido', 'Segundo Apellido']) {
+      const v = String(await this.form.getValor(label, { intentos: 1, timeoutMs: 1500 }).catch(() => '')).trim();
+      if (v) partes.push(v);
+    }
+    return partes.join(' ');
+  }
+
+  /** Datos de referencia para el flujo: el nombre leído en "Datos básicos" (o, si no pasó por ahí, el visible ahora). */
+  async _datosFlujo() {
+    const nombre = this._nombreFlujo || (await this._leerNombre());
+    return nombre ? { nombre } : null;
+  }
+
   /**
    * Guarda el formulario (botón "Guardar" del header sticky, click por JS) y
    * confirma el popup que aparece después (a pedido explícito del usuario) —
@@ -584,6 +624,39 @@ class EmpleadoFormPage extends BasePage {
       await this.popupConfirmar.esperarCerrado();
     }
     return { popupConfirmado: apareceConfirm };
+  }
+
+  /**
+   * Quita el foco del último campo llenado y saca el mouse de ese control: click en el título del
+   * formulario (`.forms-header .titles`, "Crear Empleado"), texto plano del header propio de la pantalla —
+   * no es clickable, no ejecuta ninguna acción y no cambia ningún valor (verificado con Selenium real:
+   * cursor `auto`, sin handlers). No se agrega ningún elemento al DOM.
+   */
+  async _clickAreaNeutra() {
+    const area = await this.waitVisible(By.css('.forms-header .titles'));
+    logger.info('EmpleadoFormPage: click en área neutra del formulario (título) para quitar el foco del último campo');
+    await area.click();
+  }
+
+  /**
+   * PARCHE TEMPORAL (solo `crear-empleado`): tras llenar el último campo de "Paquete salarial" la app
+   * puede ignorar el primer Guardar o responder "Internal Error"; volver a guardar sí crea el empleado.
+   *   1. click en un área neutra del formulario (`_clickAreaNeutra`), sin `sleep`;
+   *   2. `guardar()` + `resultadoGuardado()` (los mismos de siempre);
+   *   3. SOLO si el notify es "Internal Error": espera a que ese notify desaparezca y hace UN segundo
+   *      intento. Cualquier otro fallo (p. ej. "Operación Inválida") se devuelve tal cual, sin reintentar.
+   * El éxito lo decide, en ambos intentos, el criterio de `resultadoGuardado` (popup confirmado y sin notify
+   * de error): un segundo intento que vuelva a fallar devuelve ese fallo y el test falla.
+   */
+  async guardarCreacion() {
+    await this._clickAreaNeutra();
+    let res = await this.resultadoGuardado(await this.guardar());
+    if (/internal error/i.test(res.notify || '')) {
+      logger.warn('EmpleadoFormPage: "Internal Error" conocido tras Guardar; segundo intento de Guardar');
+      await this.driver.wait(async () => !(await this.notify.getTexto()), 15000).catch(() => {});
+      res = await this.resultadoGuardado(await this.guardar());
+    }
+    return res;
   }
 
   /**

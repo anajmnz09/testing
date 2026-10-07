@@ -4,12 +4,12 @@ const logger = require('@triple/core/utils/logger');
 const CuentaContableDetallePage = require('../pages/CuentaContableDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
+const bancos = require('../support/bancos');
 
 const CASO = 'crear-cuenta-contable';
 testContext.registrarCasoDesdeFormulario(CASO, CuentaContableDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'CTA QA';
-const DESCRIPCION_QA = 'Cuenta contable de prueba automatizada QA.';
 
 /**
  * Crea una Cuenta Contable nueva desde Configuración > Nómina > Cuentas
@@ -33,7 +33,7 @@ describe('Configuración - Crear Cuenta Contable', function () {
     logger.info(`${CASO}: "No. cuenta" elegido -> "${numeroCuenta}"`);
     await form.setCampo('No. cuenta', numeroCuenta);
 
-    const descripcion = testContext.get(CASO, 'Descripción') || DESCRIPCION_QA;
+    const descripcion = bancos.cuentaContable.valor(testContext.get(CASO, 'Descripción'), 'descripcion');
     await form.setCampo('Descripción', descripcion);
 
     // "Estado" — solo si el Panel lo dirigió explícitamente (ya trae un valor válido por defecto).

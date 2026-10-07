@@ -282,6 +282,10 @@
     "crear-req-creacion": [
       "Persona(s) a sustituir",
       "Documentos Requeridos"
+    ],
+    "crear-req-sustitucion": [
+      "Persona(s) a sustituir",
+      "Documentos Requeridos"
     ]
   }
 }

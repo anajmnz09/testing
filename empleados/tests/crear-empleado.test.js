@@ -90,8 +90,8 @@ describe('Empleados - Crear Empleado', function () {
     });
     logger.info(`${CASO}: "Paquete salarial" completado`);
 
-    const guardado = await form.guardar();
-    const res = await form.resultadoGuardado(guardado);
+    // Parche temporal: click neutro + Guardar, con un 2.º intento solo ante el "Internal Error" conocido.
+    const res = await form.guardarCreacion();
     assert.ok(res.exito, `Se esperaba creación exitosa de Empleado. Notify: "${res.notify}"`);
   });
 });

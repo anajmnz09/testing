@@ -116,11 +116,13 @@ Reglas:
   representa (ej. el empleado AL QUE se le agrega un registro), sin quedarse con lo
   genérico solo porque "andaba".
 
-### Datos automáticos dinámicos — `core/utils/datosPrueba.js` (única fuente)
+### Datos automáticos dinámicos — `datosPrueba.js` (identificadores y datos contextuales) y bancos de texto
 
-Cuando un campo de texto/identificador no recibió valor del Panel, el valor automático
-sale **siempre** de `@triple/core/utils/datosPrueba` (catálogos en `core/data/datosPrueba.json`),
-nunca de strings fijos ni `Automatica-<timestamp>`:
+Cuando un campo no recibió valor del Panel, el valor automático **nunca** es un string fijo ni
+`Automatica-<timestamp>`. Hay dos fuentes, con repartos distintos (ver también *Bancos de texto*, abajo):
+`datosPrueba.js` para **personas, correos, identificaciones, teléfonos y nombres/textos que dependen del contexto
+del test** (p. ej. el Puesto de una requisición) y los **bancos** para el **texto libre** de `input`/`textarea`.
+Lo de `datosPrueba.js`:
 
 - **Prioridad intacta:** el llamador sigue haciendo `testContext.get(caso, label) || generador(...)`;
   el generador no lee ni pisa el contexto.
@@ -132,7 +134,37 @@ nunca de strings fijos ni `Automatica-<timestamp>`:
 - **Límites reales:** `nombreRequisicion` se acota a 45 caracteres (61 hizo fallar el Guardar con
   "Error en el sistema"). Si un campo nuevo tiene `maxlength`, acotarlo en el generador.
 - Para ampliar: agregar catálogo/plantilla al JSON o una función a `datosPrueba.js`; no crear
-  generadores por módulo. Los helpers de módulo (`datosQA.js`, `*.data.js`) solo adaptan labels.
+  *generadores* por módulo (lógica de generación). Los helpers de módulo (`datosQA.js`, `*.data.js`) solo adaptan labels.
+- `datosPrueba.js` elige con azar inyectable (`random`); es independiente de los bancos y no cambia por ellos.
+
+#### Bancos de texto — `core/utils/bancoDatos.js` (solo `input` de texto y `textarea`)
+
+**Problema:** los tests llenaban el texto libre con literales artificiales (`'QA Lugar'`, `'Empresa QA'`,
+`'Descripción QA automatizada'`), siempre iguales y evidentemente de prueba. Un **banco** es una colección
+pequeña de categorías (unas pocas opciones cada una) y de textos que las combinan, p. ej.
+`'{institucion} {nombre}'`; con pocas opciones bien elegidas salen decenas de combinaciones plausibles.
+No se exige ningún mínimo de datos: basta que el campo reciba valores creíbles y variados.
+
+- **Alcance:** únicamente campos de **texto libre** (`<input type="text">`, `<textarea>`). NO aplica a selects,
+  fechas, números, checkboxes, radios, archivos, componentes especializados ni identificadores/valores
+  estructurados (cédula, correo, código…, que siguen en `datosPrueba.js`) salvo una regla explícita futura.
+- **Dónde viven:** los **datos** junto a su dominio, `<modulo>/support/bancos.js` (un banco pequeño por
+  dominio/entidad, no un catálogo global); el **mecanismo** es del Core (`bancoDatos.js`). Una lista que dos
+  tests necesitan se reutiliza importando el banco, no se copia.
+- **Prioridad:** `bancos.X.valor(testContext.get(CASO, label), 'clave')` — el valor del Panel / Execution Context
+  gana siempre; el banco solo responde cuando no se dirigió nada. El banco **no** lee ni escribe el Execution
+  Context ni el `FlowContext`: no es un canal de datos entre tests ni de Flujos (las entidades que un flujo necesita
+  siguen viniendo del `FlowContext`, §12).
+- **Unicidad:** los nombres que la app exige únicos siguen usando `nombreUnicoQA(dirigido, base)`, con la
+  `base` tomada del banco.
+- **Determinista y reproducible:** cada texto recorre todas las combinaciones desde una *semilla* de la corrida
+  (derivada de `RUN_ID`); la semilla y cada valor elegido quedan en el log. Para repetir una falla:
+  `DATOS_SEMILLA=<la del log>`. Este mecanismo no usa `Math.random`.
+- **Estado actual:** los usan `agregar-educacion/experiencia/capacitacion/habilidad`, `crear-empleado`
+  (`datosQA.js`), `crear-puesto/sucursal/cuenta-contable`, `crear-solicitud-empleo` y
+  `agregar-comentario-solicitud-empleo`. **Siguen con literales QA (pendientes de migrar, sin urgencia):**
+  los demás `crear-*`/`editar-*` de Configuración, `editar-capacitacion` y los sufijos de `nombreUnicoQA`.
+  **Regla para código nuevo:** el texto libre nuevo sale de un banco; lo antiguo se migra al tocarlo.
 
 Ver README §Selection Strategies y `docs/plataforma-de-control-arquitectura.md §18`.
 
@@ -272,7 +304,8 @@ regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambi
 
 | Qué | Cómo lo demuestra el código | Resultado |
 |---|---|---|
-| `produces` | `flowContext.publish/update('tipo', …)` con tipo literal | DETECTADO: se deriva, **no se declara** |
+| `produces` explícito | `flowContext.publish/update('tipo', …)` con tipo literal | DETECTADO: se deriva, **no se declara** |
+| `produces` estructural | el test llama a un creador declarado en el `ENTIDAD_FLUJO` de un Page Object y confirma el guardado | DETECTADO: `produces { tipo }` (ver abajo); editar → transformación; eliminar → `elimina` |
 | `requires` por lectura | `flowContext.get/entidad('tipo')` con tipo literal | DETECTADO: `requires { tipo }` (ordena; sin valores) |
 | `requires` con valores, por **estructura** | la clave de `testContext.get(CASO, 'k')` llega, directo o por alias simple, al localizador (`abrirDetalle(x)` u otro método declarado) de un Page Object que declara `ENTIDAD_FLUJO` | DETECTADO: `requires { tipo, clave, campo: referencia }`, sin declarar nada en el test |
 | `requires` con valores, no demostrable | clave con entidad y campo junto a su declaración: `registrarCaso(CASO, [{ clave, entidad, campo }])` o la entrada de `ESTRATEGIAS` del Page Object `{ estrategia, entidad, campo }` | DECLARADO (mínimo): la clave se alimenta del `campo` de la entidad |
@@ -280,11 +313,12 @@ regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambi
 | Resto (clave suelta, fixture, nombre) | no demuestra nada | SUGERIDO / NO DETERMINADO: **nunca crea una dependencia** |
 
 - **Contrato de entidad (`ENTIDAD_FLUJO`), declarado UNA vez en el Page Object que implementa el localizador**
-  (no en el fixture ni en cada test): `static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo' }; }` —
+  (no en el fixture ni en cada test): `static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo', creadores: ['crear'] }; }` —
   "mi `abrirDetalle(x)` localiza una entidad `tipo` por su campo `referencia`" (el campo debe estar entre los que publican los
   productores). `metodos: [...]` lista otros localizadores (por defecto `['abrirDetalle']`) y un array declara varias entidades.
-  El escáner sigue, sin ejecutar, test → fixture (cuyo cuerpo asigna `ctx.lista = <PO>`) o `new PO` → `ENTIDAD_FLUJO`, y el valor de la
-  clave hasta el localizador (asignaciones simples, `a || b`, `await`, `parsearValoresMultiples`, `for…of`, un helper del módulo de fixtures con
+  El escáner sigue, sin ejecutar, test → fixture (cuyo cuerpo asigna `ctx.lista = <PO>`) o `new PO` → lo que DEVUELVEN sus métodos
+  (`return new X(…)`: `detalle = await ctx.lista.abrirDetalle(x)`, también en un ternario o desestructurado desde un helper de
+  fixtures) → `ENTIDAD_FLUJO`, y el valor de la clave hasta el localizador (asignaciones simples, `a || b`, `await`, `parsearValoresMultiples`, `for…of`, un helper del módulo de fixtures con
   un salto, clave literal o constante de módulo). Cualquier otra forma no propaga la clave. Al crear un Page Object de listado
   cuya entidad produce algún test, declare su `ENTIDAD_FLUJO`: todos los tests que lo usen quedan descubiertos sin metadata.
 - **Tres conceptos distintos, siempre explícitos:** *entidad* (`solicitud`), *campo* de referencia (`campo`, el dato de la entidad
@@ -311,6 +345,46 @@ regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambi
   produce), `campo`/`referencia` fuera de lo que la entidad publica, métodos de `ENTIDAD_FLUJO` inexistentes, claves
   inexistentes, `orden` y que los tests sin metadata son válidos.
 
+### Producción de entidades: crear, transformar, eliminar (`flowInstrumentar.js`, contrato `ENTIDAD_FLUJO`)
+
+**Regla general:** cualquier operación que REALMENTE crea y persiste una entidad de negocio puede ser `produces`, se llame
+`crear`, `agregar`, `registrar` u otra cosa. `crear-*` no es requisito ni garantía, y `agregar-*` puede ser productor pero no siempre.
+**El nombre (del test o del método) nunca es el contrato**: la evidencia es la operación estructural declarada en el Page Object.
+
+- **Un solo contrato** (`ENTIDAD_FLUJO`) describe, por entidad: `tipo`, `referencia`, `metodos` (localizadores), `creadores`,
+  `editores`, `eliminadores` y `confirmadores` (guardado de un formulario compartido). Un array declara varias entidades en la misma clase
+  (el detalle de un empleado opera capacitación, dependiente, educación…). Lo leen el escáner estático y la capa común de publicación:
+  **una sola fuente, sin duplicar** (`tipo` puede ser un literal o `this.<getter>.<getter>`, p. ej. el listado base de Configuración
+  toma el tipo de `DetallePageClass.NOMBRE_ENTIDAD`, así que las entidades de Configuración no declaran nada más que sus propios datos).
+- **Crear vs transformar vs eliminar** (no se confunde con `guardar()`): crear → `produces`; editar un registro existente →
+  `requires` + `produces` la misma entidad (transformación); eliminar → `requires` + **invalida** la entidad (`elimina`). Abrir un
+  formulario no persiste nada: solo cuenta si el test confirma el guardado de ESA entidad (o el creador `persiste` por sí mismo).
+- **Subentidades = entidades propias** (dependiente, capacitación, educación, experiencia, habilidad, documento de capacitación,
+  comentario, pregunta…). No se mezclan con la entidad padre; crear una subentidad **requiere** a su padre, que se localiza por el mismo
+  mecanismo estructural y toma la entidad producida por el flujo (no "el primer registro"). Un método que sirve a varias entidades
+  (`agregarEducacionOExperiencia(tipo, …)`) se distingue por su argumento **literal** (`argumento` + `valor`); si no es literal, no se adivina.
+  Dos Page Objects con la misma acción (comentario de requisición / de solicitud) son entidades distintas: las diferencia quien la declara.
+- **Eliminar:** el planner ejecuta al eliminador DESPUÉS de todo test que use o produzca esa entidad; dos eliminadores del mismo tipo
+  son un error de plan; si aun así un paso la requiere después, `flowHooks` lo bloquea con el motivo. Eliminar no produce, y solo
+  queda confirmado si el test que elimina PASA (si falla, `flowHooks` restaura la entidad).
+- **No son entidades de flujo** (decisión de negocio, `static get ACCIONES_FLUJO()`): `atributo` (foto, valoración, otros beneficios),
+  `relacion` (miembros y permisos de un grupo: *requieren* el grupo producido) y `traslado` (mover datos, p. ej. agregar candidato al
+  banco). Un adjunto SÍ es entidad cuando se identifica de forma estable (nombre de archivo sin extensión: la app lo renombra con un sufijo) y existen operaciones posteriores
+  (descargar, eliminar); si no hay referencia o consumidores, queda sin modelar hasta decidirlo con negocio.
+- **Creación de respaldo:** si el test también *consume* ese tipo (p. ej. "si no hay documento, adjunta uno") la creación no lo vuelve
+  productor; se publica igual si ocurre.
+- **Publicación real, nunca fantasma:** todo `produces` estructural se publica desde una capa común, no desde cada test: los creadores
+  arman la operación y el formulario compartido que confirma el guardado (`confirmadores`, datos de `_datosFlujo()`; en Configuración el
+  valor del control `CAMPO_IDENTIFICADOR` declarado por la entidad) la resuelve (`publish` al crear, `update` al editar); los creadores
+  `persiste` publican la referencia desde un argumento; los eliminadores invalidan. Es **inerte fuera de un flujo** (no envuelve nada), y
+  un `publish` explícito del test en el mismo paso se fusiona sin duplicar. Un productor que pasa sin publicar deja a sus dependientes
+  bloqueados (`contrato-incumplido`). Excepción explícita y aceptada: una transición que crea (`cambiar-solicitud-crear-empleado`) no
+  tiene operación estructural; conserva su `publish`, y el contrato la acepta; **no se generaliza a otros cambios de etapa**.
+- **Contradicciones:** la estructura crea/edita X pero el test publica otra entidad que no consume → error de plan. Ambigüedad
+  (varios originadores del mismo tipo con consumidores) se mantiene.
+- **Duda de negocio:** si el código demuestra que se crea algo pero no es evidente si es una entidad de flujo, relación o atributo, NO se
+  decide por código: se agrupa y se confirma con negocio antes de volverlo contrato.
+
 ### Metadata `<modulo>/data/flujo-tests.js`
 
 Hoy conserva solo lo que el código no puede demostrar: el **`orden`** de negocio de una secuencia de transformación
@@ -324,12 +398,13 @@ sigue aceptando durante la transición y debe coincidir con el código.
 
 - **Planner** (`core/utils/flowPlanner.js`): orden topológico estable (el orden de selección solo desempata). Errores **antes de
   abrir el navegador**: varios originadores del mismo tipo con consumidores (ambigüedad), ciclos, caso repetido, contradicción de
-  metadata, y un `requires` sin productor seleccionado **con `auto: false`**. Sin productor y con automático solo avisa: el test
+  metadata, dos eliminadores de la misma entidad, y un `requires` sin productor seleccionado **con `auto: false`**. Sin productor y con automático solo avisa: el test
   resuelve el dato solo.
-- **Publicar:** el productor llama `flowContext.publish(tipo, datos)` (o `update` si transforma) tras su assert final de éxito; solo
-  memoria (nunca `execution-context.json` ni Panel). Re-publicar sube la versión.
+- **Publicar:** lo hace la capa común según el contrato (ver "Producción de entidades"); solo cuando la estructura no lo demuestra el test
+  llama `flowContext.publish(tipo, datos)` (o `update`) tras su assert final de éxito. Solo memoria (nunca `execution-context.json` ni
+  Panel). Re-publicar en otro paso sube la versión; en el mismo paso se fusiona.
 - **Dependencia faltante / bloqueos:** un productor fallido (o que pasa sin publicar) deja a sus consumidores **BLOQUEADOS**
-  (pendientes, con motivo; `this.skip()` en `flowHooks`). **Cancelar** detiene la corrida y marca lo pendiente como Cancelado.
+  (pendientes, con motivo; `this.skip()` en `flowHooks`), igual que quien requiere una entidad ya eliminada. **Cancelar** detiene la corrida y marca lo pendiente como Cancelado.
 - **Sesión:** `authFlow.login` no repite el login con sesión viva; antes de cada test se vuelve al dashboard. `flowHooks` espera a que
   no quede un notify del test anterior.
 - **Entre módulos:** cada caso conserva el `execution-context.json` de SU módulo solo para sembrar/consultar claves; el flujo

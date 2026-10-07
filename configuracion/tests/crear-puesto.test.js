@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const PuestoDetallePage = require('../pages/PuestoDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
+const bancos = require('../support/bancos');
 
 const CASO = 'crear-puesto';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -15,9 +16,6 @@ const CASO = 'crear-puesto';
 testContext.registrarCasoDesdeFormulario(CASO, PuestoDetallePage.ESTRATEGIAS);
 
 const NOMBRE_BASE_QA = 'PUESTO QA';
-const DESCRIPCION_QA = 'Descripción de prueba automatizada QA.';
-const REQUISITOS_QA = 'Requisitos de prueba automatizada QA.';
-const RESPONSABILIDADES_QA = 'Responsabilidades de prueba automatizada QA.';
 
 /**
  * Crea un Puesto nuevo desde Configuración > Administración > Puestos,
@@ -43,9 +41,9 @@ describe('Configuración - Crear Puesto', function () {
     logger.info(`${CASO}: nombre elegido -> "${nombrePuesto}"`);
     await form.setCampo('Nombre', nombrePuesto);
 
-    const descripcion = testContext.get(CASO, 'Descripción') || DESCRIPCION_QA;
-    const requisitos = testContext.get(CASO, 'Requisitos') || REQUISITOS_QA;
-    const responsabilidades = testContext.get(CASO, 'Responsabilidades') || RESPONSABILIDADES_QA;
+    const descripcion = bancos.puesto.valor(testContext.get(CASO, 'Descripción'), 'descripcion');
+    const requisitos = bancos.puesto.valor(testContext.get(CASO, 'Requisitos'), 'requisitos');
+    const responsabilidades = bancos.puesto.valor(testContext.get(CASO, 'Responsabilidades'), 'responsabilidades');
     await form.setCampo('Descripción', descripcion);
     await form.setCampo('Requisitos', requisitos);
     await form.setCampo('Responsabilidades', responsabilidades);

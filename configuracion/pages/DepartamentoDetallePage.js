@@ -33,6 +33,11 @@ class DepartamentoDetallePage extends ConfiguracionEntidadDetallePage {
     return ESTRATEGIAS;
   }
 
+  /** Control que identifica al registro (referencia de la entidad en un flujo; ver `ConfiguracionEntidadDetallePage`). */
+  static get CAMPO_IDENTIFICADOR() {
+    return 'Departamento';
+  }
+
   static get NOMBRE_ENTIDAD() {
     return 'departamento';
   }

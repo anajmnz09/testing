@@ -162,7 +162,22 @@ coincidencia con la metadata), **POSIBLE / SUGERIDO** (fixture, claves de entrad
 por nombre) y **NO DETERMINADO** (requires, campo, orden, auto). No escribe nada ni convierte inferencias en metadata. Útil como
 checklist al agregar un test nuevo; el contrato es lo que lo hace obligatorio.
 
-## 8. Pendientes futuros
+## 8. Producción estructural de entidades (crear / agregar / editar / eliminar) — implementado
+
+Regla normativa en GUIDELINES §12 ("Producción de entidades"). Resumen del diseño y de lo que queda fuera:
+
+- **Una sola declaración por Page Object** (`ENTIDAD_FLUJO`: `tipo`, `referencia`, `metodos`, `creadores`, `editores`, `eliminadores`,
+  `confirmadores`) que leen el escáner (`flowContratos.js` + `flowEstructura.js`) y la capa común de publicación (`flowInstrumentar.js`,
+  invocada desde el constructor de `UiContext`, inerte fuera de un flujo). Los tests no agregan líneas.
+- **Decisiones de negocio ya aplicadas:** subentidades = entidades propias con su padre como `requires`; educación / experiencia / habilidad /
+  comentario de requisición / comentario de solicitud / pregunta = entidades distintas; fotos, valoraciones, otros beneficios, miembros y
+  permisos de grupo y el traslado a Banco de candidatos NO lo son (`ACCIONES_FLUJO`); `cambiar-solicitud-crear-empleado` conserva su `publish`.
+- **Pendiente / no determinado hoy:** editar secciones del empleado (`editar-datos-*`, `editar-paquete-salarial`: transformación de `empleado`
+  cuyo nombre puede cambiar; falta un contrato de edición del detalle), tests que reciben el detalle desestructurado de `abrirAleatoria()`
+  (`agregar-foto/valoracion-*`, atributos igualmente excluidos), documentos de requisición (hay referencia —archivo + clasificación— pero no
+  operaciones posteriores) y `crear-empleado` (publica el nombre; el código no está disponible al guardar).
+
+## 9. Pendientes futuros
 
 - Historial de flujos en el Historial del Panel (hoy el Panel solo muestra el flujo actual; los reportes quedan en `flujo/reports/`).
 - Metadata `flujo-tests.js`: solo cubre la cadena requisición → solicitud → empleado → nómina; `produces` y `requires` ya se derivan del código (§7); solo hace falta `orden` en `flujo-tests.js`.

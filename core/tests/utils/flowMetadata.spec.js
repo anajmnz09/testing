@@ -166,4 +166,97 @@ describe('utils/flowMetadata — código + metadata mínima (unitario)', functio
       expect(plan.bindings).to.have.length(2);
     });
   });
+
+  describe('producción estructural: crear / editar / eliminar', function () {
+    const esc2 = (mapa) => (archivo) => ({ produces: [], lecturas: [], claves: [], declaraciones: [], estructurales: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [], invalidas: [], indeterminado: [], ...(mapa[archivo.split('/').pop().replace('.test.js', '')] || {}) });
+    const crea = (entidad, extra = {}) => ({ entidad, via: 'P.crear', linea: 0, ...extra });
+    const consume = { estructurales: [{ clave: 'k', entidad: 'padre', campo: 'nombre', via: 'P.abrirDetalle', linea: 0 }] };
+
+    it('una creación estructural hace productor al test (sin publish ni metadata)', function () {
+      const r = resolverMetadata(sel('c'), {}, { escanear: esc2({ c: { creaciones: [crea('banco')] } }) });
+      expect(r.errores).to.deep.equal([]);
+      expect(r.metadata.c.produces).to.deep.equal([{ tipo: 'banco' }]);
+    });
+
+    it('una creación de respaldo (el test también consume ese tipo) NO lo vuelve productor', function () {
+      const r = resolverMetadata(sel('c'), {}, {
+        escanear: esc2({ c: { creaciones: [crea('doc')], estructurales: [{ clave: 'd', entidad: 'doc', campo: 'nombre', via: 'P.d', linea: 0 }] } }),
+      });
+      expect(r.metadata.c.produces).to.deep.equal([]);
+      expect(r.derivado.c.respaldo).to.deep.equal(['doc']);
+    });
+
+    it('si el guardado lo confirma una capa común, abrir el formulario sin confirmarlo no cuenta como creación ni edición', function () {
+      const sin = resolverMetadata(sel('c'), {}, { escanear: esc2({ c: { creaciones: [crea('banco')], ediciones: [crea('banco')], confirmables: ['banco'] } }) });
+      expect(sin.metadata.c.produces).to.deep.equal([]);
+      const con = resolverMetadata(sel('c'), {}, { escanear: esc2({ c: { creaciones: [crea('banco')], confirmables: ['banco'], confirmaciones: [{ entidad: 'banco', via: 'F.guardar', linea: 0 }] } }) });
+      expect(con.metadata.c.produces).to.deep.equal([{ tipo: 'banco' }]);
+    });
+
+    it('un creador `persiste` no necesita confirmación', function () {
+      const r = resolverMetadata(sel('c'), {}, { escanear: esc2({ c: { creaciones: [crea('edu', { persiste: true })], confirmables: ['edu'] } }) });
+      expect(r.metadata.c.produces).to.deep.equal([{ tipo: 'edu' }]);
+    });
+
+    it('editar = transformación: requires + produces la misma entidad', function () {
+      const r = resolverMetadata(sel('e'), {}, {
+        escanear: esc2({ e: { ediciones: [crea('padre')], confirmaciones: [{ entidad: 'padre', via: 'F.g', linea: 0 }], ...consume } }),
+      });
+      expect(r.metadata.e.produces).to.deep.equal([{ tipo: 'padre' }]);
+      expect(r.metadata.e.requires.map((q) => q.tipo)).to.deep.equal(['padre']);
+    });
+
+    it('eliminar queda en `elimina` y NO produce', function () {
+      const r = resolverMetadata(sel('d'), {}, { escanear: esc2({ d: { eliminaciones: [{ entidad: 'padre', via: 'P.e', linea: 0 }], ...consume } }) });
+      expect(r.metadata.d.elimina).to.deep.equal(['padre']);
+      expect(r.metadata.d.produces).to.deep.equal([]);
+    });
+
+    it('CONTRADICCIÓN: la estructura crea "banco" pero el test publica otra entidad que no consume → error de plan', function () {
+      const r = resolverMetadata(sel('c'), {}, { escanear: esc2({ c: { creaciones: [crea('banco')], produces: ['empleado'] } }) });
+      expect(r.errores[0]).to.contain('Contradicción de produces').and.contain('banco').and.contain('empleado');
+    });
+
+    it('una publicación explícita SIN operación estructural es válida (cambio de etapa que crea un empleado)', function () {
+      const r = resolverMetadata(sel('x'), {}, { escanear: esc2({ x: { produces: ['empleado'], lecturas: ['solicitud'] } }) });
+      expect(r.errores).to.deep.equal([]);
+      expect(r.metadata.x.produces).to.deep.equal([{ tipo: 'empleado' }]);
+    });
+
+    it('un test que publica la misma entidad que crea estructuralmente no se duplica', function () {
+      const r = resolverMetadata(sel('c'), {}, { escanear: esc2({ c: { creaciones: [crea('requisicion')], produces: ['requisicion'] } }) });
+      expect(r.errores).to.deep.equal([]);
+      expect(r.metadata.c.produces).to.deep.equal([{ tipo: 'requisicion' }]);
+    });
+
+    it('INTEGRACIÓN con el planner: C(consumidor), D(eliminador), A(creador), B(transformador) → A, B, C, D', function () {
+      const e = esc2({
+        A: { creaciones: [crea('padre')], confirmaciones: [{ entidad: 'padre', via: 'x', linea: 0 }] },
+        B: { ediciones: [crea('padre')], confirmaciones: [{ entidad: 'padre', via: 'x', linea: 0 }], ...consume },
+        C: { ...consume },
+        D: { eliminaciones: [{ entidad: 'padre', via: 'P.e', linea: 0 }], ...consume },
+      });
+      const seleccion = sel('D', 'C', 'B', 'A');
+      const { metadata, errores } = resolverMetadata(seleccion, {}, { escanear: e });
+      expect(errores).to.deep.equal([]);
+      const plan = planificar(seleccion, metadata);
+      expect(plan.errores).to.deep.equal([]);
+      expect(plan.orden.map((x) => x.caso)).to.deep.equal(['A', 'B', 'C', 'D']);
+      expect(plan.elimina.D).to.deep.equal(['padre']);
+    });
+
+    it('dos eliminadores de la misma entidad → error de plan; dos creadores con consumidor → ambigüedad (se mantiene)', function () {
+      const e = esc2({
+        D1: { eliminaciones: [{ entidad: 'padre', via: 'x', linea: 0 }], ...consume },
+        D2: { eliminaciones: [{ entidad: 'padre', via: 'x', linea: 0 }], ...consume },
+        A1: { creaciones: [crea('padre')] },
+        A2: { creaciones: [crea('padre')] },
+        K: { ...consume },
+      });
+      const s1 = sel('D1', 'D2');
+      expect(planificar(s1, resolverMetadata(s1, {}, { escanear: e }).metadata).errores.join(' ')).to.contain('Eliminación múltiple');
+      const s2 = sel('A1', 'A2', 'K');
+      expect(planificar(s2, resolverMetadata(s2, {}, { escanear: e }).metadata).errores.join(' ')).to.contain('Ambigüedad');
+    });
+  });
 });
