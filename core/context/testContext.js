@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
 const formInputModel = require('./formInputModel');
+const flowContext = require('./flowContext');
 
 /**
  * EXECUTION CONTEXT (datos de prueba).
@@ -48,7 +49,7 @@ const SECCION_GLOBAL = 'global';
 // desaparezca del Panel apenas el usuario guarda un valor no vacío.
 const SECCION_MULTIVALOR = '_camposMultivalor';
 
-let _cache = null;
+const _caches = new Map(); // archivo -> datos (una caché por archivo; fuera de un flujo solo existe CONTEXT_FILE)
 
 /**
  * Un valor "vacío" (no definido por el usuario) no dirige la prueba.
@@ -83,30 +84,44 @@ function _normalizar(valor) {
   return typeof valor === 'string' ? valor.trim() : valor;
 }
 
-function _leerArchivo() {
-  if (!fs.existsSync(CONTEXT_FILE)) return {};
+/**
+ * Archivo de contexto de un caso. Normalmente es SIEMPRE `CONTEXT_FILE` (el del
+ * módulo que corre). Solo en MODO FLUJO (plan con `contextos`, ver
+ * `scripts/run-flow.js`) cada caso usa el `execution-context.json` de SU
+ * módulo, aunque varios módulos compartan el mismo proceso/navegador.
+ */
+function _archivoDe(caso) {
+  const plan = flowContext.plan();
+  const propio = plan && plan.contextos && caso ? plan.contextos[caso] : null;
+  return propio || CONTEXT_FILE;
+}
+
+function _leerArchivo(archivo = CONTEXT_FILE) {
+  if (!fs.existsSync(archivo)) return {};
   try {
-    return JSON.parse(fs.readFileSync(CONTEXT_FILE, 'utf8')) || {};
+    return JSON.parse(fs.readFileSync(archivo, 'utf8')) || {};
   } catch (err) {
-    logger.error(`testContext: no se pudo leer ${CONTEXT_FILE} (se ignora): ${err.message}`);
+    logger.error(`testContext: no se pudo leer ${archivo} (se ignora): ${err.message}`);
     return {};
   }
 }
 
-function _datos() {
-  if (_cache === null) _cache = _leerArchivo();
-  return _cache;
+function _datos(caso) {
+  const archivo = _archivoDe(caso);
+  if (!_caches.has(archivo)) _caches.set(archivo, _leerArchivo(archivo));
+  return _caches.get(archivo);
 }
 
-function _escribir(datos) {
-  fs.mkdirSync(path.dirname(CONTEXT_FILE), { recursive: true });
-  fs.writeFileSync(CONTEXT_FILE, JSON.stringify(datos, null, 2), 'utf8');
-  _cache = datos;
+function _escribir(datos, caso) {
+  const archivo = _archivoDe(caso);
+  fs.mkdirSync(path.dirname(archivo), { recursive: true });
+  fs.writeFileSync(archivo, JSON.stringify(datos, null, 2), 'utf8');
+  _caches.set(archivo, datos);
 }
 
 /** Fuerza releer el archivo del disco. */
 function recargar() {
-  _cache = null;
+  _caches.clear();
   return _datos();
 }
 
@@ -117,7 +132,7 @@ function todo() {
 
 /** Sección de un caso (objeto vacío si no existe). */
 function getCaso(caso) {
-  return _datos()[caso] || {};
+  return _datos(caso)[caso] || {};
 }
 
 /**
@@ -130,11 +145,34 @@ function getCaso(caso) {
  * El valor devuelto siempre está normalizado (`_normalizar`: trim de
  * extremos, nunca de espacios internos) — ver esa función para el porqué.
  */
-function get(caso, clave) {
+/**
+ * Valor DIRIGIDO por el usuario (ejecución INDIVIDUAL), ya normalizado, o undefined.
+ *
+ *  - Ejecución individual: sección del caso del `execution-context.json` y luego `global`.
+ *  - Dentro de un flujo: NINGUNO. Los flujos no reciben datos dirigidos y el `execution-context.json`
+ *    individual NO se usa como fuente de valores (no se lee ni se modifica; sigue sirviendo a la
+ *    ejecución individual). Este es el ÚNICO punto donde `testContext` distingue el modo.
+ */
+function valorDirigido(caso, clave) {
+  if (flowContext.activo()) return undefined;
   const delCaso = getCaso(caso)[clave];
-  if (!_vacio(delCaso)) return _normalizar(delCaso);
-  const global = (_datos()[SECCION_GLOBAL] || {})[clave];
-  if (!_vacio(global)) return _normalizar(global);
+  const global = (_datos(caso)[SECCION_GLOBAL] || {})[clave];
+  const dirigido = !_vacio(delCaso) ? delCaso : !_vacio(global) ? global : undefined;
+  return dirigido === undefined ? undefined : _normalizar(dirigido);
+}
+
+function get(caso, clave) {
+  const dirigido = valorDirigido(caso, clave);
+  if (dirigido !== undefined) return dirigido;
+
+  // MODO FLUJO (aditivo, inerte fuera de un flujo: `valorEnlazado` devuelve undefined sin
+  // TRIPLE_FLOW_PLAN). Prioridad: entidad producida por el flujo (flowContext) -> undefined
+  // (automático del test).
+  const delFlujo = flowContext.valorEnlazado(caso, clave);
+  if (delFlujo !== undefined) {
+    logger.info(`testContext: [${caso}] "${clave}" tomado del flujo -> "${_normalizar(delFlujo)}"`);
+    return _normalizar(delFlujo);
+  }
   return undefined;
 }
 
@@ -186,7 +224,7 @@ async function getODescubrir(caso, clave, descubrir) {
  * @returns {boolean} true si el archivo cambió
  */
 function registrarCaso(caso, claves = []) {
-  const datos = _datos();
+  const datos = _datos(caso);
   const seccion = datos[caso] || {};
   const yaExistia = !!datos[caso];
   let cambio = false;
@@ -244,8 +282,8 @@ function registrarCaso(caso, claves = []) {
 
   if (cambio) {
     datos[caso] = seccion;
-    _escribir(datos);
-    logger.info(`testContext: sección "${caso}" registrada/actualizada en ${CONTEXT_FILE}`);
+    _escribir(datos, caso);
+    logger.info(`testContext: sección "${caso}" registrada/actualizada en ${_archivoDe(caso)}`);
   }
   return cambio;
 }
@@ -308,6 +346,7 @@ module.exports = {
   SECCION_GLOBAL,
   SECCION_MULTIVALOR,
   get,
+  valorDirigido,
   tiene,
   getCaso,
   getODescubrir,

@@ -13,6 +13,34 @@ const { sanitizeFileName } = require('../../utils/screenshot');
  * reportes que el usuario todavía necesitaba.
  */
 describe('utilidades de archivos y reportes (unitario)', function () {
+  describe('carpeta de reportes (TRIPLE_REPORTS_BASE)', function () {
+    let proyecto;
+    let previo;
+    beforeEach(function () {
+      previo = process.env.TRIPLE_REPORTS_BASE;
+      proyecto = crearProyecto();
+    });
+    afterEach(function () {
+      if (previo === undefined) delete process.env.TRIPLE_REPORTS_BASE;
+      else process.env.TRIPLE_REPORTS_BASE = previo;
+      proyecto.limpiar();
+    });
+
+    it('por defecto cuelga del proyecto/módulo (comportamiento de siempre)', function () {
+      delete process.env.TRIPLE_REPORTS_BASE;
+      const paths = proyecto.importar('../../utils/paths');
+      expect(paths.REPORTS_ROOT_DIR).to.equal(path.join(proyecto.raiz, 'reports'));
+    });
+
+    it('con TRIPLE_REPORTS_BASE solo se mueve `reports/` (el resto sigue en el proyecto)', function () {
+      const otra = proyecto.ruta('flujo');
+      process.env.TRIPLE_REPORTS_BASE = otra;
+      const paths = proyecto.importar('../../utils/paths');
+      expect(paths.REPORTS_ROOT_DIR).to.equal(path.join(otra, 'reports'));
+      expect(paths.ROOT_DIR).to.equal(proyecto.raiz);
+    });
+  });
+
   describe('sanitizeFileName', function () {
     it('quita acentos en vez de reemplazarlos por guiones bajos', function () {
       expect(sanitizeFileName('Publicación Exitosa')).to.equal('publicacion_exitosa');

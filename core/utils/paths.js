@@ -7,7 +7,13 @@ const path = require('path');
 // no de __dirname (que apuntaría a la carpeta del core).
 const PROJECT_DIR = process.env.REPORTS_ROOT || process.cwd();
 const ROOT_DIR = PROJECT_DIR;
-const REPORTS_ROOT_DIR = path.join(PROJECT_DIR, 'reports');
+// `TRIPLE_REPORTS_BASE` (opcional) mueve SOLO la carpeta `reports/` a otra base. Lo
+// usa `scripts/run-flow.js`: un flujo cruza varios módulos, así que sus reportes
+// van a `<raíz>/flujo/reports/<RUN_ID>/` en vez de colgar del módulo del primer
+// test. El resto (contexto, metadata de pantallas) sigue resolviéndose desde
+// PROJECT_DIR, igual que siempre. Sin la variable, nada cambia.
+const REPORTS_BASE = process.env.TRIPLE_REPORTS_BASE || PROJECT_DIR;
+const REPORTS_ROOT_DIR = path.join(REPORTS_BASE, 'reports');
 const LATEST_DIR = path.join(REPORTS_ROOT_DIR, 'latest');
 
 function pad(n) {

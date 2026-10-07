@@ -60,6 +60,15 @@ const SEL = {
 };
 
 class NominaPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12): `seleccionarEmpleadoPorCodigo(x)` selecciona en "Empleados de Nuevo
+   * Ingreso" al empleado cuyo `codigo` es `x`.
+   * Lo lee el escáner estático; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: 'empleado', referencia: 'codigo', metodos: ['seleccionarEmpleadoPorCodigo'] };
+  }
+
   constructor(driver) {
     super(driver);
     this.form = new Form(driver);

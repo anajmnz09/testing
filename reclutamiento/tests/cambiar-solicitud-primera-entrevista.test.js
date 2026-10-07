@@ -2,6 +2,7 @@ const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
+const flowContext = require('@triple/core/context/flowContext');
 
 const CASO = 'cambiar-solicitud-primera-entrevista';
 const ETAPA_OBJETIVO = 'Primera entrevista';
@@ -70,5 +71,8 @@ describe('Reclutamiento - Cambiar Solicitud a Primera Entrevista', function () {
       etapaFinal.toLowerCase().includes('primera entrevista'),
       `La etapa de "${codigoUsado}" no quedó en "${ETAPA_OBJETIVO}" (quedó "${etapaFinal}").`
     );
+
+    // Solo en modo flujo: la misma solicitud, ahora en su nueva etapa (data/flujo-tests.js).
+    flowContext.update('solicitud', { codigo: codigoUsado, etapa: etapaFinal });
   });
 });

@@ -1,4 +1,5 @@
 import { el, chevron, capitalizar } from "./componentes.js";
+import * as flujo from "./flujo.js";
 
 // Árbol Módulo → (Suite) → Caso. El estado se muestra con un glifo mínimo; el
 // play aparece al hover para ejecutar sin abrir el detalle.
@@ -16,6 +17,24 @@ export function render(cont, datos, onSelect, onRun) {
     return;
   }
   for (const m of datos.modulos) cont.append(nodo(m, onSelect, onRun, 0));
+  marcar(cont);
+}
+
+/**
+ * Refleja la selección de flujo en el árbol: fondo más claro + checkbox marcado
+ * en los tests elegidos (solo los CASOS tienen checkbox). Deshabilitado mientras
+ * corre un flujo.
+ */
+export function marcar(cont) {
+  const ocupado = flujo.ocupado();
+  cont.querySelectorAll(".tree-row[data-caso]").forEach((fila) => {
+    const on = flujo.tiene(fila.dataset.modulo, fila.dataset.caso);
+    fila.classList.toggle("flujo-sel", on);
+    const chk = fila.querySelector(".tree-chk");
+    chk.classList.toggle("on", on);
+    chk.classList.toggle("deshabilitado", ocupado);
+    chk.setAttribute("aria-checked", String(on));
+  });
 }
 
 function nodo(n, onSelect, onRun, nivel) {
@@ -23,10 +42,35 @@ function nodo(n, onSelect, onRun, nivel) {
   const hijosBox = el("div", { class: "tree-hijos" });
   // Indentación compacta: separación horizontal chica entre niveles para
   // aprovechar el ancho (sin ensanchar el menú).
+  const esCaso = n.tipo === "caso";
+  // En los casos el checkbox va en el extremo izquierdo de la fila (la sangría
+  // del nivel pasa a un espaciador, para no mover el nombre).
   const fila = el("div", {
     class: `tree-row tree-${n.tipo}`,
-    style: `padding-left:${4 + nivel * 10}px`,
+    style: `padding-left:${esCaso ? 6 : 4 + nivel * 10}px`,
+    ...(esCaso ? { "data-modulo": n.modulo, "data-caso": n.id } : {}),
   });
+  const chk = esCaso
+    ? el("span", {
+        class: "tree-chk",
+        role: "checkbox",
+        tabindex: "0",
+        "aria-checked": "false",
+        title: "Agregar al flujo",
+        onclick: (e) => {
+          e.stopPropagation();
+          flujo.alternar(n);
+        },
+        onkeydown: (e) => {
+          if (e.key === " " || e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            flujo.alternar(n);
+          }
+        },
+      })
+    : null;
+  const sangria = esCaso ? el("span", { style: `width:${nivel * 10}px;flex:none` }) : null;
 
   // Chevron único (grupos) o espaciador (casos, que no despliegan).
   const izq = esGrupo ? chevron() : el("span", { class: "chev-spacer" });
@@ -51,7 +95,7 @@ function nodo(n, onSelect, onRun, nivel) {
       "▷"
     )
   );
-  fila.append(izq, lbl, der);
+  for (const x of [chk, sangria, izq, lbl, der]) if (x) fila.append(x);
 
   // Cada sección/categoría arranca COLAPSADA (a pedido explícito: quedaban
   // siempre abiertas y era incómodo navegar el árbol) — el usuario expande

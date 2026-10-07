@@ -4,6 +4,7 @@ require('./env'); // carga jerárquica de .env (módulo + global)
 const config = require('../config');
 const chromeProfiles = require('./chromeProfiles');
 const logger = require('./logger');
+const flowContext = require('../context/flowContext');
 
 // Referencia al driver activo, para que utilidades globales (ej. los root hooks
 // de Mocha en utils/mochaRootHooks.js) puedan capturar screenshots o cerrar la
@@ -13,6 +14,13 @@ const logger = require('./logger');
 let currentDriver = null;
 
 async function createDriver() {
+  // MODO FLUJO: un solo navegador/sesión para todos los tests del flujo. Fuera de
+  // un flujo (sin TRIPLE_FLOW_PLAN) esta rama no existe y todo sigue igual.
+  if (flowContext.activo() && flowContext.driverCompartido()) {
+    currentDriver = flowContext.driverCompartido();
+    return currentDriver;
+  }
+
   // Barre perfiles temporales huérfanos de corridas anteriores (best-effort):
   // así la basura no se acumula aunque un proceso previo se haya matado.
   try { chromeProfiles.barrerViejos(); } catch (e) { /* best-effort */ }
@@ -100,10 +108,14 @@ async function createDriver() {
   }
 
   currentDriver = driver;
+  if (flowContext.activo()) flowContext.setDriverCompartido(driver);
   return driver;
 }
 
-async function quitDriver(driver) {
+async function quitDriver(driver, { forzar = false } = {}) {
+  // MODO FLUJO: el driver compartido lo cierra solo el hook de flujo (`forzar`).
+  if (!forzar && driver && flowContext.activo() && flowContext.driverCompartido() === driver) return;
+  if (forzar && flowContext.activo()) flowContext.clear();
   const perfilDir = driver && driver.__perfilDir;
   if (driver) {
     await driver.quit();

@@ -160,6 +160,46 @@ function evidenciasCaso(modulo, runId, caso) {
   return out;
 }
 
+/**
+ * Estado de una corrida de FLUJO (`flow-estado.json`, escrito por
+ * `core/utils/flowHooks.js` mientras corre): por cada test, su estado y, si ya
+ * corrió, sus screenshots y evidencias — leídos con los MISMOS helpers que usa el
+ * detalle de un caso individual (nada nuevo en cómo se localizan los artefactos).
+ * `modulo` es el módulo de reportes del flujo (el del primer caso seleccionado).
+ */
+function estadoFlujo(modulo, runId) {
+  if (!/^[A-Za-z0-9_-]+$/.test(String(modulo)) || !/^[0-9_-]+$/.test(String(runId))) return { existe: false };
+  const p = path.join(repDir(modulo), runId, 'flow-estado.json');
+  if (!fs.existsSync(p)) return { existe: false };
+  let est;
+  try {
+    est = JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) {
+    return { existe: false }; // escritura en curso: el Panel reintenta en el siguiente poll
+  }
+  const casos = {};
+  for (const [caso, c] of Object.entries(est.casos || {})) {
+    const corrio = c.estado !== 'pendiente' && c.estado !== 'bloqueado';
+    casos[caso] = {
+      ...c,
+      screenshots: corrio ? artefactosCaso(modulo, runId, caso, D.screenshots, ['.png', '.jpg', '.jpeg']) : [],
+      evidencias: corrio ? evidenciasCaso(modulo, runId, caso) : [],
+    };
+  }
+  return {
+    existe: true,
+    modulo,
+    runId,
+    inicio: est.inicio,
+    fin: est.fin,
+    orden: est.orden || [],
+    casos,
+    log: fs.existsSync(path.join(repDir(modulo), runId, D.logs, D.log))
+      ? { url: urlArtefacto(modulo, runId, `${D.logs}/${D.log}`) }
+      : null,
+  };
+}
+
 function resumen(modulo, runId) {
   const rj = leerResultados(modulo, runId);
   const st = (rj && rj.stats) || {};
@@ -222,5 +262,6 @@ module.exports = {
   ultimaDeCaso,
   historial,
   detalleCorrida,
+  estadoFlujo,
   rutaArtefacto,
 };

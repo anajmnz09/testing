@@ -72,8 +72,16 @@
 .g-failed {
   color: var(--error);
 }
-.g-sin-ejecutar {
+.g-sin-ejecutar,
+.g-pending,
+.g-cancelled {
   color: var(--indigo-500);
+}
+.g-bloqueado {
+  color: var(--warn);
+}
+.g-running {
+  color: var(--info);
 }
 .tree-run {
   opacity: 0;
@@ -81,6 +89,57 @@
 }
 .tree-row:hover .tree-run {
   opacity: 0.85;
+}
+
+/* --- Selección para flujo (checkbox en cada test del árbol) --- */
+.tree-chk {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-right: var(--s1);
+  border: 1.5px solid var(--magenta-600);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.tree-chk:hover {
+  background: rgba(222, 21, 121, 0.15);
+}
+.tree-chk.on {
+  background: var(--magenta-600);
+}
+.tree-chk.on::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 3px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.tree-chk:focus-visible {
+  outline: 2px solid var(--magenta-600);
+  outline-offset: 2px;
+}
+.tree-chk.deshabilitado {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* Test elegido para el flujo: un escalón más claro que el fondo del árbol. */
+.tree-row.flujo-sel:not(.sel) {
+  background: var(--indigo-800);
+}
+.tree-row.flujo-sel:not(.sel):hover {
+  background: var(--indigo-700);
+}
+.seg-num {
+  margin-left: var(--s1);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--magenta-600);
 }
 
 /* --- Botones --- */
@@ -107,6 +166,15 @@
 }
 .btn--primario:active {
   background: var(--magenta-800);
+}
+.btn--burgundy {
+  background: var(--wine-800);
+  color: #fff;
+  border-color: var(--wine-800);
+}
+.btn--burgundy:hover {
+  background: var(--wine-700);
+  border-color: var(--wine-700);
 }
 .btn--secundario {
   background: var(--canvas);
@@ -548,4 +616,132 @@
 }
 .cargando {
   color: var(--g-500);
+}
+
+/* --- Pantalla de flujo (selección y resultados) --- */
+.flujo {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+}
+.flujo-cab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--s4);
+  padding-top: var(--s4);
+}
+.flujo-cab .inicio-logo {
+  width: 72px;
+}
+.flujo-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--indigo-900);
+}
+.flujo-acciones {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.flujo-nota {
+  color: var(--g-500);
+  font-size: 12px;
+}
+.flujo-aviso {
+  text-align: left;
+  width: 100%;
+  margin-bottom: 0;
+}
+.flujo-lista-tit {
+  color: var(--wine-800);
+  font-size: 14px;
+  font-weight: 600;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--g-100);
+}
+.flujo-it {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+.flujo-it > .colap {
+  flex: 1;
+  min-width: 0;
+}
+.flujo-it .colap-tit {
+  flex: 1;
+  min-width: 0;
+}
+.flujo-it-cab {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+.flujo-glifo {
+  font-size: 13px;
+  width: 14px;
+  text-align: center;
+  flex: none;
+}
+.flujo-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--g-100);
+  background: var(--g-50);
+  color: var(--g-500);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+}
+.flujo-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text);
+}
+.flujo-mod {
+  color: var(--g-500);
+  font-size: 12px;
+  font-weight: 400;
+}
+.flujo-quitar {
+  margin-top: var(--s2);
+}
+.flujo-det {
+  margin: 0 0 var(--s2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.flujo-det-lbl {
+  color: var(--g-500);
+}
+.flujo-det-sub {
+  color: var(--wine-800);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: var(--s3) 0 var(--s2);
+}
+.flujo-motivo {
+  background: var(--warn-bg);
+  color: var(--warn);
+  padding: var(--s3);
+  border-radius: var(--r-s);
+  margin-bottom: var(--s3);
 }

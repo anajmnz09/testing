@@ -3,6 +3,7 @@ const LoginPage = require('../pages/LoginPage');
 const DashboardPage = require('../pages/DashboardPage');
 const SRHHNavBar = require('../components/SRHHNavBar');
 const logger = require('../utils/logger');
+const flowContext = require('../context/flowContext');
 
 /**
  * Flujos de autenticación reutilizables por TODOS los módulos.
@@ -22,6 +23,15 @@ async function login(
   driver,
   { username = process.env.APP_USERNAME, password = process.env.PASSWORD } = {}
 ) {
+  // MODO FLUJO: si este MISMO driver ya inició sesión, no se re-autentica
+  // (volver a abrir el login con sesión viva agota el timeout: verificado en vivo).
+  // Solo deja el dashboard cargado. Fuera de un flujo no aplica.
+  if (flowContext.activo() && flowContext.sesionIniciada(driver)) {
+    logger.info('authFlow: sesión ya iniciada en este flujo, se omite el login');
+    const dash = new DashboardPage(driver);
+    await dash.isLoaded();
+    return dash;
+  }
   logger.info(`authFlow: login como "${username}"`);
   const loginPage = new LoginPage(driver);
   await loginPage.open();
@@ -29,6 +39,7 @@ async function login(
 
   const dashboard = new DashboardPage(driver);
   await dashboard.isLoaded();
+  if (flowContext.activo()) flowContext.marcarSesion(driver);
   return dashboard;
 }
 

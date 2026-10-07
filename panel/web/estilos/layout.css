@@ -144,11 +144,13 @@
   .app-main {
     padding: var(--s4);
   }
-  .caso-acciones {
+  .caso-acciones,
+  .flujo-acciones {
     flex-direction: column;
     align-items: stretch;
   }
-  .caso-acciones .btn {
+  .caso-acciones .btn,
+  .flujo-acciones .btn {
     justify-content: center;
   }
   .marca {

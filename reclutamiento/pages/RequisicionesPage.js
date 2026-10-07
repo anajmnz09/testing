@@ -19,6 +19,15 @@ const RequisicionDetallePage = require('./RequisicionDetallePage');
  * medida que crezcan las pruebas de Reclutamiento.
  */
 class RequisicionesPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12): `abrirDetalle(x)` localiza una requisición filtrando por su `nombre`
+   * (el buscador acepta también el código, pero el flujo solo publica `nombre`).
+   * Lo lee el escáner estático; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: 'requisicion', referencia: 'nombre' };
+  }
+
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);

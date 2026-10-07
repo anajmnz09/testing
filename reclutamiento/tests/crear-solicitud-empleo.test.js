@@ -4,6 +4,8 @@ const { testContext } = require('@triple/core');
 const SolicitudEmpleoFormPage = require('../pages/SolicitudEmpleoFormPage');
 const fixtures = require('../support/fixtures');
 const { datosUnicosQA } = require('../data/solicitud-empleo.data');
+const SolicitudEmpleoPage = require('../pages/SolicitudEmpleoPage');
+const flowContext = require('@triple/core/context/flowContext');
 
 const CASO = 'crear-solicitud-empleo';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -55,11 +57,34 @@ describe('Reclutamiento - Crear Solicitud de Empleo', function () {
     // académico, Requisición) — solo lo que siga vacío. Requisición dispara la
     // cascada de Departamento/Puesto/Supervisor (disabled, nunca se tocan:
     // no están declarados en ESTRATEGIAS).
-    await form.completarConContexto(CASO, { incluirOpcionales: true, defaults: unicos });
+    const usados = await form.completarConContexto(CASO, { incluirOpcionales: true, defaults: unicos });
 
     await form.guardar();
     const res = await form.resultadoGuardado();
     assert.ok(res.exito, `Se esperaba creación exitosa. Notify: "${res.notify}"`);
     logger.info(`Solicitud creada: identificación=${identificacion}, nombre=${unicos['Primer Nombre']}, correo=${unicos.Correo}`);
+
+    // Solo en modo flujo (individualmente no se ejecuta nada de esto): localiza la
+    // solicitud recién creada en el listado por su Identificación y publica su
+    // referencia real (Código) para los tests siguientes (ver data/flujo-tests.js).
+    // `nombreCompleto` (los 4 campos de nombre usados) permite ubicar luego, sin
+    // ambigüedad, al empleado que nace de ella (el listado de Empleados muestra el
+    // nombre legal completo, no el corto del listado de Solicitudes).
+    if (flowContext.activo()) {
+      const lista = await SolicitudEmpleoPage.ir(ctx.driver);
+      const fila = await lista.leerFilaPorIdentificacion(identificacion);
+      const nombres = ['Primer Nombre', 'Segundo Nombre', 'Primer Apellido', 'Segundo Apellido']
+        .map((l) => usados[l] || unicos[l])
+        .filter(Boolean);
+      flowContext.publish('solicitud', {
+        codigo: String(fila['Código']).trim(),
+        identificacion,
+        nombre: fila['Nombre'],
+        nombreCompleto: nombres.join(' '),
+        requisicion: fila['Requisición'],
+        etapa: fila['Etapa'],
+      });
+      logger.info(`flujo: solicitud publicada codigo=${fila['Código']} (Requisición en el listado: "${fila['Requisición']}")`);
+    }
   });
 });

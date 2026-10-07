@@ -840,8 +840,13 @@ class Form extends BaseComponent {
         await input.sendKeys(texto, Key.TAB);
         return;
       } catch (e) {
-        if (e.name !== 'StaleElementReferenceError' || intento === intentos) throw e;
-        logger.info(`Form: campo "${label}" "stale" (intento ${intento}/${intentos}), reintentando`);
+        // Transitorios de un campo que se vuelve a montar (p. ej. justo tras "Editar"):
+        // primero "stale" y, al reubicarlo, un instante "no interactuable" — confirmado
+        // en vivo (Salario de Propuesta económica). Se reintenta con una pausa corta.
+        const transitorio = ['StaleElementReferenceError', 'ElementNotInteractableError'].includes(e.name);
+        if (!transitorio || intento === intentos) throw e;
+        logger.info(`Form: campo "${label}" ${e.name === 'StaleElementReferenceError' ? '"stale"' : 'no interactuable'} (intento ${intento}/${intentos}), reintentando`);
+        await this.driver.sleep(400); // deja terminar el re-render antes de relocalizar el campo
       }
     }
   }
@@ -863,12 +868,20 @@ class Form extends BaseComponent {
    * escriba en un campo potencialmente condicional a otro.
    */
   async _inputDeCampo(campo, label, timeout = 5000) {
+    let falloDelPoll = null;
     const input = await this.driver
       .wait(async () => {
         const els = await campo.findElements(By.css('.dx-texteditor-input'));
         return els.length ? els[0] : false;
       }, timeout)
-      .catch(() => null);
+      .catch((e) => {
+        falloDelPoll = e;
+        return null;
+      });
+    // Si el contenedor se volvió "stale" durante el poll (el formulario se re-renderizó, p. ej.
+    // justo tras "Editar": el fallo ocurre en <1 s, no tras `timeout`), NO es "no expuso su editor":
+    // se deja pasar tal cual para que el llamador relocalice el campo y reintente.
+    if (!input && falloDelPoll && falloDelPoll.name === 'StaleElementReferenceError') throw falloDelPoll;
     if (!input) {
       throw new Error(`Form: "${label}" no expuso su editor (.dx-texteditor-input) tras esperar ${timeout}ms.`);
     }

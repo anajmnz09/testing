@@ -4,6 +4,7 @@ import * as detalle from "./detalle.js";
 import * as consola from "./consola.js";
 import * as historial from "./historial.js";
 import * as configuracion from "./configuracion.js";
+import * as flujo from "./flujo.js";
 import { pantallaInicio } from "./componentes.js";
 
 const treeCont = document.getElementById("tree");
@@ -17,7 +18,8 @@ let modoHistorial = false;
 // detalle del caso seleccionado para reflejar el nuevo resultado.
 function onRun(run, nombre) {
   consola.ejecutar(run, nombre, () => {
-    if (!modoHistorial && nodoSel) detalle.abrir(detCont, nodoSel, onRun);
+    // (no pisa la pantalla de flujo si es la que está a la vista)
+    if (!modoHistorial && nodoSel && !detCont.querySelector(".flujo")) detalle.abrir(detCont, nodoSel, onRun);
   });
 }
 
@@ -58,6 +60,22 @@ function aplicarFiltro() {
     nodo.style.display = visible ? "" : "none";
   });
 }
+
+// --- Selección de tests para flujo ---
+// El Panel solo guarda la selección (en orden) y la presenta; planificar y
+// ejecutar lo hace el framework (ver flujo.js).
+const tabFlujo = document.getElementById("tg-flujo");
+flujo.suscribir((tipo) => {
+  arbol.marcar(treeCont);
+  const n = flujo.cantidad();
+  tabFlujo.classList.toggle("oculto", n === 0);
+  tabFlujo.querySelector(".seg-num").textContent = String(n);
+  if (tipo === "seleccion") flujo.mostrar(detCont, onRun);
+});
+tabFlujo.addEventListener("click", () => {
+  flujo.mostrar(detCont, onRun);
+  document.querySelector(".app-sidebar").classList.remove("abierto");
+});
 
 // --- Wiring ---
 document.getElementById("tg-tests").addEventListener("click", () => setModo(false));

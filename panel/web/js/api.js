@@ -15,6 +15,14 @@ export const ejecutar = (run) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ run }),
   });
+export const contexto = (modulo, caso) => j(`/api/contexto?modulo=${enc(modulo)}&caso=${enc(caso)}`);
+export const planFlujo = (casos) =>
+  j("/api/flujo/plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ casos }),
+  });
+export const estadoFlujo = (modulo, runId) => j(`/api/flujo/estado?modulo=${enc(modulo)}&runId=${enc(runId)}`);
 export const cancelar = () => j("/api/cancelar", { method: "POST" });
 export const configuracion = () => j("/api/configuracion");
 export const guardarConfiguracion = (valores) =>

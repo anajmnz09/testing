@@ -1,7 +1,7 @@
 {
   "crear-sucursal": {
-    "Nombre Sucursal": "Guayiga",
-    "Nombre/Referencia": "gy",
+    "Nombre Sucursal": "",
+    "Nombre/Referencia": "",
     "Compañía": "",
     "Correo": "",
     "Teléfono": "",
@@ -15,7 +15,7 @@
     "nombre": ""
   },
   "editar-sucursal": {
-    "Nombre de Sucursal a editar": "SUCURSAL QA 541771",
+    "Nombre de Sucursal a editar": "",
     "Nombre Sucursal": "",
     "Nombre/Referencia": "",
     "Compañía": "",
@@ -66,7 +66,7 @@
     "nombre": ""
   },
   "editar-puesto": {
-    "Nombre de Puesto a editar": "PUESTO QA 161944",
+    "Nombre de Puesto a editar": "",
     "Nombre": "",
     "Descripción": "",
     "Clasificación 1": "",
@@ -111,18 +111,18 @@
     "Referencia MT": ""
   },
   "crear-beneficio": {
-    "Beneficio": "Compras",
-    "Concepto de nómina": "comisiones por cobro",
-    "Estado": "activo"
+    "Beneficio": "",
+    "Concepto de nómina": "",
+    "Estado": ""
   },
   "consultar-beneficio": {
     "nombre": ""
   },
   "editar-beneficio": {
-    "Nombre de Beneficio a editar": "Compras ",
-    "Beneficio": "Compras 2",
+    "Nombre de Beneficio a editar": "",
+    "Beneficio": "",
     "Concepto de nómina": "",
-    "Estado": "activO"
+    "Estado": ""
   },
   "consultar-grado-academico": {
     "nombre": ""
@@ -174,7 +174,7 @@
     "Estado": ""
   },
   "crear-proveedor-seguro": {
-    "Proveedor": "Human Health co",
+    "Proveedor": "",
     "Estado": ""
   },
   "consultar-proveedor-seguro": {
@@ -194,7 +194,7 @@
     "Estado": ""
   },
   "consultar-banco": {
-    "nombre": "popular"
+    "nombre": ""
   },
   "editar-banco": {
     "Nombre de Banco a editar": "",
@@ -206,41 +206,41 @@
     "Estado": ""
   },
   "crear-cuenta-contable": {
-    "No. cuenta": "666",
+    "No. cuenta": "",
     "Estado": "",
-    "Descripción": "qa"
+    "Descripción": ""
   },
   "consultar-cuenta-contable": {
     "nombre": ""
   },
   "editar-cuenta-contable": {
-    "No. de Cuenta Contable a editar": "666",
-    "No. cuenta": "657",
+    "No. de Cuenta Contable a editar": "",
+    "No. cuenta": "",
     "Estado": "",
-    "Descripción": "hola"
+    "Descripción": ""
   },
   "crear-tipo-nomina": {
     "Nombre": "",
     "Código nómina": "",
-    "Forma Cálculo": "salario",
-    "Frecuencia salarial": "mensual",
-    "Tipo Empleados": "todos",
-    "Intervalo de pago": "1",
+    "Forma Cálculo": "",
+    "Frecuencia salarial": "",
+    "Tipo Empleados": "",
+    "Intervalo de pago": "",
     "TSS Tipo nómina": "",
-    "Moneda": "peso dominicano",
-    "Permite reapertura": true,
+    "Moneda": "",
+    "Permite reapertura": false,
     "Estado": ""
   },
   "consultar-tipo-nomina": {
     "nombre": ""
   },
   "editar-tipo-nomina": {
-    "Nombre de Tipo Nómina a editar": "Tipo Nomina QA-panel",
+    "Nombre de Tipo Nómina a editar": "",
     "Nombre": "",
     "Código nómina": "",
     "Forma Cálculo": "",
     "Frecuencia salarial": "",
-    "Tipo Empleados": "contratados",
+    "Tipo Empleados": "",
     "Intervalo de pago": "",
     "TSS Tipo nómina": "",
     "Moneda": "",
@@ -248,19 +248,19 @@
     "Estado": ""
   },
   "crear-categoria-actividad": {
-    "Categorías": "parking",
+    "Categorías": "",
     "Estado": "",
-    "Precio Hora": "100",
-    "Usar Rate": true,
-    "Hora Jornada": "98",
-    "Rate": "98"
+    "Precio Hora": "",
+    "Usar Rate": false,
+    "Hora Jornada": "",
+    "Rate": ""
   },
   "consultar-categoria-actividad": {
     "nombre": ""
   },
   "editar-categoria-actividad": {
-    "Categoría de actividad a editar": "parking",
-    "Categorías": "parking edit",
+    "Categoría de actividad a editar": "",
+    "Categorías": "",
     "Estado": "",
     "Precio Hora": "",
     "Usar Rate": false,
@@ -268,15 +268,15 @@
     "Rate": ""
   },
   "crear-concepto-nomina": {
-    "Nombre": "Pago casa",
-    "Tipo concepto": "Otro Desc.",
-    "Clase": "Descuento",
+    "Nombre": "",
+    "Tipo concepto": "",
+    "Clase": "",
     "Código Alterno": "",
-    "Origen": "Descuento",
+    "Origen": "",
     "Tipo Ingreso": "",
-    "% Pago Horas": "12",
+    "% Pago Horas": "",
     "Estado": "",
-    "Tipo Valor": "Porcentual"
+    "Tipo Valor": ""
   },
   "consultar-concepto-nomina": {
     "nombre": ""
@@ -294,10 +294,10 @@
     "Tipo Valor": ""
   },
   "crear-comportamiento-concepto-nomina": {
-    "Concepto": "vacaciones",
-    "Tipo Nómina": "tipo nómina qa",
+    "Concepto": "",
+    "Tipo Nómina": "",
     "Todos los intervalos": false,
-    "Intervalo": "semanal"
+    "Intervalo": ""
   },
   "consultar-comportamiento-concepto-nomina": {
     "nombre": ""
@@ -317,48 +317,48 @@
     "Tiene acceso a RRHH": false
   },
   "consultar-usuario": {
-    "nombre": "juan pedro",
+    "nombre": "",
     "Código de usuario": ""
   },
   "editar-usuario": {
-    "Nombre de Usuario a editar": "QA Usuario 724476",
-    "Nombre Completo": "julieta",
+    "Nombre de Usuario a editar": "",
+    "Nombre Completo": "",
     "Correo": "",
     "Código de usuario": "",
     "Compañías permitidas": "",
     "Es administrador": false,
-    "Tiene acceso a RRHH": true
+    "Tiene acceso a RRHH": false
   },
   "agregar-foto-usuario": {
-    "nombre": "julieta",
+    "nombre": "",
     "archivo": ""
   },
   "marcar-usuario-administrador": {
-    "nombre": "julieta"
+    "nombre": ""
   },
   "dar-acceso-rrhh-usuario": {
-    "nombre": "juan elias"
+    "nombre": ""
   },
   "crear-grupo": {
-    "Nombre": "prueba panel"
+    "Nombre": ""
   },
   "consultar-grupo": {
-    "nombre": "test"
+    "nombre": ""
   },
   "editar-grupo": {
-    "Nombre de Grupo a editar": "prueba panel",
-    "Nombre": "qa-3",
-    "Descripción": "descripcion panel x5"
+    "Nombre de Grupo a editar": "",
+    "Nombre": "",
+    "Descripción": ""
   },
   "agregar-miembro-grupo": {
-    "Nombre de Grupo": "qa-3",
-    "Usuario": "marisol",
+    "Nombre de Grupo": "",
+    "Usuario": "",
     "Compañías permitidas": "",
     "Sucursal": ""
   },
   "agregar-permiso-grupo": {
-    "Nombre de Grupo": "qa-1",
-    "Módulo": "analitica",
+    "Nombre de Grupo": "",
+    "Módulo": "",
     "Roles": ""
   },
   "_camposMultivalor": {

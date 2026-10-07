@@ -586,20 +586,34 @@ class SolicitudEmpleoDetallePage extends BasePage {
       }
     }
 
-    const btnSi = await this.driver
-      .wait(
-        until.elementLocated(
-          By.xpath("//div[contains(@class,'dx-popup-content')]//div[contains(@class,'dx-button')][normalize-space(.)='Sí']")
-        ),
-        3000
-      )
-      .catch(() => null);
+    // Espera hasta 3 s el popup de aprobación "Sí" (solo algunas transiciones lo
+    // piden). Se SONDEA en vez de bloquear los 3 s completos: si el toast de la
+    // app ya apareció (no hay popup), se captura de inmediato — con la espera
+    // ciega, en una corrida rápida el toast podía expirar durante esos 3 s y la
+    // transición, ya aplicada, se reportaba sin notify (verificado en vivo).
+    const SI_APROBACION = By.xpath(
+      "//div[contains(@class,'dx-popup-content')]//div[contains(@class,'dx-button')][normalize-space(.)='Sí']"
+    );
+    let btnSi = null;
+    let textoTemprano = '';
+    const finPopup = Date.now() + 3000;
+    while (Date.now() < finPopup) {
+      const sis = await this.driver.findElements(SI_APROBACION);
+      if (sis.length) {
+        btnSi = sis[0];
+        break;
+      }
+      textoTemprano = await this.notify.getTexto();
+      if (textoTemprano) break;
+      await this.driver.sleep(150);
+    }
     if (btnSi) {
       logger.info('SolicitudEmpleoDetalle: confirmando popup de aprobación -> "Sí"');
       await this.driver.executeScript('arguments[0].click()', btnSi);
+      textoTemprano = '';
     }
 
-    const texto = await this.notify.esperarTexto(timeoutMs);
+    const texto = textoTemprano || (await this.notify.esperarTexto(timeoutMs));
     return Notify.clasificar(texto);
   }
 }

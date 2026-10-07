@@ -244,3 +244,79 @@ describe('Form.assertValor (unitario)', function () {
     expect(error.message).to.equal('mensaje custom de prueba');
   });
 });
+
+describe('Form.escribir — reintento ante un campo que se vuelve a montar (unitario)', function () {
+  function formConInput(fallos) {
+    const form = Object.create(Form.prototype);
+    form.driver = { executeScript: async () => {}, sleep: async () => {} };
+    const escrito = [];
+    let n = 0;
+    form._elemCampo = async () => ({});
+    form._inputDeCampo = async () => ({
+      clear: async () => {
+        const e = fallos[n++];
+        if (e) {
+          const err = new Error(e);
+          err.name = e;
+          throw err;
+        }
+      },
+      sendKeys: async (t) => escrito.push(t),
+    });
+    return { form, escrito };
+  }
+
+  it('reintenta tras "stale" y luego "no interactuable", y termina escribiendo', async function () {
+    const { form, escrito } = formConInput(['StaleElementReferenceError', 'ElementNotInteractableError']);
+    await form.escribir('Salario', '30000');
+    expect(escrito).to.deep.equal(['30000']);
+  });
+
+  it('si el contenedor se vuelve stale DURANTE la espera del editor, se relocaliza y reintenta (no es "no expuso su editor")', async function () {
+    const form = Object.create(Form.prototype);
+    const escrito = [];
+    let n = 0;
+    form.driver = {
+      executeScript: async () => {},
+      sleep: async () => {},
+      // `wait` ejecuta la condición una vez y propaga lo que lance (como el driver real si la condición lanza)
+      wait: async (cond) => cond(),
+    };
+    form._elemCampo = async () => ({
+      findElements: async () => {
+        if (n++ === 0) {
+          const e = new Error('stale element reference');
+          e.name = 'StaleElementReferenceError';
+          throw e;
+        }
+        return [{ clear: async () => {}, sendKeys: async (t) => escrito.push(t) }];
+      },
+    });
+    await form.escribir('Salario', '30000');
+    expect(escrito).to.deep.equal(['30000']);
+    expect(n).to.equal(2);
+  });
+
+  it('un error que no es transitorio no se reintenta', async function () {
+    const { form, escrito } = formConInput(['InvalidArgumentError']);
+    let error;
+    try {
+      await form.escribir('Salario', '1');
+    } catch (e) {
+      error = e;
+    }
+    expect(error && error.name).to.equal('InvalidArgumentError');
+    expect(escrito).to.deep.equal([]);
+  });
+
+  it('si el campo sigue sin ser interactuable tras todos los intentos, falla (no se enmascara)', async function () {
+    const { form } = formConInput(['ElementNotInteractableError', 'ElementNotInteractableError', 'ElementNotInteractableError']);
+    let error;
+    try {
+      await form.escribir('Salario', '1');
+    } catch (e) {
+      error = e;
+    }
+    expect(error && error.name).to.equal('ElementNotInteractableError');
+  });
+});

@@ -12,19 +12,19 @@
     "Supervisor": "",
     "Ubicación": "",
     "Fecha de Creación": "",
-    "Puesto": "ANALISTA DE CONTABILIDAD",
+    "Puesto": "",
     "Sucursal": "",
-    "Departamento": "ALMACEN - DESPACHO (STGO)",
-    "Reclutador": "Juan Cueli",
-    "Horario": "Primer Turno 1",
-    "Tipo de contrato": "Temporal",
+    "Departamento": "",
+    "Reclutador": "",
+    "Horario": "",
+    "Tipo de contrato": "",
     "Modalidad": "",
     "Nombre de requisición": "",
-    "Requisitos": "Requisitos personalizados desde Execution Context",
-    "Responsabilidades": "Responsabilidades personalizadas desde Execution Context",
-    "Descripción": "Descripción personalizada desde Execution Context",
-    "Comentario": "Comentario personalizado desde Execution Context",
-    "Cantidad de empleado": "7",
+    "Requisitos": "",
+    "Responsabilidades": "",
+    "Descripción": "",
+    "Comentario": "",
+    "Cantidad de empleado": "",
     "Rotativo": ""
   },
   "crear-req-sustitucion-requeridos": {
@@ -101,19 +101,19 @@
     "Rotativo": ""
   },
   "publicar-requisicion": {
-    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
+    "nombreRequisicion": "",
     "estado": ""
   },
   "cerrar-requisicion": {
     "codigo": ""
   },
   "pausar-requisicion": {
-    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
+    "nombreRequisicion": "",
     "idRequisicion": "",
     "estado": ""
   },
   "agregar-archivos-requisicion": {
-    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
+    "nombreRequisicion": "",
     "idRequisicion": "",
     "estado": "",
     "archivo": "",
@@ -123,7 +123,7 @@
     "estado": ""
   },
   "compartir-requisicion-publicada": {
-    "nombreRequisicion": "QA-crear-req-creacion-1790888158778",
+    "nombreRequisicion": "",
     "idRequisicion": "",
     "estado": ""
   },
@@ -134,14 +134,14 @@
     "Supervisor": "",
     "Ubicación": "",
     "Fecha de Creación": "",
-    "Puesto": "ANALISTA DE ASEGURAMIENTO DE LA CALIDAD",
+    "Puesto": "",
     "Sucursal": "",
     "Departamento": "",
     "Reclutador": "",
     "Horario": "",
     "Tipo de contrato": "",
     "Modalidad": "",
-    "Nombre de requisición": "ANALISTA DE ASEGURAMIENTO DE LA CALIDAD",
+    "Nombre de requisición": "",
     "Requisitos": "",
     "Responsabilidades": "",
     "Descripción": "",
@@ -150,45 +150,45 @@
     "Rotativo": ""
   },
   "crear-req-sustitucion": {
-    "Razón de solicitud": "Sustitucion",
-    "Persona(s) a sustituir": "Hugo Valentina Cordero Ruiz",
-    "Documentos Requeridos": "CV",
-    "Supervisor": "Juan Miranda Flores Montes",
-    "Ubicación": "Mi casa QA",
+    "Razón de solicitud": "",
+    "Persona(s) a sustituir": "",
+    "Documentos Requeridos": "",
+    "Supervisor": "",
+    "Ubicación": "",
     "Fecha de Creación": "",
     "Puesto": "",
     "Sucursal": "",
     "Departamento": "",
     "Reclutador": "",
-    "Horario": "Primer Turno 1",
-    "Tipo de contrato": "Por Servicio",
-    "Modalidad": "Híbrida",
-    "Nombre de requisición": "REQ DESDE PANEL SUST pt 3",
-    "Requisitos": "Requisitos",
-    "Responsabilidades": "Responsabilidades",
+    "Horario": "",
+    "Tipo de contrato": "",
+    "Modalidad": "",
+    "Nombre de requisición": "",
+    "Requisitos": "",
+    "Responsabilidades": "",
     "Descripción": "",
-    "Comentario": "Comentario",
-    "Cantidad de empleado": "3",
-    "Rotativo": "si"
+    "Comentario": "",
+    "Cantidad de empleado": "",
+    "Rotativo": ""
   },
   "agregar-comentario-requisicion": {
     "codigo": "",
-    "nombre": "gerente de proyecto",
+    "nombre": "",
     "comentario": "",
     "estado": ""
   },
   "agregar-pregunta-personalizada": {
     "codigo": "",
-    "nombre": "QA-crear-req-creacion-1790888158778",
-    "pregunta": "Cual es el software que mas ha utilizado?",
-    "tipo": "SelecciOn de una opcion",
-    "nombreCampo": "hce3",
-    "opciones": "Figma | Adobe | Ninguno",
+    "nombre": "",
+    "pregunta": "",
+    "tipo": "",
+    "nombreCampo": "",
+    "opciones": "",
     "estado": ""
   },
   "consultar-solicitudes-desde-requisicion": {
     "codigo": "",
-    "nombre": "gerente de proyecto",
+    "nombre": "",
     "estado": ""
   },
   "consultar-banco-elegibles-desde-requisicion": {
@@ -197,44 +197,44 @@
     "estado": ""
   },
   "agregar-valoracion-solicitud-empleo": {
-    "codigo": "8718",
-    "estrellas": "4"
+    "codigo": "",
+    "estrellas": ""
   },
   "agregar-foto-solicitud-empleo": {
-    "codigo": "8718",
+    "codigo": "",
     "archivo": ""
   },
   "editar-paquete-beneficios-solicitud-empleo": {
-    "codigo": "1810",
-    "estadoLaboral": "empleado",
-    "ultimoSalario": "45000",
-    "beneficios": "viaticos"
+    "codigo": "",
+    "estadoLaboral": "",
+    "ultimoSalario": "",
+    "beneficios": ""
   },
   "cambiar-solicitud-primera-entrevista": {
-    "codigo": "8719"
+    "codigo": ""
   },
   "cambiar-solicitud-segunda-entrevista": {
-    "codigo": "8719"
+    "codigo": ""
   },
   "cambiar-solicitud-tercera-entrevista": {
-    "codigo": "8719"
+    "codigo": ""
   },
   "cambiar-solicitud-oferta-empleo": {
-    "codigo": "8719"
+    "codigo": ""
   },
   "cambiar-solicitud-crear-empleado": {
-    "codigo": "8719",
-    "salario": "35000"
+    "codigo": "",
+    "salario": ""
   },
   "agregar-otros-beneficios-solicitud-empleo": {
-    "codigo": "8718",
-    "salario": "2000",
-    "beneficios": "bono desempeño anual | Transporte",
-    "montos": "1000 | 800"
+    "codigo": "",
+    "salario": "",
+    "beneficios": "",
+    "montos": ""
   },
   "agregar-comentario-solicitud-empleo": {
-    "codigo": "8718",
-    "comentario": "Hola como esta pt 3"
+    "codigo": "",
+    "comentario": ""
   },
   "validacion-solicitud-empleo": {
     "Primer Nombre": "",
@@ -247,14 +247,14 @@
   "crear-solicitud-empleo": {
     "Tipo ID": "",
     "Identificación": "",
-    "Primer Nombre": "Juancito",
+    "Primer Nombre": "",
     "Segundo Nombre": "",
-    "Primer Apellido": "Lopez",
+    "Primer Apellido": "",
     "Segundo Apellido": "",
     "Grado académico": "",
     "Celular": "",
     "Correo": "",
-    "Requisición": "ANALISTA DE ASEGURAMIENTO DE LA CALIDAD",
+    "Requisición": "",
     "Fecha Ingreso": "",
     "Etiquetas": "",
     "Comentario": ""
@@ -273,10 +273,10 @@
     "Apreciación": ""
   },
   "enviar-candidato-elegibles": {
-    "nombre": "Aderlin Rosario"
+    "nombre": ""
   },
   "enviar-candidato-descartados": {
-    "nombre": "Aderlin Rosario"
+    "nombre": ""
   },
   "_camposMultivalor": {
     "crear-req-creacion": [

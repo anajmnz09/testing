@@ -10,6 +10,7 @@ const codigo = require('./codigo');
 const contexto = require('./contexto');
 const lanzador = require('./lanzador');
 const configuracion = require('./configuracion');
+const flujo = require('./flujo');
 
 const WEB = path.join(__dirname, '..', 'web');
 // Assets compartidos del framework (ej. el logo de Triple) — se sirven desde
@@ -84,6 +85,11 @@ const server = http.createServer(async (req, res) => {
       const b = await cuerpo(req);
       return json(res, lanzador.ejecutar(b.run));
     }
+    if (ruta === '/api/flujo/plan' && req.method === 'POST') {
+      const b = await cuerpo(req);
+      return json(res, await flujo.planear(b.casos));
+    }
+    if (ruta === '/api/flujo/estado') return json(res, reportes.estadoFlujo(q.modulo, q.runId));
     if (ruta === '/api/cancelar' && req.method === 'POST') return json(res, lanzador.cancelar());
     if (ruta === '/api/configuracion' && req.method === 'GET') return json(res, configuracion.leer());
     if (ruta === '/api/configuracion' && req.method === 'POST') {

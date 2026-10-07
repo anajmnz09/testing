@@ -17,6 +17,9 @@ Luego abrir en el navegador: **http://127.0.0.1:4599** (puerto configurable con 
 - **Descubre** módulos/suites/casos escaneando el filesystem (convención `tests/*.test.js`). Ningún registro manual.
 - **Ejecuta** los mismos comandos que la consola (`npm test -- …`) vía `child_process`. No es una Runner API: es una pasarela transparente.
 - **Visualiza** el reporte Mochawesome, screenshots, evidencias, logs, código y el historial, leyendo directamente `<módulo>/reports/`.
+- **Flujos:** cada test del árbol tiene un checkbox; los marcados (en el orden elegido) forman un flujo que se ejecuta con
+  "Ejecutar Flujo" en un solo navegador/sesión. El Panel solo selecciona, presenta y muestra el estado: el orden real
+  (`requires`/`produces`) lo calcula el framework (`core/scripts/run-flow.js`). Reportes en `flujo/reports/<RUN_ID>/`. Ver GUIDELINES §12 y `docs/flujos-propuestas.md`.
 - **No** genera reportes propios, ni base de datos, ni métricas, ni lógica de Selenium/Mocha.
 
 Diseño y decisiones: ver `docs/panel-de-control-web-arquitectura.md`, `docs/panel-de-control-web-experiencia-ux.md` y `docs/panel-de-control-web-ui-diseno.md`.

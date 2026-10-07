@@ -617,6 +617,37 @@ search box, per-column filters, a lookup by an ID/code that isn't even a visible
 column — and register a parameter for each one that's a legitimate way to drive the
 scenario.
 
+## Flows: making a test usable inside a flow (only when it actually exchanges data)
+
+Most tests never need this: a test with no flow metadata stays valid, alone or as an independent step of a flow. The normative
+rules (what a flow is, individual vs flow execution, priority, planner errors, blocking) live in `GUIDELINES.md §12` — don't
+restate them here. This is the authoring procedure.
+
+1. **Producing an entity:** call `flowContext.publish('<tipo>', { ...campos })` (or `update` if it transforms an existing one) right
+   after the final success assert, with the type as a **string literal** and an object literal. That is the whole declaration:
+   `produces` is read from this call statically (`core/utils/flowScanner.js`, no execution). Never declare `produces` in
+   `flujo-tests.js`; a dynamic type (variable, alias, spread) is not provable and forces a manual declaration.
+2. **Consuming an entity by key — structure first.** If the test opens/selects the record through a listing Page Object
+   (`ctx.lista.abrirDetalle(testContext.get(CASO, 'codigo'))`, directly, via an alias, a constant key or a fixture helper), declare
+   nothing in the test: the Page Object that implements the locator declares ONCE
+   `static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo' }; }` (`metodos: [...]` for locators other than
+   `abrirDetalle`) and the scanner derives `requires { tipo, clave, campo }` for every test that uses it. When you create a new listing
+   Page Object whose entity some test publishes, add its `ENTIDAD_FLUJO`; don't copy `requires` into each test or `flujo-tests.js`.
+   Only if the structure can't prove it (e.g. a form select), declare `entidad` and `campo` once next to the key —
+   `registrarCaso(CASO, [{ clave, entidad, campo }])` or the Page Object's `ESTRATEGIAS` entry (`{ estrategia: 'searchAndSelect',
+   entidad: 'requisicion', campo: 'nombre' }`). A manual declaration the structure already proves is redundant and fails the
+   contract. Entity, reference field and consumed key are three different things: never infer `campo` from the key or the entity from
+   a name. Extra props are ignored outside a flow, so the individual run is unchanged.
+3. **Typed read:** `flowContext.get('<tipo>')` with a literal type is detected as "consumes <tipo>" on its own (orders, no values).
+   If it disagrees with the structural/declared entity of a key, the plan fails before opening the browser.
+4. **Business order** that no code can prove (Primera → Segunda → Tercera) is the only thing that goes in
+   `<modulo>/data/flujo-tests.js` (`orden: { solicitud: n }`).
+5. **Do not** treat file/test/Page Object names, labels, fixtures, generic keys (`codigo`) or previous results as a contract, and
+   never convert a scanner SUGGESTION into a dependency. Flows receive no specific data: no `flowData`, no profiles; inside a flow
+   values resolve `flowContext → automatic`, and the individual `execution-context.json` is ignored.
+6. **Check:** `node core/scripts/flujo-escanear.js <modulo>/<caso>` (DETECTED / DECLARED / SUGGESTED / UNDETERMINED) and the unit
+   suite — `core/tests/contrato-flujo-metadata.spec.js` fails on contradictions, invalid entities/fields or unknown keys.
+
 ## Selectors
 
 Never use indexes, DOM order, visual order, base64 or fragile selectors. Prefer accessible
@@ -912,7 +943,8 @@ assumed from similarity); no duplicated logic; correct naming; selectors verifie
 Execution Context updated **and confirmed** (read `execution-context.json` or the Panel —
 declaring it in code is not enough); evidence generated; compatibility preserved;
 documentation updated; new case registered in `organizacion-tests.js` (section, category,
-one-sentence description) unless it's a pure flow test.
+one-sentence description) unless it's a pure flow test; if the test exchanges data in a flow,
+its `produces`/`requires` are declared in code as described in "Flows" above and the scanner/contract pass.
 
 ## Expected Output
 

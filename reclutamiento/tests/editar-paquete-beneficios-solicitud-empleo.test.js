@@ -2,6 +2,7 @@ const assert = require('assert');
 const { testContext, evidence, assertTextoIgual } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
+const flowContext = require('@triple/core/context/flowContext');
 
 const CASO = 'editar-paquete-beneficios-solicitud-empleo';
 
@@ -116,5 +117,8 @@ describe('Reclutamiento - Editar Paquete Actual de Beneficios de Solicitud de Em
       `"Último salario" no quedó en ${ultimoSalario} (quedó "${valorSalario}")`
     );
     assertTextoIgual(valorBeneficios, beneficios, `"Beneficios" no quedó en "${beneficios}" (quedó "${valorBeneficios}")`);
+
+    // Solo en modo flujo: la misma solicitud, con su paquete de beneficios (data/flujo-tests.js).
+    flowContext.update('solicitud', { codigo: codigoUsado, paqueteBeneficios: { estadoLaboral, ultimoSalario, beneficios } });
   });
 });

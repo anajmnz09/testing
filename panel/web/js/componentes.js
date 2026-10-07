@@ -53,6 +53,7 @@ const ESTADOS = {
   "sin-ejecutar": ["Sin ejecutar", "chip--neutro"],
   cancelled: ["Cancelado", "chip--warn"],
   pending: ["Pendiente", "chip--neutro"],
+  bloqueado: ["Bloqueado", "chip--warn"],
 };
 
 export function chipEstado(estado) {

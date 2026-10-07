@@ -40,7 +40,7 @@ function resolverTarget(target) {
   return target;
 }
 
-async function runMocha(target) {
+async function runMocha(target, { requires = [], env = {} } = {}) {
   // Se resuelven por nombre/ubicación del core (no por rutas del módulo), así
   // funciona con node_modules hoisteado por workspaces y desde cualquier módulo.
   const mochaEntry = require.resolve('mocha/bin/mocha.js');
@@ -50,10 +50,11 @@ async function runMocha(target) {
 
   const args = [
     mochaEntry,
-    target,
+    ...[].concat(target), // un target (modo normal) o varios archivos (modo flujo)
     '--timeout', String(config.timeouts.testTimeoutMs),
     '--retries', String(config.retries),
     '--require', rootHooksEntry,
+    ...requires.flatMap((r) => ['--require', r]),
     '--reporter', 'mochawesome',
     '--reporter-options',
     `reportDir=${jsonDirRelative},reportFilename=results,json=true,html=false,overwrite=true,quiet=true`,
@@ -68,7 +69,7 @@ async function runMocha(target) {
       shell: false,
       // REPORTS_ROOT garantiza que el proceso hijo (Mocha) escriba en la misma
       // carpeta de reportes del módulo que calculó el proceso padre.
-      env: { ...process.env, RUN_ID: paths.RUN_ID, REPORTS_ROOT: paths.ROOT_DIR },
+      env: { ...process.env, RUN_ID: paths.RUN_ID, REPORTS_ROOT: paths.ROOT_DIR, ...env },
     });
 
     child.stdout.on('data', (chunk) => {
@@ -131,20 +132,8 @@ function limpiezaPostEjecucion() {
   }
 }
 
-async function main() {
-  const targetSolicitado = process.argv[2] || 'tests';
-  const target = resolverTarget(targetSolicitado);
-
-  paths.ensureReportDirs();
-  console.log(`Ejecución: ${paths.RUN_ID}`);
-  console.log(
-    target === targetSolicitado
-      ? `Target: ${target}`
-      : `Target: ${target} (resuelto desde "${targetSolicitado}")`
-  );
-
-  const { exitCode, logPath } = await runMocha(target);
-
+/** Pasos posteriores a Mocha, comunes al modo normal y al modo flujo (run-flow.js). */
+function finalizarCorrida(logPath) {
   // Limpieza automática post-ejecución (siempre, sin que el usuario la pida).
   limpiezaPostEjecucion();
 
@@ -160,11 +149,32 @@ async function main() {
 
   console.log(`Resultados en reports/${paths.RUN_ID}/ (JSON + screenshots + evidencias + logs) — visibles en el Panel de Control.`);
   console.log(`Log de ejecución: ${path.relative(paths.ROOT_DIR, logPath)}`);
+}
+
+async function main() {
+  const targetSolicitado = process.argv[2] || 'tests';
+  const target = resolverTarget(targetSolicitado);
+
+  paths.ensureReportDirs();
+  console.log(`Ejecución: ${paths.RUN_ID}`);
+  console.log(
+    target === targetSolicitado
+      ? `Target: ${target}`
+      : `Target: ${target} (resuelto desde "${targetSolicitado}")`
+  );
+
+  const { exitCode, logPath } = await runMocha(target);
+
+  finalizarCorrida(logPath);
 
   process.exitCode = exitCode;
 }
 
-main().catch((err) => {
-  console.error('Error ejecutando la suite:', err);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Error ejecutando la suite:', err);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { runMocha, finalizarCorrida };

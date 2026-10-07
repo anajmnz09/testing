@@ -4,6 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const SRHHNavBar = require('@triple/core/components/SRHHNavBar');
 const DataGrid = require('@triple/core/components/DataGrid');
 const fixtures = require('../support/fixtures');
+const flowContext = require('@triple/core/context/flowContext');
 
 const CASO = 'cambiar-solicitud-crear-empleado';
 
@@ -112,8 +113,15 @@ describe('Reclutamiento - Cambiar Solicitud a Crear Empleado', function () {
     // También verificado con evidencia real: el empleado NO aparece de
     // inmediato tras el notify de "Crear Empleado" (tarda en propagarse entre
     // módulos) — se espera con poll (`esperarFila`), no una lectura única.
-    const tokensNombre = nombreSolicitante.split(/\s+/).filter(Boolean);
-    const empleadoCreado = await empleadosGrid.esperarFila(tokensNombre[0], (f) => {
+    // En modo flujo la solicitud publicó su nombre legal COMPLETO (los 4 campos de
+    // nombre usados al crearla): se busca por él, contiguo, para ubicar sin
+    // ambigüedad al empleado de ESTA solicitud (el nombre corto del listado puede
+    // coincidir con otros empleados ya existentes). Individualmente: igual que siempre.
+    const solicitudFlujo = flowContext.get('solicitud');
+    const nombreFlujo = solicitudFlujo && solicitudFlujo.nombreCompleto;
+    const tokensNombre = (nombreFlujo || nombreSolicitante).split(/\s+/).filter(Boolean);
+    const textoBusqueda = nombreFlujo || tokensNombre[0];
+    const empleadoCreado = await empleadosGrid.esperarFila(textoBusqueda, (f) => {
       const nombreEmpleado = (f['Nombre'] || '').toLowerCase();
       return tokensNombre.every((t) => nombreEmpleado.includes(t.toLowerCase()));
     });
@@ -123,5 +131,14 @@ describe('Reclutamiento - Cambiar Solicitud a Crear Empleado', function () {
       `No se encontró a "${nombreSolicitante}" en el listado del módulo Empleados tras "Crear Empleado".`
     );
     logger.info(`${CASO}: empleado creado confirmado en el módulo Empleados: "${empleadoCreado.Nombre}" (Estado="${empleadoCreado.Estado}")`);
+
+    // Solo en modo flujo: publica la referencia REAL del empleado (su "Código de
+    // empleado." del listado, el mismo que usa Nómina) — data/flujo-tests.js.
+    const colCodigo = Object.keys(empleadoCreado).find((k) => /^c[oó]digo/i.test(k));
+    flowContext.publish('empleado', {
+      codigo: colCodigo ? String(empleadoCreado[colCodigo]).trim() : '',
+      nombre: empleadoCreado.Nombre,
+      solicitud: codigoUsado,
+    });
   });
 });

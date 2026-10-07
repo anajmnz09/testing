@@ -12,6 +12,14 @@ const SolicitudEmpleoDetallePage = require('./SolicitudEmpleoDetallePage');
  * navbar acá.
  */
 class SolicitudEmpleoPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12): `abrirDetalle(x)` localiza una solicitud por su `codigo`.
+   * Lo lee el escáner estático; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: 'solicitud', referencia: 'codigo' };
+  }
+
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);
@@ -83,6 +91,24 @@ class SolicitudEmpleoPage extends BasePage {
       }
     }
     throw ultimoError;
+  }
+
+  /**
+   * Fila del listado de una solicitud YA creada, ubicada por su Identificación
+   * (columna real "Identificación", comparada solo por dígitos: el grid la
+   * muestra sin máscara). Poll con `esperarFila` (la solicitud recién creada
+   * puede tardar en reflejarse). Devuelve la fila completa (incluye "Código").
+   */
+  async leerFilaPorIdentificacion(identificacion) {
+    const solo = String(identificacion).replace(/\D/g, '');
+    const fila = await this.grid.esperarFila(
+      solo,
+      (f) => String(f['Identificación'] || '').replace(/\D/g, '') === solo
+    );
+    if (!fila || !String(fila['Código'] || '').trim()) {
+      throw new Error(`SolicitudEmpleoPage: no se encontró en el listado la solicitud con Identificación "${identificacion}".`);
+    }
+    return fila;
   }
 
   /**

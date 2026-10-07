@@ -31,6 +31,17 @@ const EmpleadoFormPage = require('./EmpleadoFormPage');
  *   Mi Trabajo > Aprobaciones, Mis Actividades.
  */
 class EmpleadosPage extends BasePage {
+  /**
+   * Contrato de entidad para FLUJOS (ver GUIDELINES §12): `abrirDetalle(x)` localiza un empleado por su `nombre`.
+   * Verificado en vivo: el buscador de este listado NO indexa la columna "Código de empleado." (buscar un código
+   * existente devuelve 0 filas), por eso la referencia no puede ser `codigo`; Nómina sí localiza por código
+   * (`NominaPage.ENTIDAD_FLUJO`).
+   * Lo lee el escáner estático; en ejecución individual no se usa.
+   */
+  static get ENTIDAD_FLUJO() {
+    return { tipo: 'empleado', referencia: 'nombre' };
+  }
+
   constructor(driver) {
     super(driver);
     this.grid = new DataGrid(driver);

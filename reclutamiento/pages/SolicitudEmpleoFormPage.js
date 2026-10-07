@@ -54,7 +54,8 @@ const ESTRATEGIAS = {
   'Grado académico': 'searchAndSelect',
   Celular: 'text',
   Correo: 'text',
-  Requisición: 'searchAndSelect',
+  // entidad/campo: en un flujo, "Requisición" se alimenta con el `nombre` de la entidad `requisicion` (ver GUIDELINES §12).
+  Requisición: { estrategia: 'searchAndSelect', entidad: 'requisicion', campo: 'nombre' },
   'Fecha Ingreso': 'datePicker',
   Etiquetas: { estrategia: 'custom', fn: (form, label, valor) => form.escribirTagLibre(label, valor) },
   Comentario: 'text',

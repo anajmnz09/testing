@@ -2,6 +2,7 @@ const assert = require('assert');
 const { testContext, assertTextoIgual } = require('@triple/core');
 const RequisicionFormPage = require('../pages/RequisicionFormPage');
 const fixtures = require('../support/fixtures');
+const flowContext = require('@triple/core/context/flowContext');
 
 const CASO = 'crear-req-creacion';
 
@@ -45,5 +46,9 @@ describe('Reclutamiento - Crear Requisición', function () {
     assert.ok((await detalle.getRequisitos()).includes(d.requisitos), 'Requisitos no cargó');
     assert.ok((await detalle.getResponsabilidades()).includes(d.responsabilidades), 'Responsabilidades no cargó');
     assert.ok((await detalle.getDescripcion()).includes(d.descripcion), 'Descripción no cargó');
+
+    // Solo en modo flujo (inerte si se ejecuta individualmente): deja la requisición
+    // disponible para los tests posteriores que la requieran (ver data/flujo-tests.js).
+    flowContext.publish('requisicion', { nombre, puesto: d.Puesto });
   });
 });

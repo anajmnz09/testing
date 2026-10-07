@@ -245,6 +245,104 @@ respetan `KEEP_BROWSER_OPEN` tal cual está en `.env` — eso no cambia. Todo lo
 demás que el asistente ejecute por su cuenta, aunque use el mismo comando o
 script, cierra el navegador siempre.
 
+## 12. Flujos: varios tests, un navegador (`requires` / `produces`)
+
+Un **flujo** es una corrida de varios tests existentes, en un orden calculado por el framework, con **un solo navegador y una
+sola sesión**, donde un test puede consumir lo que otro produjo (la requisición creada alimenta la solicitud, etc.). Es una capa
+ADICIONAL: un test individual no la usa ni cambia (sin `TRIPLE_FLOW_PLAN` todo es inerte) y **un test sin metadata de flujo sigue
+siendo válido**, solo o como paso independiente de un flujo.
+
+### Ejecución individual vs flujo
+
+| | Individual | Flujo (`core/scripts/run-flow.js`) |
+|---|---|---|
+| Fuente de valores | `testContext` → `execution-context.json` → automático | `flowContext` → automático |
+| `execution-context.json` | se lee y se modifica (Panel) | **no es fuente de valores**: no se lee ni se modifica (solo siembra/consulta las claves del caso: `registrarCaso`, `claveConocida`) |
+| Datos específicos | los del Execution Context / Panel | **ninguno**: un flujo no recibe datos (ni perfiles ni parámetros temporales) |
+| Navegador | uno por test | uno compartido (`createDriver` lo devuelve; `quitDriver` no lo cierra, lo hace `flowHooks`) |
+
+`testContext.valorDirigido` es el único punto que distingue el modo. En un flujo, el valor de una clave es la entidad que el flujo
+produjo (`flowContext`) o, si no hay, el automático del propio test. Residuos de un `execution-context.json` individual **no** se
+aplican a un flujo (el Panel lo avisa como "Data residual" sin borrar nada ni bloquear).
+
+### Descubrimiento estático (`core/utils/flowScanner.js`, `flowEstructura.js`, `flowMetadata.js`)
+
+El escáner **lee el código sin ejecutarlo** (sin Selenium, Mocha ni `require` del test; un lexer ignora comentarios, strings y
+regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambigüedad. Lo demás se reporta, nunca se adivina.
+
+| Qué | Cómo lo demuestra el código | Resultado |
+|---|---|---|
+| `produces` | `flowContext.publish/update('tipo', …)` con tipo literal | DETECTADO: se deriva, **no se declara** |
+| `requires` por lectura | `flowContext.get/entidad('tipo')` con tipo literal | DETECTADO: `requires { tipo }` (ordena; sin valores) |
+| `requires` con valores, por **estructura** | la clave de `testContext.get(CASO, 'k')` llega, directo o por alias simple, al localizador (`abrirDetalle(x)` u otro método declarado) de un Page Object que declara `ENTIDAD_FLUJO` | DETECTADO: `requires { tipo, clave, campo: referencia }`, sin declarar nada en el test |
+| `requires` con valores, no demostrable | clave con entidad y campo junto a su declaración: `registrarCaso(CASO, [{ clave, entidad, campo }])` o la entrada de `ESTRATEGIAS` del Page Object `{ estrategia, entidad, campo }` | DECLARADO (mínimo): la clave se alimenta del `campo` de la entidad |
+| Orden de negocio | no está en el código | DECLARADO en `flujo-tests.js` (`orden`) |
+| Resto (clave suelta, fixture, nombre) | no demuestra nada | SUGERIDO / NO DETERMINADO: **nunca crea una dependencia** |
+
+- **Contrato de entidad (`ENTIDAD_FLUJO`), declarado UNA vez en el Page Object que implementa el localizador**
+  (no en el fixture ni en cada test): `static get ENTIDAD_FLUJO() { return { tipo: 'solicitud', referencia: 'codigo' }; }` —
+  "mi `abrirDetalle(x)` localiza una entidad `tipo` por su campo `referencia`" (el campo debe estar entre los que publican los
+  productores). `metodos: [...]` lista otros localizadores (por defecto `['abrirDetalle']`) y un array declara varias entidades.
+  El escáner sigue, sin ejecutar, test → fixture (cuyo cuerpo asigna `ctx.lista = <PO>`) o `new PO` → `ENTIDAD_FLUJO`, y el valor de la
+  clave hasta el localizador (asignaciones simples, `a || b`, `await`, `parsearValoresMultiples`, `for…of`, un helper del módulo de fixtures con
+  un salto, clave literal o constante de módulo). Cualquier otra forma no propaga la clave. Al crear un Page Object de listado
+  cuya entidad produce algún test, declare su `ENTIDAD_FLUJO`: todos los tests que lo usen quedan descubiertos sin metadata.
+- **Tres conceptos distintos, siempre explícitos:** *entidad* (`solicitud`), *campo* de referencia (`campo`, el dato de la entidad
+  que se usa) y *clave consumida* (`clave`, la del test). `campo` nunca se deduce de la clave: `solicitud.codigo` ← clave `codigo`,
+  `requisicion.nombre` ← clave `Requisición` o `nombre` se declaran (en el contrato del Page Object o en `ESTRATEGIAS`), no se
+  infieren por coincidencia de texto.
+- **Heurísticas prohibidas como contrato:** nombres de archivo, de test, de Page Object o de variable; labels; fixtures; claves
+  genéricas (`codigo`); resultados, screenshots o reportes previos. Pueden aparecer como SUGERIDO en el escáner, nada más.
+- **Detectado y declarado se integran igual en el planner.** Si discrepan (el código lee `solicitud` y se declara `empleado`; la
+  misma clave con otra entidad/campo), una declaración es incompleta o hay `orden` para un tipo que el test no produce, es un
+  **error de contrato/plan** y el flujo no abre el navegador (nunca se elige uno en silencio). Si no se puede probar, queda NO
+  DETERMINADO y no se inventa relación.
+- **Jerarquía (el framework descubre cuando hay evidencia estructural; no infiere por nombres, labels ni heurísticas ambiguas):**
+  1) **detección estructural** → 2) **declaración explícita mínima** (solo si la estructura no lo demuestra, y preferentemente
+  una sola vez en el Page Object: `ESTRATEGIAS` o `ENTIDAD_FLUJO`; en el test solo como último recurso) → 3) **no determinado**
+  (no crea dependencia). Una declaración manual que la estructura ya demuestra es **redundante** y el contrato exige quitarla.
+  Dentro de un flujo, la entidad detectada alimenta la clave desde `flowContext`; si no hay entidad producida, el test usa su
+  comportamiento automático de siempre. En ejecución individual nada cambia.
+- **Cuándo declarar:** solo si el test consume una entidad de un flujo y la estructura no lo demuestra. Una clave sin entidad
+  es un dato libre más del test. Un test que no participa en flujos no declara nada.
+- **Diagnóstico y contrato:** `node core/scripts/flujo-escanear.js <modulo>/<caso>` (o `--todo`) separa DETECTADO CON CERTEZA /
+  DECLARADO EXPLÍCITAMENTE / SUGERIDO / NO DETERMINADO. `core/tests/contrato-flujo-metadata.spec.js` valida requires detectados y
+  declarados, contradicciones (incluida estructura vs declaración), declaraciones redundantes, entidades inexistentes (nadie las
+  produce), `campo`/`referencia` fuera de lo que la entidad publica, métodos de `ENTIDAD_FLUJO` inexistentes, claves
+  inexistentes, `orden` y que los tests sin metadata son válidos.
+
+### Metadata `<modulo>/data/flujo-tests.js`
+
+Hoy conserva solo lo que el código no puede demostrar: el **`orden`** de negocio de una secuencia de transformación
+(`orden: { solicitud: 20 }`). Los tests que requieren Y producen la misma entidad (`solicitud → solicitud`) no son un ciclo: el
+planner los encadena por ese número (10 paquete · 20 primera entrevista · 30 segunda · 40 tercera · 50 oferta), aunque se elijan
+desordenados; los que no declaran `orden` siguen el orden de selección. Es único por tipo y solo para un tipo que el test produce.
+Es opcional por módulo; no repetir lo que el código ya dice. La forma antigua (`produces`, `requires` en la metadata) se
+sigue aceptando durante la transición y debe coincidir con el código.
+
+### Plan, dependencias y ejecución
+
+- **Planner** (`core/utils/flowPlanner.js`): orden topológico estable (el orden de selección solo desempata). Errores **antes de
+  abrir el navegador**: varios originadores del mismo tipo con consumidores (ambigüedad), ciclos, caso repetido, contradicción de
+  metadata, y un `requires` sin productor seleccionado **con `auto: false`**. Sin productor y con automático solo avisa: el test
+  resuelve el dato solo.
+- **Publicar:** el productor llama `flowContext.publish(tipo, datos)` (o `update` si transforma) tras su assert final de éxito; solo
+  memoria (nunca `execution-context.json` ni Panel). Re-publicar sube la versión.
+- **Dependencia faltante / bloqueos:** un productor fallido (o que pasa sin publicar) deja a sus consumidores **BLOQUEADOS**
+  (pendientes, con motivo; `this.skip()` en `flowHooks`). **Cancelar** detiene la corrida y marca lo pendiente como Cancelado.
+- **Sesión:** `authFlow.login` no repite el login con sesión viva; antes de cada test se vuelve al dashboard. `flowHooks` espera a que
+  no quede un notify del test anterior.
+- **Entre módulos:** cada caso conserva el `execution-context.json` de SU módulo solo para sembrar/consultar claves; el flujo
+  puede cruzar módulos (reclutamiento → nómina) con el mismo driver. Cadena real verificada: `requisicion {nombre, puesto}` →
+  `solicitud {codigo, identificacion, nombre, nombreCompleto, requisicion, etapa}` (los transformadores la actualizan) →
+  `empleado {codigo, nombre, solicitud}`.
+- **Panel:** cada TEST del árbol tiene un checkbox; el Panel guarda la selección **en orden** (`web/js/flujo.js`) y la presenta, no
+  planifica. La vista previa sale de `run-flow.js --plan` (mismo planner; no crea carpetas de reportes) y "Ejecutar Flujo" lanza
+  `run-flow.js`. El estado en vivo sale de `flow-estado.json` (lo escribe `flowHooks`); los reportes van a
+  `flujo/reports/<RUN_ID>/`. Un test individual no cambia.
+- Estados, propuestas pendientes y decisiones: `docs/flujos-propuestas.md`. Pendientes: metadata de los demás casos (si algún
+  autor decide que participen), historial de flujos.
+
 ## Checklist antes de dar por terminado
 
 - [ ] Reutiliza infraestructura existente (Core→…→Tests); sin lógica duplicada.

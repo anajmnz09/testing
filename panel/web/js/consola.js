@@ -11,7 +11,9 @@ function indicador() {
   return document.getElementById("ind-corrida");
 }
 
-export function ejecutar(run, nombre, onFin) {
+// `onLinea` (opcional) recibe cada línea de salida; devuelve una promesa que resuelve
+// a `true` si la corrida arrancó (los llamadores existentes la ignoran).
+export function ejecutar(run, nombre, onFin, onLinea) {
   const p = panel();
   p.classList.remove("oculto", "contraida");
   p.innerHTML = "";
@@ -34,12 +36,12 @@ export function ejecutar(run, nombre, onFin) {
   );
   p.append(cab, cuerpo);
 
-  api.ejecutar(run).then((r) => {
+  return api.ejecutar(run).then((r) => {
     if (!r.ok) {
       estado.textContent =
         r.motivo === "ya-hay-una-corrida" ? "Ya hay una corrida en curso" : `No se pudo iniciar (${r.motivo || "error"})`;
       p.classList.add("contraida");
-      return;
+      return false;
     }
     estado.textContent = "Ejecutando";
     indicador().classList.add("activo");
@@ -47,6 +49,7 @@ export function ejecutar(run, nombre, onFin) {
       (linea) => {
         cuerpo.append(el("div", { class: "con-linea" }, linea));
         cuerpo.scrollTop = cuerpo.scrollHeight;
+        if (onLinea) onLinea(linea);
       },
       (codigo) => {
         estado.textContent = codigo === 0 ? "Terminado ✓" : "Terminado ✗";
@@ -56,5 +59,6 @@ export function ejecutar(run, nombre, onFin) {
         if (onFin) onFin(codigo);
       }
     );
+    return true;
   });
 }
