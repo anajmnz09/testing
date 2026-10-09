@@ -67,6 +67,10 @@ function _esVerdadero(crudo) {
   return ['true', '1', 'yes'].includes(String(crudo).toLowerCase());
 }
 
+function _leerCrudo() {
+  return fs.existsSync(ARCHIVO_ENV) ? _parsearEnv(fs.readFileSync(ARCHIVO_ENV, 'utf8')) : {};
+}
+
 /** Estado actual de cada campo administrado: valor real del `.env` o, si no está seteado, el default. */
 function leer() {
   const existentes = fs.existsSync(ARCHIVO_ENV) ? _parsearEnv(fs.readFileSync(ARCHIVO_ENV, 'utf8')) : {};
@@ -122,6 +126,11 @@ function guardar(valores) {
     `KEEP_BROWSER_OPEN=${porClave.KEEP_BROWSER_OPEN}`,
     '',
   ];
+  // Variables que esta pantalla NO administra (p. ej. OPENAI_API_KEY de Casos de Uso IA, que nunca se muestra en
+  // el frontend) se conservan tal cual: regenerar el archivo no debe borrarlas.
+  const conocidas = new Set(CAMPOS.map((c) => c.clave));
+  const otras = Object.entries(_leerCrudo()).filter(([k]) => !conocidas.has(k));
+  if (otras.length) lineas.push('# --- Otras variables (no administradas por el Panel) ---', ...otras.map(([k, v]) => `${k}=${v}`), '');
   fs.writeFileSync(ARCHIVO_ENV, lineas.join('\n'), 'utf8');
   return leer();
 }

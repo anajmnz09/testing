@@ -5,6 +5,7 @@ import * as consola from "./consola.js";
 import * as historial from "./historial.js";
 import * as configuracion from "./configuracion.js";
 import * as flujo from "./flujo.js";
+import * as ia from "./ia.js";
 import { pantallaInicio } from "./componentes.js";
 
 const treeCont = document.getElementById("tree");
@@ -13,13 +14,14 @@ const detCont = document.getElementById("detalle");
 let nodoSel = null;
 let moduloActivo = null;
 let modoHistorial = false;
+let modoIa = false;
 
 // Ejecutar sin perder el contexto: la consola emerge; al terminar, refresca el
 // detalle del caso seleccionado para reflejar el nuevo resultado.
 function onRun(run, nombre) {
   consola.ejecutar(run, nombre, () => {
     // (no pisa la pantalla de flujo si es la que está a la vista)
-    if (!modoHistorial && nodoSel && !detCont.querySelector(".flujo")) detalle.abrir(detCont, nodoSel, onRun);
+    if (!modoHistorial && !modoIa && nodoSel && !detCont.querySelector(".flujo")) detalle.abrir(detCont, nodoSel, onRun);
   });
 }
 
@@ -42,13 +44,27 @@ async function cargarArbol() {
 
 async function setModo(hist) {
   modoHistorial = hist;
+  modoIa = false;
   document.getElementById("tg-tests").classList.toggle("activo", !hist);
   document.getElementById("tg-hist").classList.toggle("activo", hist);
+  document.getElementById("tg-ia").classList.remove("activo");
   if (hist) {
     await historial.render(treeCont, moduloActivo, (m, r) => historial.abrirCorrida(detCont, m, r));
   } else {
     await cargarArbol();
   }
+}
+
+// Casos de Uso IA: sección independiente (sidebar = corridas de IA; principal = subir PDF / resultado).
+async function abrirIa() {
+  modoIa = true;
+  modoHistorial = false;
+  document.getElementById("tg-tests").classList.remove("activo");
+  document.getElementById("tg-hist").classList.remove("activo");
+  document.getElementById("tg-ia").classList.add("activo");
+  const lista = () => ia.renderLista(treeCont, (runId) => ia.mostrarCorrida(detCont, runId));
+  await lista();
+  await ia.abrir(detCont, lista);
 }
 
 function aplicarFiltro() {
@@ -80,6 +96,7 @@ tabFlujo.addEventListener("click", () => {
 // --- Wiring ---
 document.getElementById("tg-tests").addEventListener("click", () => setModo(false));
 document.getElementById("tg-hist").addEventListener("click", () => setModo(true));
+document.getElementById("tg-ia").addEventListener("click", abrirIa);
 document.getElementById("tg-config").addEventListener("click", () => configuracion.abrir(detCont));
 document.getElementById("search").addEventListener("input", aplicarFiltro);
 document.getElementById("menu-toggle").addEventListener("click", () =>

@@ -11,6 +11,7 @@ const contexto = require('./contexto');
 const lanzador = require('./lanzador');
 const configuracion = require('./configuracion');
 const flujo = require('./flujo');
+const ia = require('./ia');
 
 const WEB = path.join(__dirname, '..', 'web');
 // Assets compartidos del framework (ej. el logo de Triple) — se sirven desde
@@ -58,6 +59,28 @@ function cuerpo(req) {
   });
 }
 
+/** Cuerpo JSON con tope de tamaño (la subida de un PDF en base64 es grande; se corta si se excede). */
+function cuerpoLimitado(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    let b = '';
+    req.on('data', (c) => {
+      b += c;
+      if (b.length > maxBytes) {
+        reject(new Error('cuerpo demasiado grande'));
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(b || '{}'));
+      } catch (e) {
+        resolve({});
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://127.0.0.1');
   const q = Object.fromEntries(u.searchParams);
@@ -90,6 +113,17 @@ const server = http.createServer(async (req, res) => {
       return json(res, await flujo.planear(b.casos));
     }
     if (ruta === '/api/flujo/estado') return json(res, reportes.estadoFlujo(q.modulo, q.runId));
+    // --- Casos de Uso IA (independiente de tests y flujos; la API key nunca sale del servidor) ---
+    if (ruta === '/api/ia/estado') return json(res, { configurada: ia.configurada() });
+    if (ruta === '/api/ia/pdf' && req.method === 'POST') {
+      const b = await cuerpoLimitado(req, Math.ceil(ia.MAX_PDF_BYTES * 1.4) + 4096);
+      return json(res, ia.guardarPdf({ nombre: b.nombre, base64: b.base64 }));
+    }
+    if (ruta === '/api/ia/corridas') return json(res, { corridas: ia.corridas() });
+    if (ruta === '/api/ia/corrida') {
+      const d = ia.detalle(q.runId);
+      return d ? json(res, d) : json(res, { error: 'no-encontrada' }, 404);
+    }
     if (ruta === '/api/cancelar' && req.method === 'POST') return json(res, lanzador.cancelar());
     if (ruta === '/api/configuracion' && req.method === 'GET') return json(res, configuracion.leer());
     if (ruta === '/api/configuracion' && req.method === 'POST') {

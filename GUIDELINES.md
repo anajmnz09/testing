@@ -307,6 +307,7 @@ regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambi
 | `produces` explícito | `flowContext.publish/update('tipo', …)` con tipo literal | DETECTADO: se deriva, **no se declara** |
 | `produces` estructural | el test llama a un creador declarado en el `ENTIDAD_FLUJO` de un Page Object y confirma el guardado | DETECTADO: `produces { tipo }` (ver abajo); editar → transformación; eliminar → `elimina` |
 | `requires` por lectura | `flowContext.get/entidad('tipo')` con tipo literal | DETECTADO: `requires { tipo }` (ordena; sin valores) |
+| `requires` por **campo seleccionable** | el formulario que el test registra (`registrarCasoDesdeFormulario(CASO, <Page>.ESTRATEGIAS)`) tiene un control con estrategia de selección (`firstOption`, `directSelect`, `searchAndSelect`, `tagSelect`) cuyo label contiene el término de una entidad ya conocida (`tipo`/`alias` de un `ENTIDAD_FLUJO`) | DETECTADO: `requires { tipo }` (ordena; sin valores). Ver «Campos seleccionables» abajo |
 | `requires` con valores, por **estructura** | la clave de `testContext.get(CASO, 'k')` llega, directo o por alias simple, al localizador (`abrirDetalle(x)` u otro método declarado) de un Page Object que declara `ENTIDAD_FLUJO` | DETECTADO: `requires { tipo, clave, campo: referencia }`, sin declarar nada en el test |
 | `requires` con valores, no demostrable | clave con entidad y campo junto a su declaración: `registrarCaso(CASO, [{ clave, entidad, campo }])` o la entrada de `ESTRATEGIAS` del Page Object `{ estrategia, entidad, campo }` | DECLARADO (mínimo): la clave se alimenta del `campo` de la entidad |
 | Orden de negocio | no está en el código | DECLARADO en `flujo-tests.js` (`orden`) |
@@ -331,6 +332,13 @@ regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambi
   misma clave con otra entidad/campo), una declaración es incompleta o hay `orden` para un tipo que el test no produce, es un
   **error de contrato/plan** y el flujo no abre el navegador (nunca se elige uno en silencio). Si no se puede probar, queda NO
   DETERMINADO y no se inventa relación.
+- **Campos seleccionables (`flowCampos.js`): label + entidad conocida + dropdown ⇒ `requires { tipo }`.** Las entidades conocidas son las que ya declaran
+  los contratos `ENTIDAD_FLUJO` (su `tipo`, p. ej. `plan-de-seguro`, y los `alias: ['cargo']` opcionales del contrato; no hay otro catálogo). Cada control se resuelve
+  por separado: tiene que ser un selector de opciones (un `text`, `datePicker`, `switch`… nunca cuenta) y su label debe contener el término completo
+  de la entidad (sin mayúsculas/tildes/puntuación/conectores; nunca una subcadena, ni un complemento introducido por «de»: «Razón de solicitud» no es la entidad
+  `solicitud`). Gana el término más largo («Tipo de nómina» → `tipo-nomina`, no `nomina`); un empate entre entidades distintas es un error de plan (se
+  desambigua con un `alias` en el contrato), nunca una asignación arbitraria. No se exige rastrear de dónde salen las opciones. Una entidad que el propio test
+  crea/edita (p. ej. «Departamento padre») no es una dependencia. Para que un label distinto reconozca una entidad, añada el `alias` en su `ENTIDAD_FLUJO`.
 - **Jerarquía (el framework descubre cuando hay evidencia estructural; no infiere por nombres, labels ni heurísticas ambiguas):**
   1) **detección estructural** → 2) **declaración explícita mínima** (solo si la estructura no lo demuestra, y preferentemente
   una sola vez en el Page Object: `ESTRATEGIAS` o `ENTIDAD_FLUJO`; en el test solo como último recurso) → 3) **no determinado**
@@ -417,6 +425,46 @@ sigue aceptando durante la transición y debe coincidir con el código.
   `flujo/reports/<RUN_ID>/`. Un test individual no cambia.
 - Estados, propuestas pendientes y decisiones: `docs/flujos-propuestas.md`. Pendientes: metadata de los demás casos (si algún
   autor decide que participen), historial de flujos.
+
+## 13. Casos de Uso IA (runner independiente, `ia/`)
+
+Probar un **caso de uso (UC) real descrito en un PDF** operando la aplicación con un modelo de OpenAI. Es una **arquitectura aparte**: no usa Mocha, tests,
+Page Objects, `flowContext`/planner/metadata ni `requires`/`produces`, y **nunca** se mezcla con Flujos (no hay `flowData` ni equivalente).
+Un caso IA no depende de que exista un test. Código solo en `ia/`; el Panel (pestaña "Casos IA") únicamente sube el PDF, lanza
+`ia/run-caso-ia.js` con el mismo `lanzador` y muestra `ia/reports/<RUN_ID>/` (evidencia propia, aparte de `reports/` y `flujo/reports`).
+
+- **Qué se prueba: funcionalidad observable, no código.** El agente no tiene acceso al código, la BD ni los servicios y no los valida.
+  Tablas, vistas, webservices, métodos, clases, endpoints, selectores, GUIDs o IDs internos que traiga el UC **no son pasos ni condiciones**:
+  se traduce a lo funcional observable ("al guardar, la operación termina bien") o se ignora. Los pasos escritos para una persona se
+  traducen a acciones de la interfaz; el nombre del UC puede diferir del de la app. Las **reglas de negocio** del UC deciden qué se
+  ejecuta y qué se comprueba (llegar al final de los pasos no es PASS). El agente descubre *cómo* llegar a una pantalla, nunca *qué* es correcto.
+- **El TEXTO del PDF es la fuente de verdad** (`ia/pdf.js` lo extrae sin dependencias y se entrega como "ESPECIFICACIÓN DEL CASO DE USO").
+  Las imágenes son referencia visual **opcional**: el PDF solo se adjunta si trae imágenes de contenido o el texto no se pudo extraer; una
+  imagen ausente o no interpretada nunca provoca `BLOCKED` ni `FAIL`.
+- **Ciclo:** texto del caso + estado inicial de la app → el modelo elige una herramienta → Selenium la ejecuta (`ia/navegador.js`, reutiliza
+  `createDriver`, `authFlow.login` y `UiContext`) → estado en texto (+ captura solo si algo relevante cambió) → el modelo … → `finalizar`.
+- **Verificación por observación directa**, no por captura: texto visible, valor de un campo, estado de un control (p. ej. deshabilitado),
+  presencia/ausencia, mensaje de la app, navegación (`buscar_texto`, `leer_elemento`, estado de la página). La captura es evidencia adicional.
+- **Resultado** (consolidado por el runner, `ia/politicas.js`): `PASS` = el comportamiento se ejecutó y las condiciones funcionales relevantes se
+  comprobaron; `FAIL` = se pudo ejecutar pero lo observado contradice lo esperado; `BLOCKED` = imposibilidad real (precondición inexistente,
+  pantalla inaccesible, información indispensable ausente, error técnico, ambigüedad insalvable), con el motivo concreto. Cada condición lleva
+  estado, método y evidencia escrita; si cita `texto_observado`, debe aparecer en lo que el navegador mostró. Un `BLOCKED` o condiciones sin
+  verificar se cuestionan **una vez** antes de aceptarse. Los escenarios que exigen provocar fallos de infraestructura no se prueban ni cuentan.
+  Límites: `IA_MAX_ACCIONES` (40) e `IA_MAX_MINUTOS` (20) → `BLOCKED`.
+- **Capturas:** todas se guardan en disco; al modelo solo la inicial, las de cambios relevantes (URL, título, diálogos/notificaciones), errores,
+  una cada 6 acciones o las que pide (`inspeccionar` con `captura: true`).
+- **Seguridad:** lista cerrada de herramientas (sin shell, filesystem ni JS arbitrario); `navegar` solo dentro del origen de `BASE_URL`; el login
+  lo hace el runner y las credenciales **nunca** se envían al modelo; el contenido del PDF/página es dato, no instrucción.
+- **OpenAI (solo servidor):** el modelo se usa **por API** (Responses, `ia/clienteOpenAI.js`, único módulo que traduce al formato de OpenAI); no hace falta Claude Desktop, Claude Code ni nada instalado en la PC.
+  `OPENAI_API_KEY` (obligatoria; credencial de acceso al servicio, nunca en el repo ni en el frontend), `OPENAI_MODEL` (opcional, modelo;
+  def. `gpt-6.1-sol`), `OPENAI_REASONING_EFFORT` y `OPENAI_BASE_URL` (opcionales). Van en el `.env` raíz o en `ia/.env`
+  (plantilla `ia/.env.example`); el Panel solo sabe si hay key.
+- **Regla de configuración:** Casos de Uso IA **reutiliza la configuración y la autenticación de la aplicación existente** (`BASE_URL`,
+  `APP_USERNAME`, `PASSWORD` y `authFlow.login`, las mismas de tests y Flujos); no define otro usuario, otro `BASE_URL` ni otro login. Su **única
+  configuración externa nueva es la conexión con OpenAI** (`OPENAI_API_KEY`; el resto, opcional). Una PC nueva necesita: Node.js, Chrome,
+  `npm install`, la configuración existente del proyecto y la key — pasos en el README ("Casos de Uso IA").
+- **Estado:** validado con un servidor falso (tubería) y con un UC real contra OpenAI (`gpt-6.1-sol`, TRIPLE 000035: el modelo separó lo funcional de lo técnico,
+  encontró la pantalla pese al nombre distinto, ejecutó el flujo y verificó con texto, estado de controles y el reporte; ver `ia/reports/`). Pruebas: `npm run test:ia`.
 
 ## Checklist antes de dar por terminado
 

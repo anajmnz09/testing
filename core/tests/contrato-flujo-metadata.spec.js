@@ -288,7 +288,8 @@ describe('contrato de la metadata de flujos (flujo-tests.js) vs el código', fun
 
   it('lo que la estructura no puede probar se declara una sola vez en el Page Object (ESTRATEGIAS), no por test', function () {
     const r = resueltos.find((x) => `${x.ws}/${x.caso}` === 'reclutamiento/crear-solicitud-empleo');
-    expect(r.requires).to.deep.equal([{ tipo: 'requisicion', clave: 'Requisición', campo: 'nombre' }]);
+    // + el selector "Grado académico" (dropdown cuyo label es una entidad conocida): requires por tipo, sin enlazar valores (flowCampos.js)
+    expect(r.requires).to.deep.equal([{ tipo: 'requisicion', clave: 'Requisición', campo: 'nombre' }, { tipo: 'grado-academico' }]);
     expect(r.declaraciones.map((d) => d.via)).to.deep.equal(['ESTRATEGIAS']);
   });
 

@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "test:unit": "npm run test:unit --workspace core",
+    "test:ia": "mocha ia/tests --recursive",
     "test:e2e": "npm test --workspace reclutamiento",
     "test:all": "npm run test:unit && npm run test:e2e"
   },

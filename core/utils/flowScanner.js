@@ -18,6 +18,8 @@
  *     → "la clave K se alimenta del campo C de la entidad E" (`declaraciones`).
  *   - la ESTRUCTURA (`estructurales`): la clave llega a `<listado>.abrirDetalle(…)` de un Page Object que
  *     declara `ENTIDAD_FLUJO` (ver `flowEstructura.js`; lo agrega `escanearArchivo`, no `escanearFuente`).
+ *   - los CAMPOS SELECCIONABLES (`campos`): un dropdown de `<Page>.ESTRATEGIAS` cuyo label contiene una entidad conocida
+ *     (contratos ENTIDAD_FLUJO) → requires por tipo (ver `flowCampos.js`; lo agrega `escanearArchivo`).
  * Una clave suelta (`'codigo'`) o un nombre/label NO dicen de qué entidad es: nunca se deduce.
  * Una declaración mal formada (entidad sin campo, valor no literal…) va a `invalidas`.
  *
@@ -408,6 +410,10 @@ function escanearArchivo(ruta) {
   r.confirmables = est.confirmables;
   r.exclusiones = est.exclusiones;
   r.invalidas.push(...est.invalidas);
+  // requires por CAMPOS SELECCIONABLES del formulario que coinciden con una entidad conocida, ver flowCampos.js
+  const cam = require('./flowCampos').detectarCamposSeleccionables(ruta);
+  r.campos = cam.campos;
+  r.invalidas.push(...cam.invalidas);
   return r;
 }
 

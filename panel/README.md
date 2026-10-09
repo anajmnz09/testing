@@ -20,6 +20,7 @@ Luego abrir en el navegador: **http://127.0.0.1:4599** (puerto configurable con 
 - **Flujos:** cada test del árbol tiene un checkbox; los marcados (en el orden elegido) forman un flujo que se ejecuta con
   "Ejecutar Flujo" en un solo navegador/sesión. El Panel solo selecciona, presenta y muestra el estado: el orden real
   (`requires`/`produces`) lo calcula el framework (`core/scripts/run-flow.js`). Reportes en `flujo/reports/<RUN_ID>/`. Ver GUIDELINES §12 y `docs/flujos-propuestas.md`.
+- **Casos de Uso IA:** pestaña "Casos IA": sube un PDF y lanza `ia/run-caso-ia.js` (runner independiente; el modelo de OpenAI opera la app real). El Panel solo sube el PDF, muestra la consola y el resultado de `ia/reports/<RUN_ID>/`; la API key nunca llega al navegador. Ver GUIDELINES §13.
 - **No** genera reportes propios, ni base de datos, ni métricas, ni lógica de Selenium/Mocha.
 
 Diseño y decisiones: ver `docs/panel-de-control-web-arquitectura.md`, `docs/panel-de-control-web-experiencia-ux.md` y `docs/panel-de-control-web-ui-diseno.md`.

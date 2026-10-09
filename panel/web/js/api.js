@@ -23,6 +23,15 @@ export const planFlujo = (casos) =>
     body: JSON.stringify({ casos }),
   });
 export const estadoFlujo = (modulo, runId) => j(`/api/flujo/estado?modulo=${enc(modulo)}&runId=${enc(runId)}`);
+export const iaEstado = () => j("/api/ia/estado");
+export const iaCorridas = () => j("/api/ia/corridas");
+export const iaCorrida = (runId) => j(`/api/ia/corrida?runId=${enc(runId)}`);
+export const iaPdf = (nombre, base64) =>
+  j("/api/ia/pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, base64 }),
+  });
 export const cancelar = () => j("/api/cancelar", { method: "POST" });
 export const configuracion = () => j("/api/configuracion");
 export const guardarConfiguracion = (valores) =>

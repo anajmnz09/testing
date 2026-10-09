@@ -12,6 +12,7 @@ La idea central: un **core reutilizable** (`@triple/core`) que contiene todo lo 
 
 - [Estructura del monorepo](#estructura-del-monorepo)
 - [Requisitos e instalación](#requisitos-e-instalación)
+- [Casos de Uso IA](#casos-de-uso-ia)
 - [Panel de control web](#panel-de-control-web)
 - [Cómo correr las pruebas](#cómo-correr-las-pruebas)
 - [Arquitectura de capas](#arquitectura-de-capas)
@@ -184,6 +185,41 @@ Interfaz web para ejecutar y visualizar las pruebas sin usar la terminal para ca
 5. Desde el panel puedes ejecutar las pruebas automatizadas.
 
 > El puerto por defecto es `4599`; es configurable con la variable de entorno `PANEL_PORT` si hiciera falta. Más detalle en [`panel/README.md`](panel/README.md).
+
+---
+
+## Casos de Uso IA
+
+Pestaña **Casos IA** del Panel: subes el PDF de un caso de uso y un modelo de OpenAI lo ejecuta en la aplicación real (texto del PDF como fuente, funcionalidad
+observable, resultado PASS / FAIL / BLOCKED con capturas y registro en `ia/reports/<RUN_ID>/`). Reglas completas: GUIDELINES §13.
+
+**Casos IA no tiene configuración propia de acceso a la aplicación**: usa la misma (`BASE_URL`, `APP_USERNAME`, `PASSWORD`) y el mismo login que los
+tests y los Flujos. Lo único nuevo es la conexión con OpenAI. **El modelo se usa por API: no necesitas Claude Desktop, Claude Code ni ninguna
+instalación local de ningún modelo.**
+
+```text
+PC nueva
+├── Node.js, Google Chrome, npm install
+├── configuración EXISTENTE del proyecto (.env raíz o ⚙ Configuración del Panel)
+│   └── BASE_URL, APP_USERNAME, PASSWORD   ← ya la necesitan los tests; Casos IA la reutiliza
+└── configuración NUEVA de Casos IA
+    └── OPENAI_API_KEY
+```
+
+En una PC nueva basta:
+
+1. **Node.js** y **Google Chrome** (los mismos requisitos del proyecto) y `npm install` en la raíz.
+2. La configuración de la aplicación que el proyecto ya exige (`BASE_URL`, `APP_USERNAME` y `PASSWORD` en el `.env` raíz, o desde ⚙ Configuración
+   del Panel). Si los tests ya corren en esa PC, no hay nada más que configurar para la aplicación.
+3. **`OPENAI_API_KEY`**: la credencial de la API de OpenAI (se obtiene en platform.openai.com). Cópiala de `ia/.env.example` a `ia/.env`
+   (o agrégala al `.env` raíz) y pega tu key; esos archivos están en `.gitignore`, nunca se suben ni llegan al navegador (solo la usa el proceso del
+   runner en el servidor). Opcionales:
+   `OPENAI_MODEL` (modelo a usar; por defecto `gpt-6.1-sol`), `OPENAI_REASONING_EFFORT`, `OPENAI_BASE_URL` (endpoint alterno o proxy; por defecto la API oficial),
+   `IA_MAX_ACCIONES` (40) e `IA_MAX_MINUTOS` (20), que acotan cada ejecución.
+4. Inicia el Panel (`node panel/anfitrion/servidor.js`), abre **Casos IA**, elige el PDF y pulsa **Ejecutar caso**. Sin el Panel:
+   `node ia/run-caso-ia.js ruta/al/caso.pdf`.
+
+Si falta la key, el Panel lo avisa en la propia pantalla y la corrida termina en BLOCKED con ese motivo. Pruebas unitarias del runner: `npm run test:ia`.
 
 ---
 

@@ -305,6 +305,71 @@
   flex-wrap: wrap;
 }
 
+/* --- Casos IA: selector de PDF (nombre | Seleccionar Archivo | Ejecutar), valores usados y tabla de verificaciones --- */
+.caso-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin: var(--s4) 0;
+}
+.caso-botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+.caso-archivo {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--g-500);
+}
+.valor-usado {
+  font-weight: 700;
+  color: var(--wine-800);
+}
+.hist-caso {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ver-tabla {
+  font-size: 13px;
+}
+.ver-fila {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  column-gap: var(--s4);
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--g-100);
+}
+.ver-estado .chip {
+  display: inline-block;
+  font-size: 13px;
+  white-space: nowrap;
+  padding: 3px 10px;
+}
+.ver-texto {
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.ver-metodo {
+  color: var(--g-500);
+  font-size: 12px;
+}
+/* En pantallas estrechas se reducen los anchos, pero estado y descripción siguen lado a lado. */
+@media (max-width: 600px) {
+  .ver-fila {
+    grid-template-columns: 128px minmax(0, 1fr);
+    column-gap: var(--s3);
+  }
+}
+
 /* --- Colapsables --- */
 .colap {
   border-bottom: 1px solid var(--g-100);

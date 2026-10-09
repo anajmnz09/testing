@@ -614,6 +614,23 @@ Rules and scope: GUIDELINES §3 "Bancos de texto". Steps:
 4. **Reproduce:** the log prints the run seed and each chosen value; rerun with `DATOS_SEMILLA=<seed>`.
 5. Existing literal-based tests are migrated when touched, not in bulk.
 
+## AI Case Runner (Casos de Uso IA) — procedure
+
+Rules (functional-only testing, text-first PDF, PASS/FAIL/BLOCKED, API config, new-PC requirements): GUIDELINES §13. It is independent from
+tests and flows: no metadata, `requires/produces`, Page Object changes or `flowData`; code only in `ia/`.
+- **Set up a PC:** app access is the EXISTING project config (`BASE_URL`, `APP_USERNAME`, `PASSWORD` in the root `.env`, same login as tests/flows) —
+  do not document or create a second one; if tests already run there, nothing more is needed for the app. The only new setting is
+  `OPENAI_API_KEY` (optional: `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`, `OPENAI_BASE_URL`, `IA_MAX_ACCIONES`, `IA_MAX_MINUTOS`). The model is consumed via API:
+  never ask to install Claude Desktop/Code or any local model.
+- **Run:** Panel tab "Casos IA" (upload PDF → Ejecutar) or `node ia/run-caso-ia.js <pdf>`; the key goes in the server `.env` or
+  `ia/.env` (see `ia/.env.example`; both gitignored, never sent to the browser). As the assistant, pass `HEADLESS=true KEEP_BROWSER_OPEN=false`. Evidence: `ia/reports/<RUN_ID>/`
+  (`resultado.json`, `especificacion.txt`, `screenshots/`, `acciones.json`, `entrada.pdf`, `logs/`).
+- **Change behavior:** the agent's instructions (what to test/ignore, how to verify) live in `SISTEMA` in `ia/ejecutor.js`; the loop and screenshot
+  policy in the same file; tools/validation in `ia/navegador.js` + `ia/politicas.js`; PDF text in `ia/pdf.js`; the API in `ia/clienteOpenAI.js (OpenAI Responses API; the only place that knows OpenAI's format)`.
+  Any change gets a spec in `ia/tests/` (`npm run test:ia`).
+- **Verify without a key:** point `OPENAI_BASE_URL` to a local fake server to exercise PDF → tools → Selenium → evidence; that validates the pipeline,
+  never the model's comprehension. Say so explicitly; a live PASS/FAIL needs a real key.
+
 ## Non-form Tests
 
 Examples: publish requisition, pause requisition, share requisition, import documents,
@@ -650,15 +667,18 @@ minimal explicit declaration (once, in the Page Object) → undetermined**.
 3. **Decide with business, don't guess:** if an action persists something but it isn't clear whether it is an entity, a relation or an
    attribute (photo, rating, group member/permission, moving data), list it in `ACCIONES_FLUJO` only after the decision — or ask. An attachment is an
    entity only if it has a stable reference and later operations.
-4. **Consuming by key** needs nothing in the test when the key reaches a declared locator (even through an alias or a fixture helper). Only if the
+4. **Select fields need nothing either:** a dropdown in the form the test registers (`registrarCasoDesdeFormulario(CASO, <Page>.ESTRATEGIAS)`) whose label contains a known entity
+   (`tipo`/`alias` of an `ENTIDAD_FLUJO`) yields `requires { tipo }` automatically (GUIDELINES §12, `flowCampos.js`). To make another label recognise an entity add
+   `alias: ['…']` to its contract; never list requires per test. An ambiguous label is a plan error, not a guess.
+5. **Consuming by key** needs nothing in the test when the key reaches a declared locator (even through an alias or a fixture helper). Only if the
    structure can't prove it (e.g. a form select), declare `entidad` and `campo` once next to the key (`registrarCaso` object entry or the Page Object's
    `ESTRATEGIAS` entry). Entity, reference field and consumed key are three different things: never infer one from another or from a name. A manual
    declaration the structure already proves is redundant and fails the contract.
-5. **Business order** no code can prove (Primera → Segunda → Tercera) is the only thing for `<modulo>/data/flujo-tests.js` (`orden: { solicitud: n }`).
-6. **Do not** treat file/test/Page Object names, labels, fixtures, generic keys or previous results as a contract, and never convert a scanner
+6. **Business order** no code can prove (Primera → Segunda → Tercera) is the only thing for `<modulo>/data/flujo-tests.js` (`orden: { solicitud: n }`).
+7. **Do not** treat file/test/Page Object names, labels (outside rule 4: select field + known entity), fixtures, generic keys or previous results as a contract, and never convert a scanner
    SUGGESTION into a dependency. Flows receive no specific data: inside a flow values resolve `flowContext → automatic`, and the individual
    `execution-context.json` is ignored. Individual execution must not change (the contract and the publication layer are inert outside a flow).
-7. **Check:** `node core/scripts/flujo-escanear.js <modulo>/<caso>` (role + DETECTED / DECLARED / SUGGESTED / UNDETERMINED) and the unit suite —
+8. **Check:** `node core/scripts/flujo-escanear.js <modulo>/<caso>` (role + DETECTED / DECLARED / SUGGESTED / UNDETERMINED) and the unit suite —
    `core/tests/contrato-flujo-metadata.spec.js` fails on contradictions, ghost producers (structural producer nobody publishes), invalid
    entities/fields, missing methods or redundant declarations.
 

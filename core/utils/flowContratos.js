@@ -5,7 +5,8 @@
  * en los tests) y el contrato del repo (`core/tests/contrato-flujo-metadata.spec.js`).
  *
  * Forma del contrato (el mismo objeto lo lee en runtime `flowInstrumentar.js`; una sola fuente):
- *   static get ENTIDAD_FLUJO() { return { tipo, referencia, metodos?, creadores?, editores?, eliminadores?, confirmadores? }; }
+ *   static get ENTIDAD_FLUJO() { return { tipo, referencia, alias?, metodos?, creadores?, editores?, eliminadores?, confirmadores? }; }
+ *   (`alias`: nombres alternativos literales para reconocer la entidad por el label de un selector, ver `flowCampos.js`)
  *   (un array de objetos si la clase opera varias entidades). Cada lista admite strings o
  *   `{ metodo, argumento?, valor?, persiste?, referenciaArg?, leer? }`.
  * `tipo` puede ser un literal o una expresión `this.<getter>.<getter>` que se resuelve contra la subclase
@@ -200,6 +201,14 @@ function parseEntradas(objeto, clave) {
   });
 }
 
+/** `alias: ['cargo', 'puesto de trabajo']` (strings literales; nombres alternativos de la entidad para reconocerla por label). */
+function parseAlias(objeto) {
+  const m = /(?:^|[\s,{])alias\s*:\s*\[/.exec(objeto);
+  const cuerpo = m ? bloqueBalanceado(objeto, m.index + m[0].length - 1) : null;
+  if (cuerpo === null) return [];
+  return partesDeNivel(cuerpo).map((x) => /^(['"`])([^'"`]+)\1$/.exec(x)).filter(Boolean).map((x) => x[2]);
+}
+
 /** Objetos de contrato de UN archivo (sin herencia): `{ objetos: [...], invalidas, linea }`. */
 function objetosPropios(archivo) {
   const f = leer(archivo);
@@ -248,6 +257,7 @@ function contratosDeClase(archivo, concreto = archivo) {
       const editores = parseEntradas(texto, 'editores') || [];
       const eliminadores = parseEntradas(texto, 'eliminadores') || [];
       const confirmadores = parseEntradas(texto, 'confirmadores') || [];
+      const alias = parseAlias(texto);
       const sinTipo = tipo === undefined;
       if (sinTipo && !confirmadores.length) {
         invalidas.push({ linea, motivo: `${path.basename(a)}: ENTIDAD_FLUJO exige tipo (string literal o this.<getter>.<getter>)` });
@@ -257,7 +267,7 @@ function contratosDeClase(archivo, concreto = archivo) {
         invalidas.push({ linea, motivo: `${path.basename(a)}: ENTIDAD_FLUJO de "${tipo}" exige referencia como string literal` });
         continue;
       }
-      contratos.push({ tipo, referencia, metodos: sinTipo ? [] : metodos, creadores, editores, eliminadores, confirmadores, archivo: a });
+      contratos.push({ tipo, referencia, alias, metodos: sinTipo ? [] : metodos, creadores, editores, eliminadores, confirmadores, archivo: a });
     }
     break; // el contrato más específico (el de la clase o el primer ancestro que lo declara) manda
   }

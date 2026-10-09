@@ -13,6 +13,8 @@
  *                A. lecturas tipadas del código (`flowContext.get('solicitud')`) → `{ tipo }` (ordena)
  *                S. ESTRUCTURA: la clave llega a un localizador de un Page Object con `ENTIDAD_FLUJO`
  *                   (`flowEstructura.js`) → `{ tipo, clave, campo }` sin declarar nada en el test
+ *                F. CAMPOS SELECCIONABLES del formulario (`flowCampos.js`): un dropdown cuyo label coincide con una entidad
+ *                   conocida (contratos ENTIDAD_FLUJO) → `{ tipo }` (ordena; sin clave, no enlaza valores). Cede ante A/S/B/C
  *                B. claves declaradas en el código con entidad+campo (`registrarCaso` / `ESTRATEGIAS`)
  *                C. `requires` de la metadata (forma antigua, transición)
  *              S, B y C se tratan igual en el planner. Jerarquía: estructura → declaración mínima →
@@ -82,6 +84,10 @@ function unirRequires(caso, esc, deMetadata) {
   for (const t of probados) {
     if (!tiposDeclarados.has(t)) requires.push({ tipo: t });
   }
+  // F: un campo seleccionable de una entidad que el test ya consume (por lectura, clave o metadata) no suma nada
+  for (const c of esc.campos || []) {
+    if (!tiposDeclarados.has(c.tipo) && !probados.includes(c.tipo) && !requires.some((x) => x.tipo === c.tipo)) requires.push({ tipo: c.tipo });
+  }
   for (const r of deMetadata) if (!r.clave && !requires.some((x) => x.tipo === r.tipo && !x.clave)) requires.push({ ...r });
   return { requires, errores, redundantes };
 }
@@ -111,7 +117,10 @@ function resolverMetadata(seleccion, metadata, { escanear = escanearArchivo } = 
         esc = { produces: [], lecturas: [], claves: [], declaraciones: [], invalidas: [], indeterminado: [{ linea: 0, motivo: `no se pudo leer el test: ${e.message}` }] };
       }
     }
-    esc = { lecturas: [], declaraciones: [], estructurales: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [], invalidas: [], ...esc };
+    esc = { lecturas: [], declaraciones: [], estructurales: [], campos: [], creaciones: [], ediciones: [], eliminaciones: [], confirmaciones: [], confirmables: [], exclusiones: [], invalidas: [], ...esc };
+    // Un campo seleccionable de la MISMA entidad que el test crea/edita no es una dependencia (p. ej. "Departamento padre")
+    const propias = new Set([...esc.creaciones, ...esc.ediciones].map((o) => o.entidad));
+    esc = { ...esc, campos: (esc.campos || []).filter((c) => !propias.has(c.tipo)) };
     const req = unirRequires(s.caso, esc, meta.requires || []);
     errores.push(...req.errores);
     // Operaciones que demuestra la estructura. Una CREACIÓN de un tipo que el propio test también consume (por clave) es
@@ -128,7 +137,7 @@ function resolverMetadata(seleccion, metadata, { escanear = escanearArchivo } = 
     const eliminadas = [...new Set(esc.eliminaciones.map((c) => c.entidad))];
     derivado[s.caso] = {
       produces: esc.produces, indeterminado: esc.indeterminado, requires: req.requires, detectados: esc.lecturas,
-      estructurales: esc.estructurales || [], redundantes: req.redundantes, creadas, respaldo, editadas, eliminadas,
+      estructurales: esc.estructurales || [], campos: esc.campos, redundantes: req.redundantes, creadas, respaldo, editadas, eliminadas,
     };
 
     let produces;

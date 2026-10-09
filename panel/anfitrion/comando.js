@@ -19,6 +19,7 @@ const SEGURO = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
  *   - caso    → npm test -- tests/<archivo>.test.js
  *   - carpeta → npm test -- "tests/<glob>"        (el runner ya soporta globs)
  *   - modulo  → npm test
+ *   - ia      → node ia/run-caso-ia.js "ia/entradas/<pdf>"   (Casos de Uso IA; `archivo` = id del PDF subido; ver GUIDELINES §13)
  *   - flujo   → node core/scripts/run-flow.js <modulo>/<caso> ...   (`casos` en el ORDEN DE
  *               SELECCIÓN del usuario; el orden real lo decide el planner del framework según
  *               `requires`/`produces`, no el Panel; un flujo no recibe datos)
@@ -50,6 +51,9 @@ function argsFlujo(casos) {
 function resolver(run) {
   if (!run || typeof run !== 'object') throw new Error('run inválido');
   const { tipo, modulo, target } = run;
+
+  // Caso de Uso IA: runner independiente (`ia/run-caso-ia.js`); el PDF ya subido se identifica por su id.
+  if (tipo === 'ia') return require('./ia').resolverComando(run.archivo);
 
   if (tipo === 'flujo') {
     return { cwd: '.', comando: `node core/scripts/run-flow.js ${argsFlujo(run.casos).join(' ')}` };
