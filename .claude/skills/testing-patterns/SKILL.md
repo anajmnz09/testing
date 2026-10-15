@@ -591,7 +591,7 @@ as "Banco Popular 293688" — a different value than what was actually asked for
 `editar-*` bug: the random/timestamp part is confined strictly to the "nothing was directed"
 branch.
 
-## Automatic-mode data: `datosPrueba.js` for identifiers/contextual data, text banks for free text — never fixed strings or `Automatica-<ts>`
+## Automatic-mode data: common entry point `datos.js` (text banks + `datosPrueba.js`) — never fixed strings or `Automatica-<ts>`
 
 Personas e identificadores del modo automático (sin valor del Panel), y los textos que dependen del contexto
 del test, se generan con `@triple/core/utils/datosPrueba` + `core/data/datosPrueba.json`: nombres/apellidos de catálogo,
@@ -602,17 +602,23 @@ el contexto semántico se pasa como argumento (p. ej. el Puesto elegido). Respet
 un nombre de requisición de 61 caracteres falló el Guardar ("Error en el sistema") — se acota a 45.
 Amplía el JSON/`datosPrueba.js`; no crees *generadores* por módulo.
 
-### Text banks (free `input`/`textarea` text only) — procedure
+### Test data (free `input`/`textarea` text) — ONE entry point: `@triple/core/utils/datos`
 
-Rules and scope: GUIDELINES §3 "Bancos de texto". Steps:
-1. **Use a bank** when a text/textarea default would otherwise be a literal (`'QA …'`, `'… de prueba'`). **Don't** for
-   selects, dates, numbers, files, identifiers (→ `datosPrueba.js`) or entity data a flow needs (→ `FlowContext`).
-2. **Consume:** `const bancos = require('../support/bancos'); bancos.<banco>.valor(testContext.get(CASO, label), '<clave>')`
-   (the Panel value is passed first, so it wins). Unique names: `nombreUnicoQA(dirigido, bancos.<banco>.texto('<clave>'))`.
-3. **Add data:** append options to a category (or a text) in the module's `support/bancos.js`; no new file if the
-   domain already has one, no copied lists. New domain → `<modulo>/support/bancos.js` with `definirBanco`.
-4. **Reproduce:** the log prints the run seed and each chosen value; rerun with `DATOS_SEMILLA=<seed>`.
-5. Existing literal-based tests are migrated when touched, not in bulk.
+Rules, sources, priority and scope: GUIDELINES §3 "Datos automáticos dinámicos". Steps:
+1. **Request data, don't pick a generator.** `const datos = require('@triple/core/utils/datos')`. Never import `bancos.js`,
+   `datosPrueba.js`, `datosQA.js` or `nombresQA.js` in a new test. **Don't** use it for selects, dates, numbers, files or entity data a flow
+   needs (→ `FlowContext`); and **keep literal values** when the scenario tests an exact/empty/invalid/limit value (just don't ask for data).
+2. **Declare the source once, next to the field**, in the form's `ESTRATEGIAS`: `Descripción: { estrategia: 'text', dato: 'puesto.descripcion' }`
+   (unique names: `dato: { fuente: 'capacitacion.nombre', unico: true }`). The test gets `datos.deFormulario(CASO, Page.ESTRATEGIAS)`
+   → `{ label: value }` (Panel value first). `Form.completarDesde(..., { autofill: true })` resolves them too. No `ESTRATEGIAS` (modal)?
+   `datos.valor(testContext.get(CASO, label), 'banco.clave')`. Personal data: `datos.resolver('persona.primerNombre' | 'persona.correo' | …)`;
+   requisition name / texts: `'requisicion.nombre'`, `'texto.requisitos'` with `{ puesto }`.
+3. **Add data:** append options to a category (or a text) in the module's `support/bancos.js` (discovered automatically; bank names must
+   be unique across modules; `persona`/`requisicion`/`texto` are reserved). New domain → `<modulo>/support/bancos.js` with `definirBanco`.
+   A new kind of structured value (format) → extend `datosPrueba.js` + a `persona.*`-style source in `datos.js`, not a per-module generator.
+4. **Reproduce:** the log prints the seed and each value (`bancoDatos:` / `datos:` lines); rerun with `DATOS_SEMILLA=<seed>` (also a field in the
+   Panel's Configuración). No `Math.random` in this mechanism; only the uniqueness suffix is time-based on purpose.
+5. Legacy: `nombreUnicoQA`/`bancos.X.valor` still work (adapters); existing literal-based tests are migrated when touched, not in bulk.
 
 ## AI Case Runner (Casos de Uso IA) — procedure
 

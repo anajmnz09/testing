@@ -14,9 +14,15 @@
  *    aleatorio por proceso), NO una garantía estricta entre corridas.
  *    Los textos libres (descripciones, comentarios) pueden repetirse entre corridas.
  *
+ * REPRODUCIBLE: el azar sale de la semilla de la corrida (`bancoDatos.prng`, `DATOS_SEMILLA`), nunca de `Math.random`: misma semilla +
+ * mismo orden de llamadas = misma persona, mismos textos. Lo único que NO se reproduce a propósito es el sufijo de UNICIDAD
+ * (tiempo + secuencia): reproducir una corrida no debe chocar con los registros que la anterior dejó en la app.
+ *
+ * Los tests no lo importan directo: se accede por `utils/datos.js` (fuentes `persona.*`, `requisicion.nombre`, `texto.*`).
  * `crear({ random })` permite inyectar el azar (tests unitarios deterministas).
  */
 const catalogos = require('../data/datosPrueba.json');
+const bancoDatos = require('./bancoDatos');
 
 const SIN_ACENTOS = new RegExp('[\u0300-\u036f]', 'g');
 
@@ -28,10 +34,18 @@ function slug(texto) {
   return sinAcentos(texto).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
-function crear({ random = Math.random, ahora = Date.now } = {}) {
-  // Arranca en un valor aleatorio por proceso: dos procesos que empiecen en el
-  // mismo instante ya no generan la misma secuencia.
-  let secuencia = Math.floor(random() * 1e6);
+function crear({ random: inyectado, ahora = Date.now } = {}) {
+  // Azar por defecto: flujo derivado de la semilla de la corrida (se crea al primer uso, no al cargar el módulo).
+  let flujo = null;
+  const random = inyectado || (() => (flujo || (flujo = bancoDatos.prng('datosPrueba')))());
+  // Arranca en un valor derivado de la semilla: dos procesos con semillas distintas que empiecen en el
+  // mismo instante no generan la misma secuencia.
+  let secuencia = null;
+  const siguiente = () => {
+    if (secuencia === null) secuencia = Math.floor(random() * 1e6);
+    secuencia += 1;
+    return secuencia;
+  };
   const usadas = new Set(); // personas ya emitidas en ESTE proceso
 
   const elegir = (lista) => lista[Math.floor(random() * lista.length)];
@@ -44,9 +58,8 @@ function crear({ random = Math.random, ahora = Date.now } = {}) {
    * procesos; no es una garantía estricta.
    */
   function tokenUnico(largo = 7) {
-    secuencia += 1;
     const fijo = segundos().toString(36).toUpperCase().slice(-(largo - 2));
-    const seq = (secuencia % 1296).toString(36).toUpperCase().padStart(2, '0');
+    const seq = (siguiente() % 1296).toString(36).toUpperCase().padStart(2, '0');
     return `${fijo}${seq}`;
   }
 
@@ -55,9 +68,8 @@ function crear({ random = Math.random, ahora = Date.now } = {}) {
    * (100 llamadas/seg distintas en el proceso). Misma garantía "muy improbable".
    */
   function digitosUnicos(largo = 8) {
-    secuencia += 1;
     const fijo = String(segundos() % 10 ** (largo - 2)).padStart(largo - 2, '0');
-    return `${fijo}${String(secuencia % 100).padStart(2, '0')}`;
+    return `${fijo}${String(siguiente() % 100).padStart(2, '0')}`;
   }
 
   /** Cédula RD de 11 dígitos, única por llamada. */

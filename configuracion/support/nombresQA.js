@@ -1,3 +1,5 @@
+const { unicoQA } = require('@triple/core/utils/datos');
+
 const PREFIJO = 'QA';
 
 /**
@@ -42,10 +44,12 @@ function siguienteNombreQA(actual) {
  * Panel terminaba guardándose como "Banco Popular 293688" — un dato distinto
  * al pedido. Este helper reemplaza ese criterio en todos los `crear-*` de
  * Configuración.
+ *
+ * COMPATIBILIDAD: la lógica vive en el punto de acceso común (`@triple/core/utils/datos#unicoQA`); esta función se conserva
+ * para los tests existentes. Un test nuevo pide `datos.valor(dirigido, '<banco>.<texto>', { unico: true })`.
  */
 function nombreUnicoQA(dirigido, base) {
-  if (dirigido) return dirigido;
-  return `${base} ${Date.now().toString().slice(-6)}`;
+  return unicoQA(dirigido, base);
 }
 
 /**

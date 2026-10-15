@@ -547,7 +547,7 @@ testContext.registrarCaso(CASO, ['nombreVacante', 'puesto', 'empleado']);
 
 ### Datos automáticos dinámicos
 
-Sin valor del Panel, los textos/identificadores automáticos salen de `core/utils/datosPrueba.js` (catálogos en `core/data/datosPrueba.json`): nombres, correos, identificaciones y textos coherentes con el contexto del test (p. ej. el Puesto). Únicos solo donde la app lo exige. El texto libre (`input` de texto / `textarea`) sale de bancos pequeños y deterministas por módulo (`<modulo>/support/bancos.js`, mecanismo `core/utils/bancoDatos.js`, reproducible con `DATOS_SEMILLA`); el valor del Panel gana siempre. Ver GUIDELINES §3.
+Sin valor del Panel, los datos automáticos se piden por un único punto de acceso, `core/utils/datos.js` (fuente `'banco.clave'`, `persona.*`, `requisicion.nombre`, `texto.*`; el campo se asocia a su fuente con `dato` en `ESTRATEGIAS`; semilla común `DATOS_SEMILLA`). Detrás, los textos/identificadores salen de `core/utils/datosPrueba.js` (catálogos en `core/data/datosPrueba.json`): nombres, correos, identificaciones y textos coherentes con el contexto del test (p. ej. el Puesto). Únicos solo donde la app lo exige. El texto libre (`input` de texto / `textarea`) sale de bancos pequeños y deterministas por módulo (`<modulo>/support/bancos.js`, mecanismo `core/utils/bancoDatos.js`, reproducible con `DATOS_SEMILLA`); el valor del Panel gana siempre. Ver GUIDELINES §3.
 
 ### Casos de formulario: sembrar desde el Input Model
 

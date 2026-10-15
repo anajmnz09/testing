@@ -2,8 +2,7 @@ const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
-const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'agregar-habilidad';
 const CLAVE_BUSQUEDA = 'Nombre de Empleado que recibe la Habilidad';
@@ -50,7 +49,7 @@ describe('Empleados - Agregar Habilidad (Resumen/CV)', function () {
     assert.ok(abierta.activada, `No se pudo activar la sección "Resumen/CV" para "${nombreUsado}".`);
 
     const tipoDirigido = testContext.get(CASO, 'Tipo');
-    const habilidad = nombreUnicoQA(testContext.get(CASO, 'Habilidad'), bancos.habilidad.texto('nombre'));
+    const habilidad = datos.valor(testContext.get(CASO, 'Habilidad'), { fuente: 'habilidad.nombre', unico: true });
     const nivel = testContext.get(CASO, 'Nivel');
 
     logger.info(`${CASO}: agregando Habilidad "${habilidad}" (Tipo dirigido: ${tipoDirigido || '(automático)'}) a "${nombreUsado}"`);

@@ -38,7 +38,7 @@ const { ConfiguracionEntidadDetallePage } = require('@triple/core');
 const ESTRATEGIAS = {
   'No. cuenta': 'text',
   Estado: 'directSelect',
-  Descripción: 'text',
+  Descripción: { estrategia: 'text', dato: 'cuentaContable.descripcion' },
 };
 
 class CuentaContableDetallePage extends ConfiguracionEntidadDetallePage {

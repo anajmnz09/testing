@@ -56,7 +56,25 @@ module.exports = {
     seccion: 'Empleados',
     categoria: 'Dependientes',
     descripcion:
-      'Agrega un Dependiente a un Empleado ya existente, en la sección "Dependientes" del detalle. Requeridos: Parentesco, Tipo ID, Identificación, Nombres, Apellidos, Género y Fecha de nacimiento.',
+      'Agrega un Dependiente a un Empleado ya existente, en la sección "Dependientes" del detalle, llenando TODOS los campos editables (incluido el bloque de seguro y "Dependiente directo"; "Edad" es de solo lectura). Textos autogenerados con la fuente común de datos.',
+  },
+  'consultar-dependiente': {
+    seccion: 'Empleados',
+    categoria: 'Dependientes',
+    descripcion:
+      'Consulta un Dependiente en la sección "Dependientes" del detalle de un Empleado: lee su fila (Parentesco, Tipo ID, Identificación, Nombre, Género, …). Auto: primer empleado y primer dependiente; Panel: empleado y/o dependiente (identificación o nombre).',
+  },
+  'editar-dependiente': {
+    seccion: 'Empleados',
+    categoria: 'Dependientes',
+    descripcion:
+      'Edita un Dependiente por el ícono "Editar" de la columna "Acción". Auto: primer empleado y primer dependiente; Panel: empleado y/o dependiente (identificación o nombre). Cambia datos y Guarda.',
+  },
+  'eliminar-dependiente': {
+    seccion: 'Empleados',
+    categoria: 'Dependientes',
+    descripcion:
+      'Elimina un Dependiente por checkbox + botón "Eliminar" + confirmar. Auto: primer empleado y primer dependiente; Panel: empleado y/o dependiente (identificación o nombre).',
   },
   'consultar-amonestaciones': {
     seccion: 'Empleados',
@@ -67,6 +85,48 @@ module.exports = {
     seccion: 'Empleados',
     categoria: 'Consultar',
     descripcion: 'Abre la sección "Herramientas" del detalle de un Empleado ya existente.',
+  },
+  'consultar-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Consulta una Herramienta en la sección "Herramientas" del detalle de un Empleado: lee su fila (Fecha de asignación, Descripción, Referencia, Fecha de Devolución). Auto: primer empleado y primera herramienta; Panel: empleado y/o herramienta.',
+  },
+  'eliminar-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Elimina una Herramienta por checkbox + botón "Eliminar" + confirmar. Auto: asigna una propia y elimina esa; Panel: empleado y/o herramienta (descripción).',
+  },
+  'agregar-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Asigna una Herramienta a un Empleado ya existente: "Agregar" abre la pantalla "Crear asignación" (Fecha de asignación, Referencia, Descripción) y Guarda. Textos autogenerados con la fuente común de datos; Panel: empleado y campos.',
+  },
+  'retornar-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Retorna una Herramienta por Opciones (3 puntos) > Retornar: popup con "Fecha finalización" y Guardar; verifica la "Fecha de Devolución" en el grid. Auto: primera herramienta pendiente (asigna una si no hay); Panel: empleado, herramienta y fecha.',
+  },
+  'adjuntar-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Adjunta un documento a una Herramienta por Opciones (3 puntos) > Adjuntar (pantalla propia titulada con la descripción). Usa un PDF genérico. Auto: primer empleado y primera herramienta; Panel: empleado y/o herramienta.',
+  },
+  'descargar-documento-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Descarga un documento adjunto de una Herramienta (ícono de descarga de la pantalla de adjuntos). Auto: primer empleado, primera herramienta y primer documento (sube uno si no hay); Panel: empleado, herramienta y/o documento.',
+  },
+  'eliminar-documento-herramienta': {
+    seccion: 'Herramientas',
+    plano: true,
+    descripcion:
+      'Elimina un documento adjunto de una Herramienta por checkbox + "Eliminar" + confirmar. Auto: sube un documento propio y elimina ese; Panel: empleado, herramienta y/o documento.',
   },
   'consultar-ausencias': {
     seccion: 'Empleados',
@@ -92,6 +152,102 @@ module.exports = {
     seccion: 'Empleados',
     categoria: 'Consultar',
     descripcion: 'Abre la sección "Beneficios" (dentro de "Recursos humanos") del detalle de un Empleado ya existente.',
+  },
+  'agregar-seguro': {
+    seccion: 'Seguros',
+    plano: true,
+    descripcion:
+      'Asigna un Seguro a un Empleado ya existente (Recursos humanos > Seguros): "Agregar" abre "Agregar Seguro" (Proveedor, Plan, Comentario; Tarifa y porcentajes los calcula la app) y Guarda. Proveedor y plan al azar de un banco de nombres reales entre los que existen en el catálogo; Panel: empleado y campos.',
+  },
+  'inactivar-seguro': {
+    seccion: 'Seguros',
+    plano: true,
+    descripcion:
+      'Inactiva un Seguro por checkbox + botón "Inactivar" y verifica el Estado "Inactivo". Auto: asigna uno propio e inactiva ese; Panel: empleado y/o seguro (por el nombre de su plan).',
+  },
+  'agregar-beneficio': {
+    seccion: 'Beneficios',
+    plano: true,
+    descripcion:
+      'Asigna un Beneficio a un Empleado ya existente (Recursos humanos > Beneficios): "Agregar" abre "Crear Beneficio" (Beneficio, Monto, Comentario, Fecha Inicial/Final) y Guarda. El tipo de beneficio sale al azar de un banco de ~10 (transporte, comida…) entre los que existen en el catálogo; Panel: empleado y campos.',
+  },
+  'inactivar-beneficio': {
+    seccion: 'Beneficios',
+    plano: true,
+    descripcion:
+      'Inactiva un Beneficio por checkbox + botón "Inactivar" y verifica el Estado "Inactivo". Auto: asigna uno propio e inactiva ese; Panel: empleado y/o beneficio (por su comentario).',
+  },
+  'adjuntar-analisis-medico': {
+    seccion: 'Documentos',
+    categoria: 'Análisis médicos',
+    descripcion:
+      'Adjunta un documento en "Análisis médicos" (Documentos) del detalle de un Empleado: "Adjuntar" > popup "Importar Documentos" > Guardar; verifica que el grid lo lista. Usa un PDF genérico. Auto: primer empleado; Panel: empleado y/o archivo.',
+  },
+  'descargar-analisis-medico': {
+    seccion: 'Documentos',
+    categoria: 'Análisis médicos',
+    descripcion:
+      'Descarga un documento de "Análisis médicos" (Documentos) con el ícono de descarga del grid. Auto: primer empleado y primer documento (sube uno si no hay); Panel: empleado y/o documento.',
+  },
+  'eliminar-analisis-medico': {
+    seccion: 'Documentos',
+    categoria: 'Análisis médicos',
+    descripcion:
+      'Elimina un documento de "Análisis médicos" (Documentos) por checkbox + "Eliminar" + confirmar. Auto: sube un documento propio y elimina ese; Panel: empleado y/o documento.',
+  },
+  'adjuntar-contrato': {
+    seccion: 'Documentos',
+    categoria: 'Contratos',
+    descripcion:
+      'Adjunta un documento en "Contratos" (Documentos) del detalle de un Empleado: "Adjuntar" > popup "Importar Documentos" > Guardar; verifica que el grid lo lista. Usa un PDF genérico. Auto: primer empleado; Panel: empleado y/o archivo.',
+  },
+  'descargar-contrato': {
+    seccion: 'Documentos',
+    categoria: 'Contratos',
+    descripcion:
+      'Descarga un documento de "Contratos" (Documentos) con el ícono de descarga del grid. Auto: primer empleado y primer documento (sube uno si no hay); Panel: empleado y/o documento.',
+  },
+  'eliminar-contrato': {
+    seccion: 'Documentos',
+    categoria: 'Contratos',
+    descripcion:
+      'Elimina un documento de "Contratos" (Documentos) por checkbox + "Eliminar" + confirmar. Auto: sube un documento propio y elimina ese; Panel: empleado y/o documento.',
+  },
+  'adjuntar-otro-documento': {
+    seccion: 'Documentos',
+    categoria: 'Otros Documentos',
+    descripcion:
+      'Adjunta un documento en "Otros Documentos" (Documentos) del detalle de un Empleado: "Adjuntar" > popup "Importar Documentos" > Guardar; verifica que el grid lo lista. Usa un PDF genérico. Auto: primer empleado; Panel: empleado y/o archivo.',
+  },
+  'descargar-otro-documento': {
+    seccion: 'Documentos',
+    categoria: 'Otros Documentos',
+    descripcion:
+      'Descarga un documento de "Otros Documentos" (Documentos) con el ícono de descarga del grid. Auto: primer empleado y primer documento (sube uno si no hay); Panel: empleado y/o documento.',
+  },
+  'eliminar-otro-documento': {
+    seccion: 'Documentos',
+    categoria: 'Otros Documentos',
+    descripcion:
+      'Elimina un documento de "Otros Documentos" (Documentos) por checkbox + "Eliminar" + confirmar. Auto: sube un documento propio y elimina ese; Panel: empleado y/o documento.',
+  },
+  'adjuntar-carta': {
+    seccion: 'Documentos',
+    categoria: 'Cartas',
+    descripcion:
+      'Adjunta un documento en "Cartas" (Documentos) del detalle de un Empleado: "Adjuntar" > popup "Importar Documentos" > Guardar; verifica que el grid lo lista. Usa un PDF genérico. Auto: primer empleado; Panel: empleado y/o archivo.',
+  },
+  'descargar-carta': {
+    seccion: 'Documentos',
+    categoria: 'Cartas',
+    descripcion:
+      'Descarga un documento de "Cartas" (Documentos) con el ícono de descarga del grid. Auto: primer empleado y primer documento (sube uno si no hay); Panel: empleado y/o documento.',
+  },
+  'eliminar-carta': {
+    seccion: 'Documentos',
+    categoria: 'Cartas',
+    descripcion:
+      'Elimina un documento de "Cartas" (Documentos) por checkbox + "Eliminar" + confirmar. Auto: sube un documento propio y elimina ese; Panel: empleado y/o documento.',
   },
   'consultar-prestamos': {
     seccion: 'Empleados',

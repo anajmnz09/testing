@@ -14,6 +14,10 @@
  *   - coincidencia = los TÉRMINOS (tokens completos, sin mayúsculas, tildes, puntuación ni conectores "de/del/la…") de la entidad
  *     aparecen contiguos en el label; nunca por subcadena ("Compuesto" no es "puesto") ni como complemento introducido por
  *     "de/del" ("Razón de solicitud" es una razón, no la entidad solicitud);
+ *   - un control puede declarar `sinRequires: true` en su entrada de ESTRATEGIAS (`Beneficio: { estrategia: 'directSelect', sinRequires: true }`):
+ *     el label coincide con una entidad, pero ese selector NO es una dependencia de flujo (p. ej. el formulario que crea
+ *     `beneficio-empleado` elige un "Beneficio" del catálogo de Configuración sin necesitar que un test lo cree). Es explícito y
+ *     por control; no hay otra forma de excluir un campo;
  *   - gana el término más largo (el label "Tipo de nómina" es `tipo-nomina`, no `nomina`); si varias entidades distintas
  *     empatan se reporta una ambigüedad (`invalidas`, error de plan) y NO se asigna ninguna.
  */
@@ -155,7 +159,8 @@ function leerControles(src) {
       const valor = e[4].trim();
       const lit = /^(['"`])([\w-]+)\1$/.exec(valor);
       const obj = valor.startsWith('{') ? /(?:^|[\s,{])estrategia\s*:\s*(['"`])([\w-]+)\1/.exec(valor) : null;
-      out.push({ label: e[2] || e[3], estrategia: lit ? lit[2] : obj ? obj[2] : null, linea: src.slice(0, m.index).split('\n').length });
+      const sinRequires = valor.startsWith('{') && /(?:^|[\s,{])sinRequires\s*:\s*true\b/.test(valor);
+      out.push({ label: e[2] || e[3], estrategia: lit ? lit[2] : obj ? obj[2] : null, sinRequires, linea: src.slice(0, m.index).split('\n').length });
     }
   }
   return out;
@@ -194,6 +199,7 @@ function detectarCamposSeleccionables(archivoTest, { raiz = RAIZ_REPO } = {}) {
   for (const archivo of archivos) {
     for (const c of leerControles(C.leer(archivo).src)) {
       if (!ESTRATEGIAS_DE_SELECCION.includes(c.estrategia)) continue;
+      if (c.sinRequires) continue; // excluido explícitamente en el Page Object: no es una dependencia de flujo
       const r = entidadDeLabel(c.label, catalogo);
       if (!r) continue;
       const via = `${path.basename(archivo, '.js')}.ESTRATEGIAS["${c.label}"]`;

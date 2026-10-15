@@ -4,7 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const CuentaContableDetallePage = require('../pages/CuentaContableDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'crear-cuenta-contable';
 testContext.registrarCasoDesdeFormulario(CASO, CuentaContableDetallePage.ESTRATEGIAS);
@@ -33,7 +33,7 @@ describe('Configuración - Crear Cuenta Contable', function () {
     logger.info(`${CASO}: "No. cuenta" elegido -> "${numeroCuenta}"`);
     await form.setCampo('No. cuenta', numeroCuenta);
 
-    const descripcion = bancos.cuentaContable.valor(testContext.get(CASO, 'Descripción'), 'descripcion');
+    const { Descripción: descripcion } = datos.deFormulario(CASO, CuentaContableDetallePage.ESTRATEGIAS);
     await form.setCampo('Descripción', descripcion);
 
     // "Estado" — solo si el Panel lo dirigió explícitamente (ya trae un valor válido por defecto).

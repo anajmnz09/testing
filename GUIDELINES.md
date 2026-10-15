@@ -116,10 +116,36 @@ Reglas:
   representa (ej. el empleado AL QUE se le agrega un registro), sin quedarse con lo
   genérico solo porque "andaba".
 
-### Datos automáticos dinámicos — `datosPrueba.js` (identificadores y datos contextuales) y bancos de texto
+### Datos automáticos dinámicos — punto de acceso común `datos.js` (bancos de texto + `datosPrueba.js`)
+
+**Un solo punto de acceso:** `require('@triple/core/utils/datos')`. El test (o el Page Object) pide el dato por **fuente**
+`'<familia>.<clave>'` y el mecanismo delega en el proveedor correcto; no se importa `bancos.js`, `datosPrueba.js`, `datosQA.js` ni
+`nombresQA.js` para obtener datos nuevos:
+
+| Fuente | Proveedor | Ejemplo |
+|---|---|---|
+| `<banco>.<texto>` | banco de texto del dominio (`<modulo>/support/bancos.js`, motor `bancoDatos.js`), descubierto solo | `puesto.descripcion`, `educacion.lugar` |
+| `persona.*` | `datosPrueba.js` (formatos válidos, coherentes entre sí): primerNombre, segundoNombre, primerApellido, segundoApellido, nombreCompleto, correo, correoPersonal, identificacion, celular | `persona.correo` |
+| `requisicion.nombre`, `texto.<tipo>` | `datosPrueba.js` con contexto `{ puesto }` | `texto.requisitos` |
+
+- **Dónde se asocia campo → fuente (declarativo, una vez):** junto al campo, en el `ESTRATEGIAS` del formulario:
+  `Descripción: { estrategia: 'text', dato: 'puesto.descripcion' }`, `Nombre: { estrategia: 'text', dato: { fuente: 'capacitacion.nombre', unico: true } }`.
+  Solo `estrategia: 'text'` (`input` de texto / `textarea`). `datos.deFormulario(CASO, Page.ESTRATEGIAS)` devuelve `{ label: valor }` de los
+  campos con `dato`; `Form.completarDesde` con `autofill` también los resuelve. Sin `ESTRATEGIAS` (modales): `datos.valor(testContext.get(CASO, label), 'banco.clave')`.
+- **Prioridad (nunca se pisa una decisión):** 1) valor dirigido del Panel / Execution Context, 2) valor que el escenario pasa a
+  propósito (vacío, inválido, límite: el test simplemente **no** pide un dato generado para ese campo), 3) valor de un paso
+  anterior del flujo (llega por el mismo contexto / `FlowContext`; este mecanismo no lo transporta), 4) la fuente declarada.
+- **Unicidad:** `{ unico: true }` agrega un sufijo corto de tiempo+secuencia (`datos.unico`); `nombreUnicoQA` queda como adaptador de
+  compatibilidad (delega en `datos.unicoQA`). `siguienteNombreQA/siguienteNumeroQA` no generan: derivan del valor previo en `editar-*`.
+- **Reproducibilidad:** todo el azar y los cursores salen de **una** semilla por corrida (`bancoDatos.semilla()`): `DATOS_SEMILLA=<n>`
+  (campo en Configuración del Panel o variable de entorno; vacío = semilla nueva en cada corrida) repite personas, textos y códigos
+  para la misma secuencia de solicitudes. **Nada de este mecanismo usa `Math.random`.** Lo único que no se reproduce a propósito es
+  el sufijo de unicidad (tiempo): repetir una corrida no debe chocar con los registros que la anterior dejó en la app.
+- **Límites:** solo texto libre. Selects, fechas, números, checkboxes y archivos no pasan por acá. No es un canal de datos entre tests ni de
+  Flujos (`FlowContext`, §12). Los nombres de banco son únicos entre módulos; `persona`, `requisicion` y `texto` están reservados.
 
 Cuando un campo no recibió valor del Panel, el valor automático **nunca** es un string fijo ni
-`Automatica-<timestamp>`. Hay dos fuentes, con repartos distintos (ver también *Bancos de texto*, abajo):
+`Automatica-<timestamp>`. Hay dos proveedores, con repartos distintos (ver también *Bancos de texto*, abajo):
 `datosPrueba.js` para **personas, correos, identificaciones, teléfonos y nombres/textos que dependen del contexto
 del test** (p. ej. el Puesto de una requisición) y los **bancos** para el **texto libre** de `input`/`textarea`.
 Lo de `datosPrueba.js`:
@@ -135,7 +161,7 @@ Lo de `datosPrueba.js`:
   "Error en el sistema"). Si un campo nuevo tiene `maxlength`, acotarlo en el generador.
 - Para ampliar: agregar catálogo/plantilla al JSON o una función a `datosPrueba.js`; no crear
   *generadores* por módulo (lógica de generación). Los helpers de módulo (`datosQA.js`, `*.data.js`) solo adaptan labels.
-- `datosPrueba.js` elige con azar inyectable (`random`); es independiente de los bancos y no cambia por ellos.
+- `datosPrueba.js` elige con el flujo pseudoaleatorio de la semilla de la corrida (`random` sigue siendo inyectable en tests unitarios).
 
 #### Bancos de texto — `core/utils/bancoDatos.js` (solo `input` de texto y `textarea`)
 
@@ -151,20 +177,21 @@ No se exige ningún mínimo de datos: basta que el campo reciba valores creíble
 - **Dónde viven:** los **datos** junto a su dominio, `<modulo>/support/bancos.js` (un banco pequeño por
   dominio/entidad, no un catálogo global); el **mecanismo** es del Core (`bancoDatos.js`). Una lista que dos
   tests necesitan se reutiliza importando el banco, no se copia.
-- **Prioridad:** `bancos.X.valor(testContext.get(CASO, label), 'clave')` — el valor del Panel / Execution Context
+- **Prioridad:** `datos.valor(testContext.get(CASO, label), 'banco.clave')` (equivale a `bancos.X.valor(...)`, que sigue disponible) — el valor del Panel / Execution Context
   gana siempre; el banco solo responde cuando no se dirigió nada. El banco **no** lee ni escribe el Execution
   Context ni el `FlowContext`: no es un canal de datos entre tests ni de Flujos (las entidades que un flujo necesita
   siguen viniendo del `FlowContext`, §12).
-- **Unicidad:** los nombres que la app exige únicos siguen usando `nombreUnicoQA(dirigido, base)`, con la
-  `base` tomada del banco.
+- **Unicidad:** `{ unico: true }` en la fuente (o `nombreUnicoQA(dirigido, base)`, adaptador de compatibilidad).
 - **Determinista y reproducible:** cada texto recorre todas las combinaciones desde una *semilla* de la corrida
   (derivada de `RUN_ID`); la semilla y cada valor elegido quedan en el log. Para repetir una falla:
   `DATOS_SEMILLA=<la del log>`. Este mecanismo no usa `Math.random`.
-- **Estado actual:** los usan `agregar-educacion/experiencia/capacitacion/habilidad`, `crear-empleado`
-  (`datosQA.js`), `crear-puesto/sucursal/cuenta-contable`, `crear-solicitud-empleo` y
-  `agregar-comentario-solicitud-empleo`. **Siguen con literales QA (pendientes de migrar, sin urgencia):**
-  los demás `crear-*`/`editar-*` de Configuración, `editar-capacitacion` y los sufijos de `nombreUnicoQA`.
-  **Regla para código nuevo:** el texto libre nuevo sale de un banco; lo antiguo se migra al tocarlo.
+- **Estado actual:** consumen el punto común `agregar-educacion/experiencia/capacitacion/habilidad`, `crear-empleado`
+  (`datosQA.js` sobre `datos`), `crear-puesto/sucursal/cuenta-contable` (con `dato` en `ESTRATEGIAS`), `crear-solicitud-empleo`,
+  `agregar-comentario-solicitud-empleo`, `crear-tipo-nomina` (`datos.codigo`), las requisiciones (`texto.*`, `requisicion.nombre`) y todos los
+  `crear-*`/`agregar-*` que usan `nombreUnicoQA` (adaptador). **Siguen con literales QA como `base` (nombres identificables, pendientes de
+  migrar a un banco por entidad, sin urgencia):** los `NOMBRE_BASE_QA` de los `crear-*` de Configuración, y los `Math.random` numéricos de
+  Reclutamiento (estrellas, salario, apreciación: fuera de alcance, no son texto). `editar-*` siguen con `siguienteNombreQA` (derivan del valor previo).
+  **Regla para código nuevo:** el texto libre nuevo se declara con `dato` en `ESTRATEGIAS` (o `datos.valor`) y sale de un banco.
 
 Ver README §Selection Strategies y `docs/plataforma-de-control-arquitectura.md §18`.
 
@@ -338,7 +365,7 @@ regex). Solo acepta lo que el código **demuestra**: formas literales y sin ambi
   de la entidad (sin mayúsculas/tildes/puntuación/conectores; nunca una subcadena, ni un complemento introducido por «de»: «Razón de solicitud» no es la entidad
   `solicitud`). Gana el término más largo («Tipo de nómina» → `tipo-nomina`, no `nomina`); un empate entre entidades distintas es un error de plan (se
   desambigua con un `alias` en el contrato), nunca una asignación arbitraria. No se exige rastrear de dónde salen las opciones. Una entidad que el propio test
-  crea/edita (p. ej. «Departamento padre») no es una dependencia. Para que un label distinto reconozca una entidad, añada el `alias` en su `ENTIDAD_FLUJO`.
+  crea/edita (p. ej. «Departamento padre») no es una dependencia. Para que un label distinto reconozca una entidad, añada el `alias` en su `ENTIDAD_FLUJO`. Si el selector coincide con una entidad pero NO es una dependencia de flujo (p. ej. el formulario que crea la asignación `beneficio-empleado` elige un «Beneficio» del catálogo de Configuración), el control lo declara en su `ESTRATEGIAS`: `Beneficio: { estrategia: 'directSelect', sinRequires: true }` (explícito, por control).
 - **Jerarquía (el framework descubre cuando hay evidencia estructural; no infiere por nombres, labels ni heurísticas ambiguas):**
   1) **detección estructural** → 2) **declaración explícita mínima** (solo si la estructura no lo demuestra, y preferentemente
   una sola vez en el Page Object: `ESTRATEGIAS` o `ENTIDAD_FLUJO`; en el test solo como último recurso) → 3) **no determinado**

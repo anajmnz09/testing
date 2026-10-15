@@ -37,6 +37,7 @@ const CAMPOS = [
   { seccion: 'Framework', clave: 'KEEP_REPORTS', etiqueta: 'Reportes a conservar', tipo: 'numero', defecto: '5' },
   { seccion: 'Framework', clave: 'TESTER_NAME', etiqueta: 'Nombre del tester', tipo: 'texto', defecto: '' },
   { seccion: 'Framework', clave: 'TEST_ENVIRONMENT', etiqueta: 'Ambiente', tipo: 'texto', defecto: '' },
+  { seccion: 'Framework', clave: 'DATOS_SEMILLA', etiqueta: 'Semilla de datos de prueba (vacío = distinta en cada corrida)', tipo: 'texto', defecto: '' },
 
   {
     seccion: 'Panel',
@@ -121,6 +122,7 @@ function guardar(valores) {
     `KEEP_REPORTS=${porClave.KEEP_REPORTS}`,
     `TESTER_NAME=${porClave.TESTER_NAME}`,
     `TEST_ENVIRONMENT=${porClave.TEST_ENVIRONMENT}`,
+    `DATOS_SEMILLA=${porClave.DATOS_SEMILLA}       # vacío = semilla nueva por corrida; un valor repite los mismos datos`,
     '',
     '# --- Panel de Automatización ---',
     `KEEP_BROWSER_OPEN=${porClave.KEEP_BROWSER_OPEN}`,

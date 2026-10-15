@@ -36,10 +36,10 @@ const config = require('@triple/core/config');
  * resto es opcional (verificado en el DOM: `dx-field-item-optional`).
  */
 const ESTRATEGIAS = {
-  Nombre: 'text',
-  Descripción: 'text',
-  Centro: 'text',
-  Facilitador: 'text',
+  Nombre: { estrategia: 'text', dato: { fuente: 'capacitacion.nombre', unico: true } },
+  Descripción: { estrategia: 'text', dato: 'capacitacion.descripcion' },
+  Centro: { estrategia: 'text', dato: 'capacitacion.centro' },
+  Facilitador: { estrategia: 'text', dato: 'capacitacion.facilitador' },
   // numberbox: `Form.escribir` teclea en el `.dx-texteditor-input` (mismo
   // criterio que "Número de hijos"/"Pies"/"Saldo a favor ISR" de EmpleadoFormPage).
   Costo: 'text',

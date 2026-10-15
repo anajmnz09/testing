@@ -3,7 +3,7 @@ const logger = require('@triple/core/utils/logger');
 const { testContext } = require('@triple/core');
 const SolicitudEmpleoFormPage = require('../pages/SolicitudEmpleoFormPage');
 const fixtures = require('../support/fixtures');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 const { datosUnicosQA } = require('../data/solicitud-empleo.data');
 const SolicitudEmpleoPage = require('../pages/SolicitudEmpleoPage');
 const flowContext = require('@triple/core/context/flowContext');
@@ -48,7 +48,7 @@ describe('Reclutamiento - Crear Solicitud de Empleo', function () {
     // dentro del framework: se dirigen acá, igual que hace
     // crear-req-comentarios.test.js con su Comentario. Se completan ANTES de
     // completarConContexto() para que la regla "solo vacíos" los respete.
-    const comentario = bancos.comentario.valor(testContext.get(CASO, 'Comentario'), 'texto');
+    const { Comentario: comentario } = datos.deFormulario(CASO, SolicitudEmpleoFormPage.ESTRATEGIAS);
     await form.setCampo('Comentario', comentario);
     const etiqueta = testContext.get(CASO, 'Etiquetas') || ETIQUETA_QA;
     await form.setCampo('Etiquetas', etiqueta);

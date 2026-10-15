@@ -4,7 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const SucursalDetallePage = require('../pages/SucursalDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'crear-sucursal';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -48,7 +48,7 @@ describe('Configuración - Crear Sucursal', function () {
 
     const correo = testContext.get(CASO, 'Correo') || CORREO_QA;
     const telefono = testContext.get(CASO, 'Teléfono') || TELEFONO_QA;
-    const direccion = bancos.sucursal.valor(testContext.get(CASO, 'Dirección'), 'direccion');
+    const { Dirección: direccion } = datos.deFormulario(CASO, SucursalDetallePage.ESTRATEGIAS);
     await form.setCampo('Correo', correo);
     await form.setCampo('Teléfono', telefono);
     await form.setCampo('Dirección', direccion);

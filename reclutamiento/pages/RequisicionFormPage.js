@@ -7,7 +7,7 @@ const config = require('@triple/core/config');
 const testContext = require('@triple/core/context/testContext');
 const { parsearValoresMultiples } = require('@triple/core/strategies');
 const datos = require('../data/requisiciones.data');
-const datosPrueba = require('@triple/core/utils/datosPrueba');
+const datosCore = require('@triple/core/utils/datos');
 
 const RAZON = { CREACION: 'Creacion', SUSTITUCION: 'Sustitucion' };
 
@@ -225,9 +225,9 @@ class RequisicionFormPage extends BasePage {
     resultado.nombre = nombre;
     logger.info(`RequisicionForm: nombre de requisición = "${nombre}" (Puesto base: "${puesto}")`);
     await this.form.escribir('Nombre de requisición', nombre);
-    resultado.requisitos = val('Requisitos') || datosPrueba.texto('requisitos', { puesto });
-    resultado.responsabilidades = val('Responsabilidades') || datosPrueba.texto('responsabilidades', { puesto });
-    resultado.descripcion = val('Descripción') || datosPrueba.texto('descripcion', { puesto });
+    resultado.requisitos = val('Requisitos') || datosCore.resolver('texto.requisitos', { puesto, campo: 'Requisitos' });
+    resultado.responsabilidades = val('Responsabilidades') || datosCore.resolver('texto.responsabilidades', { puesto, campo: 'Responsabilidades' });
+    resultado.descripcion = val('Descripción') || datosCore.resolver('texto.descripcion', { puesto, campo: 'Descripción' });
     await this.form.escribir('Requisitos', resultado.requisitos);
     await this.form.escribir('Responsabilidades', resultado.responsabilidades);
     await this.form.escribir('Descripción', resultado.descripcion);

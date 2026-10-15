@@ -3,8 +3,7 @@ const { testContext, evidence } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
 const CapacitacionFormPage = require('../pages/CapacitacionFormPage');
-const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'agregar-capacitacion';
 const CLAVE_EMPLEADO = 'Nombre de Empleado que recibe la Capacitación';
@@ -75,12 +74,11 @@ describe('Empleados - Agregar Capacitación', function () {
     const hoy = new Date();
     const en30 = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    const nombreCap = nombreUnicoQA(testContext.get(CASO, 'Nombre'), bancos.capacitacion.texto('nombre'));
+    // Nombre (único) / Descripción / Centro / Facilitador: lo dirigido o la fuente declarada en CapacitacionFormPage.ESTRATEGIAS.
+    const generados = datos.deFormulario(CASO, CapacitacionFormPage.ESTRATEGIAS);
+    const nombreCap = generados.Nombre;
     const valores = {
-      Nombre: nombreCap,
-      Descripción: bancos.capacitacion.valor(testContext.get(CASO, 'Descripción'), 'descripcion'),
-      Centro: bancos.capacitacion.valor(testContext.get(CASO, 'Centro'), 'centro'),
-      Facilitador: bancos.capacitacion.valor(testContext.get(CASO, 'Facilitador'), 'facilitador'),
+      ...generados,
       Costo: testContext.get(CASO, 'Costo') || '1000',
       'Inversión Empresa': testContext.get(CASO, 'Inversión Empresa') || '500',
       'Fecha de inicio': testContext.get(CASO, 'Fecha de inicio') || fmt(hoy),

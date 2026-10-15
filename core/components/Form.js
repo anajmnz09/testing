@@ -99,8 +99,13 @@ class Form extends BaseComponent {
    * recurso — así una pantalla que ya funciona con las dos primeras nunca
    * paga el costo ni el riesgo de la tercera (nunca llega a intentarla), y
    * solo una pantalla que realmente la necesita la usa.
+   *
+   * Opt-in `form.soloGenerica = true`: para una pantalla que SABE que solo usa la tercera convención (`<label>` + editor sin clase
+   * propia, ej. "Crear asignación" de Herramientas) y no debe pagar el timeout completo de las dos primeras en cada campo. Por
+   * defecto `false`: ningún formulario existente cambia.
    */
   async _elemCampo(label, timeoutMs) {
+    if (this.soloGenerica) return this._mejorCandidato(this._campoGenerico(label), label, timeoutMs);
     try {
       return await this._mejorCandidato(this._campo(label), label, timeoutMs);
     } catch (e) {
@@ -159,12 +164,19 @@ class Form extends BaseComponent {
    * `_esperarOverlayCerrado`: un solo `executeScript` en vez de `isDisplayed()`
    * elemento por elemento (el elemento DOM devuelto por `executeScript` se
    * hidrata como WebElement normal, usable con `.click()`/`.getText()`).
+   *
+   * `omitirPlaceholder` (opt-in): salta el item que es solo un placeholder tipo "---Seleccionar---" (no es una opción real y
+   * elegirlo no cambia nada); por defecto NO se omite, para no alterar los formularios que ya dependen de este comportamiento.
    */
-  async _primerItemVisible() {
+  async _primerItemVisible({ omitirPlaceholder = false } = {}) {
     return this.driver.wait(async () => {
       const el = await this.driver.executeScript(
-        (sel) => Array.from(document.querySelectorAll(sel)).find((e) => e.offsetParent !== null) || null,
-        this._opcionSelectorCss()
+        (sel, omitir) =>
+          Array.from(document.querySelectorAll(sel)).find(
+            (e) => e.offsetParent !== null && !(omitir && /^s*-{2,}[^-]*-{2,}s*$/.test(e.innerText || ''))
+          ) || null,
+        this._opcionSelectorCss(),
+        omitirPlaceholder
       );
       return el || false;
     }, this._timeout());
@@ -495,6 +507,45 @@ class Form extends BaseComponent {
   }
 
   /**
+   * Textos de las opciones de un selectbox por label (abre el dropdown, las lee y lo cierra SIN elegir). Excluye el placeholder tipo
+   * "---Seleccionar---". Solo lee: no cambia el valor del campo.
+   */
+  async opcionesDe(label) {
+    await this._abrirDropdown(label);
+    const textos = (await this._textosItemsVisibles()).split('|').map((t) => t.trim()).filter((t) => t && !/^-{2,}[^-]*-{2,}$/.test(t));
+    await this.driver.actions().sendKeys(Key.ESCAPE).perform();
+    await this._esperarOverlayCerrado().catch(() => {});
+    return textos;
+  }
+
+  /**
+   * Elige en un selectbox el PRIMER candidato de `siguienteCandidato()` que EXISTA entre sus opciones (sin distinguir mayúsculas ni
+   * acentos). Para catálogos que se administran en otro lado (Configuración): un candidato del banco de datos que allí no existe no se
+   * puede asignar, así que se salta (cada llamada avanza el cursor del banco, determinista por `DATOS_SEMILLA`) y queda en el log. Si
+   * ninguno de `intentos` candidatos existe, elige la primera opción real del catálogo y lo avisa. Devuelve el texto REAL elegido.
+   * @param {string} label
+   * @param {() => string} siguienteCandidato  p. ej. `() => datos.resolver('beneficio.tipo')`
+   */
+  async elegirDelCatalogo(label, siguienteCandidato, { intentos = 30 } = {}) {
+    const opciones = await this.opcionesDe(label);
+    if (!opciones.length) throw new Error(`Form: el catálogo de "${label}" no tiene opciones.`);
+    let elegido = null;
+    const descartados = [];
+    for (let i = 0; i < intentos && !elegido; i += 1) {
+      const candidato = siguienteCandidato();
+      elegido = opciones.find((o) => normalizarTexto(o) === normalizarTexto(candidato)) || null;
+      if (!elegido) descartados.push(candidato);
+    }
+    if (!elegido) {
+      elegido = opciones[0];
+      logger.warn(`Form: ningún candidato del banco existe en el catálogo de "${label}" [${opciones.join(', ')}]: se usa "${elegido}"`);
+    } else if (descartados.length) {
+      logger.info(`Form: candidatos del banco que no están en el catálogo de "${label}" (omitidos): ${[...new Set(descartados)].join(', ')}`);
+    }
+    return elegido;
+  }
+
+  /**
    * Selecciona en un selectbox la primera opción válida y devuelve su texto.
    * (Cumple la regla: "para selectbox, primera opción válida si no hay regla".)
    *
@@ -507,12 +558,12 @@ class Form extends BaseComponent {
    * framework sin ese reintento, así que la carrera se colaba siempre por
    * acá primero.
    */
-  async seleccionarPrimera(label, intentos = 3) {
+  async seleccionarPrimera(label, intentos = 3, { omitirPlaceholder = false } = {}) {
     logger.info(`Form: seleccionar primera opción de "${label}"`);
     for (let intento = 1; intento <= intentos; intento++) {
       try {
         await this._abrirDropdown(label);
-        const item = await this._primerItemVisible();
+        const item = await this._primerItemVisible({ omitirPlaceholder });
         const texto = (await item.getText()).trim();
         try {
           await item.click();
@@ -1024,7 +1075,9 @@ class Form extends BaseComponent {
    *   - `valores[label]` con valor NO vacío  → se usa ese valor con su estrategia.
    *   - `valores[label]` vacío y `autofill:true`  → se aplica la estrategia SIN
    *     valor (su comportamiento por defecto: firstOption elige la primera, text
-   *     no toca el campo, etc.).
+   *     no toca el campo, etc.). Excepción: un control de texto que declara `dato`
+   *     en `ESTRATEGIAS` ({ estrategia:'text', dato:'puesto.descripcion' }) recibe
+   *     un valor de la fuente común (`utils/datos.js`), reproducible por semilla.
    *   - `valores[label]` vacío y `autofill:false` (default) → NO se toca el control.
    *
    * Con `autofill:false` esta rutina es NEUTRA para los campos que el usuario no
@@ -1053,7 +1106,8 @@ class Form extends BaseComponent {
         usados[label] = await this.setValor(label, valor, { estrategia, ...extra });
       } else if (autofill) {
         logger.info(`Form: completar "${label}" automáticamente (sin valor)`);
-        usados[label] = await this.setValor(label, undefined, { estrategia, ...extra });
+        const generado = extra.dato !== undefined && estrategia === 'text' ? require('../utils/datos').resolver(extra.dato, { campo: label }) : undefined;
+        usados[label] = await this.setValor(label, generado, { estrategia, ...extra });
       }
     }
     return usados;

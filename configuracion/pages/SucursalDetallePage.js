@@ -44,7 +44,7 @@ const ESTRATEGIAS = {
   Latitud: 'text',
   Longitud: 'text',
   Estado: 'directSelect',
-  Dirección: 'text',
+  Dirección: { estrategia: 'text', dato: 'sucursal.direccion' },
 };
 
 class SucursalDetallePage extends ConfiguracionEntidadDetallePage {

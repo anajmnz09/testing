@@ -81,7 +81,10 @@ async function _escribirCaracterPorCaracter(form, label, texto) {
  * Requeridos reales (asterisco en la app, confirmado real): Parentesco,
  * Tipo ID, Identificación, Nombres, Apellidos, Género, Fecha de nacimiento.
  */
-const CAMPOS_SEGURO_CONDICIONALES = ['Plan de seguro', 'Tarifa', '% Empresa', '% Empleado'];
+// Tras elegir el Plan de seguro, la app AUTOCALCULA Tarifa, % Empresa y % Empleado y los deja en solo lectura (`dx-state-readonly`,
+// confirmado real, 2026-10-13: p. ej. 1631 / 100 / 0): nunca se escriben, igual que "Edad". Aunque el Panel los muestre, no se aplican.
+const CAMPOS_CALCULADOS = ['Edad', 'Tarifa', '% Empresa', '% Empleado'];
+const CAMPOS_SEGURO = ['Proveedor de seguros', 'Plan de seguro'];
 
 const ESTRATEGIAS = {
   Parentesco: 'directSelect',
@@ -91,14 +94,16 @@ const ESTRATEGIAS = {
     estrategia: 'custom',
     fn: (form, label, valor) => (valor === undefined || valor === null ? undefined : _escribirCaracterPorCaracter(form, label, valor).then(() => valor)),
   },
-  Nombres: 'text',
-  Apellidos: 'text',
+  // Texto libre con fuente declarada (mecanismo común `core/utils/datos`): Panel > escenario > fuente.
+  Nombres: { estrategia: 'text', dato: 'persona.primerNombre' },
+  Apellidos: { estrategia: 'text', dato: 'persona.primerApellido' },
   Género: 'directSelect',
   'Fecha de nacimiento': 'datePicker',
   Edad: 'text',
-  Discapacidad: 'text',
-  'Proveedor de seguros': 'directSelect',
-  'Plan de seguro': 'directSelect',
+  Discapacidad: { estrategia: 'text', dato: 'dependiente.discapacidad' },
+  // Su primer item es el placeholder "---Seleccionar---" (no habilita el bloque de seguro): se salta para elegir una opción real.
+  'Proveedor de seguros': { estrategia: 'directSelect', omitirPlaceholder: true },
+  'Plan de seguro': { estrategia: 'directSelect', omitirPlaceholder: true },
   Tarifa: 'text',
   '% Empresa': 'text',
   '% Empleado': 'text',
@@ -159,18 +164,17 @@ class DependienteFormPage extends BasePage {
    * primero (`estricta`): si la UI muestra un control que `ESTRATEGIAS` no
    * declara, el test FALLA en vez de pasar con un campo sin cubrir.
    *
-   * "Edad" SIEMPRE queda excluida (readonly/autocalculada). El bloque de
-   * seguro (`CAMPOS_SEGURO_CONDICIONALES`) solo se intenta si `valores`
-   * incluye un valor para "Proveedor de seguros" — si no, queda excluido
-   * (están deshabilitados en la app hasta elegir un proveedor).
+   * Los campos calculados (`CAMPOS_CALCULADOS`: Edad, Tarifa, % Empresa, % Empleado) SIEMPRE quedan excluidos (readonly). El bloque
+   * de seguro (Proveedor -> Plan) se llena como el resto, con la primera opción REAL (el primer item es el placeholder
+   * "---Seleccionar---"); elegir el plan es lo que rellena Tarifa y los porcentajes. `conSeguro:false` lo excluye.
    */
-  async completar(valores = {}, { autofill = true } = {}) {
+  async completar(valores = {}, { autofill = true, conSeguro = true } = {}) {
     await this.form.validarControlesDeclarados(ESTRATEGIAS, {
       etiqueta: 'Agregar Dependiente',
       estricta: true,
     });
-    const excepto = ['Edad'];
-    if (!valores['Proveedor de seguros']) excepto.push(...CAMPOS_SEGURO_CONDICIONALES);
+    const excepto = [...CAMPOS_CALCULADOS];
+    if (!conSeguro) excepto.push(...CAMPOS_SEGURO);
     return this.form.completarDesde(ESTRATEGIAS, valores, { autofill, excepto });
   }
 

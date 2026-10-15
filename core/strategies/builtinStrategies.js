@@ -30,8 +30,14 @@ class FirstOptionStrategy extends SelectionStrategy {
  * escribir. Para listas cortas sin buscador.
  */
 class DirectSelectStrategy extends SelectionStrategy {
-  async aplicar(form, label, valor) {
-    if (valor === undefined || valor === null || valor === '') return form.seleccionarPrimera(label);
+  /**
+   * `opciones.omitirPlaceholder` (opt-in): sin valor, "primera opción" salta un placeholder tipo "---Seleccionar---" y elige la
+   * primera opción REAL (para selects cuyo primer item no es una opción y no habilita nada, ej. "Proveedor de seguros").
+   */
+  async aplicar(form, label, valor, opciones = {}) {
+    if (valor === undefined || valor === null || valor === '') {
+      return form.seleccionarPrimera(label, undefined, { omitirPlaceholder: !!opciones.omitirPlaceholder });
+    }
     await form.seleccionar(label, valor);
     return valor;
   }

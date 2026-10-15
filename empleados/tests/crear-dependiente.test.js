@@ -1,6 +1,7 @@
 const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
+const datos = require('@triple/core/utils/datos');
 const fixtures = require('../support/fixtures');
 const DependienteFormPage = require('../pages/DependienteFormPage');
 
@@ -11,35 +12,23 @@ const CLAVE_EMPLEADO = 'Nombre de Empleado que recibe el Dependiente';
 // empleado PRIMERO.
 testContext.registrarCasoDesdeFormulario(CASO, DependienteFormPage.ESTRATEGIAS, [CLAVE_EMPLEADO]);
 
-function sufijoUnico() {
-  return Date.now().toString().slice(-6);
-}
-
 /**
- * Agrega un Dependiente a un Empleado existente: entra al detalle, abre la
- * sección "Dependientes" del sidemenu (listview con barra título/Agregar/
- * Eliminar/Filtro, MISMO layout que "Capacitación"), presiona "Agregar",
- * llena el formulario inline con los 7 campos REQUERIDOS (Parentesco, Tipo
- * ID, Identificación, Nombres, Apellidos, Género, Fecha de nacimiento) +
- * "Discapacidad" (opcional, texto libre) y presiona "Guardar".
+ * Agrega un Dependiente a un Empleado existente con TODOS los campos editables llenos: entra al detalle, abre la sección
+ * "Dependientes", presiona "Agregar", llena el formulario inline completo y presiona "Guardar".
  *
- * Empleado: si el Panel dirige "Nombre de Empleado que recibe el
- * Dependiente", se usa ese; si no, el PRIMERO del listado (nunca un nombre
- * memorizado — los registros cambian según la compañía activa).
+ * Campos: Parentesco, Tipo ID, Identificación, Nombres, Apellidos, Género, Fecha de nacimiento, Discapacidad, Proveedor de seguros,
+ * Plan de seguro y Dependiente directo. "Edad", "Tarifa", "% Empresa" y "% Empleado" son de solo lectura (la app los autocalcula desde
+ * la fecha de nacimiento y el plan): se ven en pantalla, nunca se escriben.
  *
- * Valores: cada campo toma el valor dirigido desde el Panel o, si no viene,
- * un default QA. "Identificación" lleva sufijo único por corrida (formato
- * cédula, 11 dígitos) para que la verificación de persistencia no sea un
- * falso positivo por un registro de una corrida anterior. "Parentesco"/
- * "Tipo ID"/"Género" (catálogos) sin valor dirigido -> primera opción (modo
- * automático del framework, `directSelect`).
+ * Empleado: si el Panel dirige "Nombre de Empleado que recibe el Dependiente", se usa ese; si no, el PRIMERO del listado.
  *
- * NO llena el bloque de seguro ("Proveedor de seguros"/"Plan de seguro"/
- * "Tarifa"/"% Empresa"/"% Empleado", deshabilitado hasta elegir un
- * proveedor) ni "Dependiente directo" (checkbox opcional) salvo que el
- * Panel los dirija explícitamente — ver `DependienteFormPage.completar`.
- * "Edad" nunca se toca: es de solo lectura, autocalculada desde "Fecha de
- * nacimiento".
+ * Valores (prioridad: Panel / Execution Context > fuente automática):
+ *  - Texto con fuente común (`core/utils/datos`): Nombres y Apellidos (`persona.*`, coherentes entre sí), Discapacidad (banco
+ *    `dependiente`, declarado en `DependienteFormPage.ESTRATEGIAS`) e Identificación (`persona.identificacion`, única por
+ *    llamada: encontrarla en el listado prueba que ESTA corrida guardó). Reproducibles con `DATOS_SEMILLA`.
+ *  - Selects (Parentesco, Tipo ID, Género, Proveedor y Plan de seguro): la primera opción real (autofill del framework).
+ *  - Valores intencionales que NO vienen del mecanismo (no son texto): Fecha de nacimiento 01/01/2015 y Dependiente directo marcado
+ *    (el Panel siembra `false` por omisión, indistinguible de "sin dirigir").
  */
 describe('Empleados - Crear Dependiente', function () {
   this.timeout(300000);
@@ -75,26 +64,22 @@ describe('Empleados - Crear Dependiente', function () {
 
     const form = await detalle.abrirAgregarDependiente();
 
-    const s = sufijoUnico();
-    const nombres = testContext.get(CASO, 'Nombres') || `QA${s}`;
-    const apellidos = testContext.get(CASO, 'Apellidos') || `Dependiente${s}`;
-    const identificacion = testContext.get(CASO, 'Identificación') || `001${s}${s.slice(-2)}`.slice(0, 11).padEnd(11, '0');
+    // Texto libre: fuente declarada en ESTRATEGIAS (Nombres, Apellidos, Discapacidad); la Identificación es un editor enmascarado
+    // (estrategia custom), así que se pide directo por la interfaz pública.
+    const generados = datos.deFormulario(CASO, DependienteFormPage.ESTRATEGIAS);
+    const identificacion = datos.valor(testContext.get(CASO, 'Identificación'), 'persona.identificacion', { campo: 'Identificación' });
+    const { Nombres: nombres, Apellidos: apellidos } = generados;
 
     const valores = {
       Parentesco: testContext.get(CASO, 'Parentesco') || undefined,
       'Tipo ID': testContext.get(CASO, 'Tipo ID') || undefined,
       Identificación: identificacion,
-      Nombres: nombres,
-      Apellidos: apellidos,
+      ...generados,
       Género: testContext.get(CASO, 'Género') || undefined,
       'Fecha de nacimiento': testContext.get(CASO, 'Fecha de nacimiento') || '01/01/2015',
-      Discapacidad: testContext.get(CASO, 'Discapacidad') || 'Ninguna',
       'Proveedor de seguros': testContext.get(CASO, 'Proveedor de seguros') || undefined,
       'Plan de seguro': testContext.get(CASO, 'Plan de seguro') || undefined,
-      Tarifa: testContext.get(CASO, 'Tarifa') || undefined,
-      '% Empresa': testContext.get(CASO, '% Empresa') || undefined,
-      '% Empleado': testContext.get(CASO, '% Empleado') || undefined,
-      'Dependiente directo': testContext.get(CASO, 'Dependiente directo'),
+      'Dependiente directo': true,
     };
 
     logger.info(`${CASO}: llenando Dependiente "${nombres} ${apellidos}" para "${nombreUsado}" -> ${JSON.stringify(valores)}`);

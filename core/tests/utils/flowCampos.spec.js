@@ -51,6 +51,7 @@ describe('utils/flowCampos — requires por campos seleccionables (unitario)', f
   'Razón de salida': 'firstOption',
   'Razón de solicitud': 'directSelect',
   Compuesto: 'searchAndSelect',
+  Oficina: { estrategia: 'searchAndSelect', sinRequires: true },
   'Tipo de nómina': 'searchAndSelect',
   'Fecha de puesto': 'datePicker',
   'Aprobado por sucursal': 'switch',
@@ -97,6 +98,16 @@ module.exports = SucursalFormPage;
       expect(tiposDe(r)).to.include('Sucursal→sucursal');
       const c = r.campos.find((x) => x.tipo === 'sucursal');
       expect(c).to.include({ estrategia: 'searchAndSelect', via: 'FormPage.ESTRATEGIAS["Sucursal"]' });
+    });
+
+    it('3b. un control con `sinRequires: true` no genera requires aunque su label coincida con una entidad conocida', function () {
+      const r = detectar('modC/tests/formulario.test.js');
+      expect(tiposDe(r).filter((t) => t.startsWith('Oficina'))).to.deep.equal([]);
+      const controles = leerControles("const ESTRATEGIAS = { Oficina: { estrategia: 'searchAndSelect', sinRequires: true }, Sucursal: 'searchAndSelect' };");
+      expect(controles.map((c) => [c.label, c.sinRequires])).to.deep.equal([
+        ['Oficina', true],
+        ['Sucursal', false],
+      ]);
     });
 
     it('2. un dropdown cuyo label no coincide con ninguna entidad no genera nada', function () {
@@ -224,6 +235,12 @@ module.exports = SucursalFormPage;
     it('Configuración: crear-beneficio y crear-comportamiento-concepto-nomina', function () {
       expect(requiresDe('configuracion/tests/crear-beneficio.test.js').tipos).to.include('concepto-nomina');
       expect(requiresDe('configuracion/tests/crear-comportamiento-concepto-nomina.test.js').tipos).to.include('tipo-nomina');
+    });
+
+    it('Empleados: agregar-beneficio solo exige empleado (su selector "Beneficio" declara sinRequires)', function () {
+      const { tipos } = requiresDe('empleados/tests/agregar-beneficio.test.js');
+      expect(tipos).to.include('empleado');
+      expect(tipos).to.not.include('beneficio');
     });
 
     it('Empleados: crear-dependiente exige plan-de-seguro', function () {

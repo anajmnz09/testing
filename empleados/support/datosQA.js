@@ -5,35 +5,30 @@
  * — sin un valor explícito, `TextInputStrategy`/`DatePickerStrategy` no tocan el
  * control, ver `builtinStrategies.js`).
  *
- * Los valores salen del generador único del Core (`core/utils/datosPrueba.js`):
- * nombre/apellidos de catálogo (cambian en cada corrida) e Identificación/correo
- * únicos por construcción. El llamador (`valoresSeccion` en `crear-empleado`)
+ * Los valores salen del punto de acceso común del Core (`@triple/core/utils/datos`):
+ * persona de catálogo (cambia en cada corrida, reproducible con `DATOS_SEMILLA`) e
+ * Identificación/correo únicos por construcción, y los bancos del módulo. El llamador (`valoresSeccion` en `crear-empleado`)
  * sigue dando prioridad a lo dirigido desde el Panel.
  */
-const datosPrueba = require('@triple/core/utils/datosPrueba');
-const bancos = require('./bancos');
+const datos = require('@triple/core/utils/datos');
 
-// Persona de la ÚLTIMA llamada a `datosBasicosQA()`: permite que los correos de
-// `datosPersonalesQA()` se deriven del mismo nombre (coherencia dentro del test).
-let ultimaPersona = null;
-
+// La persona vigente vive en el punto común: `datosBasicosQA()` empieza una nueva y los correos de
+// `datosPersonalesQA()` se derivan de ella (coherencia dentro del test).
 function datosBasicosQA() {
-  const persona = datosPrueba.personaUnica();
-  ultimaPersona = persona;
+  datos.nuevaPersona();
   return {
-    'Primer Nombre': persona.primerNombre,
-    'Segundo Nombre': persona.segundoNombre,
-    'Primer Apellido': persona.primerApellido,
-    'Segundo Apellido': persona.segundoApellido,
-    'Dimensión empleado': bancos.datosEmpleado.texto('dimension'),
-    Referencia: bancos.datosEmpleado.texto('referencia'),
+    'Primer Nombre': datos.resolver('persona.primerNombre'),
+    'Segundo Nombre': datos.resolver('persona.segundoNombre'),
+    'Primer Apellido': datos.resolver('persona.primerApellido'),
+    'Segundo Apellido': datos.resolver('persona.segundoApellido'),
+    'Dimensión empleado': datos.resolver('datosEmpleado.dimension'),
+    Referencia: datos.resolver('datosEmpleado.referencia'),
     // Cascade Tipo ID -> Identificación: 11 dígitos (formato cédula RD más común).
-    Identificación: datosPrueba.identificacion(),
+    Identificación: datos.resolver('persona.identificacion'),
   };
 }
 
 function datosPersonalesQA() {
-  const persona = ultimaPersona || datosPrueba.personaUnica();
   return {
     'Fecha de nacimiento': '01/01/1990',
     'Número de hijos': '0',
@@ -43,16 +38,16 @@ function datosPersonalesQA() {
     Pulgadas: '7',
     'Condición médica': 'Ninguna',
     Discapacidad: 'Ninguna',
-    'Email corporativo': datosPrueba.correo(persona),
-    'Email personal': datosPrueba.correo({ ...persona, primerApellido: persona.segundoApellido }),
+    'Email corporativo': datos.resolver('persona.correo'),
+    'Email personal': datos.resolver('persona.correoPersonal'),
     // Solo dígitos: el editor enmascarado ("(XXX) XXX-XXXX") los formatea
     // solo — con guiones en el valor, la máscara los interpreta mal y
     // termina desalineada (confirmado con Selenium real).
     'Teléfono de trabajo': '8095550100',
     'Teléfono personal': '8095550101',
     // Cascade País -> Ciudad -> Sector -> Calle:
-    Calle: bancos.datosEmpleado.texto('calle'),
-    Nombre: bancos.datosEmpleado.texto('contacto'),
+    Calle: datos.resolver('datosEmpleado.calle'),
+    Nombre: datos.resolver('datosEmpleado.contacto'),
     Teléfono: '8095550102',
     Parentesco: 'Amigo',
   };

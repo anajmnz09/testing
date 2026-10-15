@@ -1,7 +1,7 @@
 const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const fixtures = require('../support/fixtures');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'agregar-comentario-solicitud-empleo';
 
@@ -28,7 +28,7 @@ describe('Reclutamiento - Agregar comentario a Solicitud de Empleo', function ()
         `${CASO}: se requiere indicar el "codigo" de la Solicitud de Empleo (Execution Context/Panel) — no aplica descubrimiento automático.`
       );
     }
-    const comentario = bancos.comentario.valor(testContext.get(CASO, 'comentario'), 'texto');
+    const comentario = datos.valor(testContext.get(CASO, 'comentario'), 'comentario.texto');
 
     const detalle = await ctx.lista.abrirDetalle(codigo);
     await detalle.estaCargado();

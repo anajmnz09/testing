@@ -1,3 +1,5 @@
+const { unicoQA } = require('@triple/core/utils/datos');
+
 /**
  * Mismo criterio que `configuracion/support/nombresQA.js#nombreUnicoQA`
  * (copia local — mismo patrón de "una copia por módulo" ya usado para
@@ -14,8 +16,8 @@
  * anterior no prueba que ESTA corrida guardó nada).
  */
 function nombreUnicoQA(dirigido, base) {
-  if (dirigido) return dirigido;
-  return `${base} ${Date.now().toString().slice(-6)}`;
+  // Compatibilidad: ya no es una copia local, delega en el punto de acceso común (`@triple/core/utils/datos`).
+  return unicoQA(dirigido, base);
 }
 
 module.exports = { nombreUnicoQA };

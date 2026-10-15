@@ -1,6 +1,7 @@
 const assert = require('assert');
 const { testContext } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
+const datos = require('@triple/core/utils/datos');
 const TipoNominaDetallePage = require('../pages/TipoNominaDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
@@ -23,7 +24,7 @@ const NOMBRE_BASE_QA = 'TIPO NOMINA QA';
 // corriendo esta suite repetidas veces en la misma sesión. `Math.random()`
 // no tiene esa correlación con el timing entre corridas.
 function codigoUnicoQA3() {
-  return Math.floor(Math.random() * 46656).toString(36).toUpperCase().padStart(3, '0');
+  return datos.codigo(3); // mismo espacio (36^3) y criterio, ahora derivado de la semilla de la corrida (DATOS_SEMILLA)
 }
 // Defaults QA para los numberbox REQUERIDOS que la app rechaza en "0"
 // (mismo hallazgo que "Tarifa" de Planes de seguro: "0" no cuenta como vacío

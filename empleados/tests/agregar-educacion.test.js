@@ -2,8 +2,7 @@ const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
-const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'agregar-educacion';
 const CLAVE_BUSQUEDA = 'Nombre de Empleado que recibe la Educación';
@@ -63,8 +62,8 @@ describe('Empleados - Agregar Educación (Resumen/CV)', function () {
     const abierta = await detalle.abrirSeccion('Resumen/CV');
     assert.ok(abierta.activada, `No se pudo activar la sección "Resumen/CV" para "${nombreUsado}".`);
 
-    const nombrePrograma = nombreUnicoQA(testContext.get(CASO, 'Nombre programa educativo'), bancos.educacion.texto('programa'));
-    const lugar = bancos.educacion.valor(testContext.get(CASO, 'Lugar'), 'lugar');
+    const nombrePrograma = datos.valor(testContext.get(CASO, 'Nombre programa educativo'), { fuente: 'educacion.programa', unico: true });
+    const lugar = datos.valor(testContext.get(CASO, 'Lugar'), 'educacion.lugar');
     const fechaInicio = testContext.get(CASO, 'Fecha de inicio') || '01/01/2020';
     const fechaFin = testContext.get(CASO, 'Fecha finalización');
     const descripcion = testContext.get(CASO, 'Descripción');

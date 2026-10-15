@@ -12,24 +12,23 @@
  * completar — el bug reportado ("no llena los campos requeridos en modo
  * automático"). Mismo criterio ya usado en `empleados/support/datosQA.js`.
  *
- * Los datos vienen de `core/utils/datosPrueba.js` (únicos donde la app lo exige).
+ * Los datos vienen del punto de acceso común (`@triple/core/utils/datos`, fuentes `persona.*`; únicos donde la app lo exige).
  */
-const { datosBasicosQA } = require('../../empleados/support/datosQA');
-const datosPrueba = require('@triple/core/utils/datosPrueba');
+const datos = require('@triple/core/utils/datos');
 
 function datosQA() {
   // Persona única por ejecución (la app exige nombre distinto por candidato/
   // empleado), generada por el generador del Core — ya no `QA<timestamp>`.
-  const persona = datosPrueba.personaUnica();
+  datos.nuevaPersona();
   return {
-    'Primer Nombre': persona.primerNombre,
-    'Segundo Nombre': persona.segundoNombre,
-    'Primer Apellido': persona.primerApellido,
-    'Segundo Apellido': persona.segundoApellido,
+    'Primer Nombre': datos.resolver('persona.primerNombre'),
+    'Segundo Nombre': datos.resolver('persona.segundoNombre'),
+    'Primer Apellido': datos.resolver('persona.primerApellido'),
+    'Segundo Apellido': datos.resolver('persona.segundoApellido'),
     // Solo dígitos: mismo criterio que los editores enmascarados de teléfono
     // de Empleados (con guiones la máscara puede desalinearse).
-    Celular: datosPrueba.celular(),
-    Correo: datosPrueba.correo(persona),
+    Celular: datos.resolver('persona.celular'),
+    Correo: datos.resolver('persona.correo'),
   };
 }
 
@@ -41,7 +40,7 @@ function datosQA() {
  * una variable para reutilizarlo al buscar/consultar lo creado.
  */
 function datosUnicosQA() {
-  return { ...datosQA(), Identificación: datosBasicosQA().Identificación };
+  return { ...datosQA(), Identificación: datos.resolver('persona.identificacion') };
 }
 
 module.exports = { datosQA, datosUnicosQA };

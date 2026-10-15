@@ -7,6 +7,15 @@ const EmpleadoFormPage = require('./EmpleadoFormPage');
 const CapacitacionFormPage = require('./CapacitacionFormPage');
 const CapacitacionAdjuntosPage = require('./CapacitacionAdjuntosPage');
 const DependienteFormPage = require('./DependienteFormPage');
+const HerramientaAdjuntosPage = require('./HerramientaAdjuntosPage');
+const HerramientaFormPage = require('./HerramientaFormPage');
+const HerramientaRetornoPage = require('./HerramientaRetornoPage');
+const BeneficioFormPage = require('./BeneficioFormPage');
+const SeguroFormPage = require('./SeguroFormPage');
+const AnalisisMedicoAdjuntosPage = require('./AnalisisMedicoAdjuntosPage');
+const ContratoAdjuntosPage = require('./ContratoAdjuntosPage');
+const OtroDocumentoAdjuntosPage = require('./OtroDocumentoAdjuntosPage');
+const CartaAdjuntosPage = require('./CartaAdjuntosPage');
 
 /**
  * "Resumen/CV" > "Educación y experiencia": el select "Tipo" condiciona el
@@ -98,7 +107,26 @@ class EmpleadoDetallePage extends BasePage {
         editores: ['abrirEditarCapacitacion'],
         eliminadores: ['eliminarCapacitacion'],
       },
-      { tipo: 'dependiente', referencia: 'identificacion', metodos: [], creadores: ['abrirAgregarDependiente'] },
+      {
+        tipo: 'herramienta',
+        referencia: 'descripcion',
+        metodos: ['abrirAdjuntarHerramienta', 'abrirRetornarHerramienta', 'leerHerramienta'],
+        creadores: ['abrirAgregarHerramienta'],
+        eliminadores: ['eliminarHerramienta'],
+      },
+      {
+        tipo: 'seguro-empleado',
+        referencia: 'comentario',
+        metodos: ['leerSeguro', 'inactivarSeguro'],
+        creadores: ['abrirAgregarSeguro'],
+      },
+      {
+        tipo: 'beneficio-empleado',
+        referencia: 'comentario',
+        metodos: ['leerBeneficio', 'inactivarBeneficio'],
+        creadores: ['abrirAgregarBeneficio'],
+      },
+      { tipo: 'dependiente', referencia: 'identificacion', metodos: [], creadores: ['abrirAgregarDependiente'], editores: ['abrirEditarDependiente'], eliminadores: ['eliminarDependiente'] },
       {
         tipo: 'educacion',
         referencia: 'nombre',
@@ -434,6 +462,308 @@ class EmpleadoDetallePage extends BasePage {
   }
 
   /**
+   * Grid de "Seguros" (Recursos humanos): firma de columnas "Proveedor" + "Plan" (mismo núcleo que las demás secciones), marcado
+   * `data-qa="grid-seguros"`.
+   */
+  async _esperarGridSeguros(timeout = 20000) {
+    return this._esperarGridPorFirma(['Proveedor', 'Plan'], 'grid-seguros', timeout);
+  }
+
+  /**
+   * Filas del grid de "Seguros" como `{ columna: valor }[]` ("Proveedor", "Plan", "Tarifa", "% Empresa", "% Empleado", "Comentario",
+   * "Estado"). LANZA si el grid nunca se estabiliza (no confunde "no cargó" con "sin seguros").
+   */
+  async leerFilasSeguros() {
+    const estado = await this._esperarGridSeguros();
+    if (!estado.listo) {
+      throw new Error(`EmpleadoDetallePage: el grid de "Seguros" no se pudo leer (filas=${estado.filas}). ¿Cambió la firma de columnas o la sección no renderizó?`);
+    }
+    return estado.vacio ? [] : this._leerFilasGridMarcado('grid-seguros');
+  }
+
+  /**
+   * Índice de la fila de "Seguros" para `objetivo` (sin distinguir mayúsculas ni acentos): número = posición; texto = su "Comentario"
+   * EXACTO (la referencia de la entidad en un flujo: es único por corrida) o el nombre del PLAN ("Plan Alpha" — lo que se dirige a mano
+   * desde el Panel). Si hay varias del mismo plan gana la primera ACTIVA. -1 si no existe.
+   */
+  _indiceSeguro(filas, objetivo) {
+    if (typeof objetivo === 'number') return objetivo < filas.length ? objetivo : -1;
+    const norm = (t) => String(t == null ? '' : t).normalize('NFD').replace(new RegExp('[\u0300-\u036f]', 'g'), '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const buscado = norm(objetivo);
+    const porComentario = filas.findIndex((f) => norm(f.Comentario) === buscado);
+    if (porComentario >= 0) return porComentario;
+    const porPlan = filas.map((f, i) => ({ f, i })).filter(({ f }) => norm(f.Plan) === buscado);
+    const activo = porPlan.find(({ f }) => /^activo$/i.test(String(f.Estado || '').trim()));
+    return (activo || porPlan[0] || { i: -1 }).i;
+  }
+
+  /** Lee (sin modificar nada) la fila de "Seguros" de `objetivo` (plan, comentario exacto o índice; ver `_indiceSeguro`). FALLA explícito si no existe. */
+  async leerSeguro(objetivo = 0) {
+    const filas = await this.leerFilasSeguros();
+    const indice = this._indiceSeguro(filas, objetivo);
+    if (indice < 0) {
+      throw new Error(`EmpleadoDetallePage: no se encontró el Seguro ${JSON.stringify(objetivo)} en la sección "Seguros". Planes: ${JSON.stringify(filas.map((f) => f.Plan))}.`);
+    }
+    return filas[indice];
+  }
+
+  /**
+   * Abre la pantalla "Agregar Seguro" (botón "Agregar" de la barra de "Seguros"; NAVEGA a una pantalla propia).
+   * Requiere estar en la sección "Seguros". Devuelve una `SeguroFormPage` cargada.
+   */
+  async abrirAgregarSeguro() {
+    await this.esperarSinLoader().catch(() => {});
+    const btn = await this.waitVisible(By.xpath("//*[self::button or contains(@class,'dx-button')][normalize-space(.)='Agregar']"));
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', btn);
+    await btn.click();
+    return new SeguroFormPage(this.driver).estaCargado();
+  }
+
+  /**
+   * Inactiva un Seguro: checkbox de su fila + botón "Inactivar" de la barra (+ confirmación si la app la pide). `objetivo`: nombre del
+   * plan (primera fila activa con ese plan), comentario exacto o índice (0 = primera). Devuelve `{ seleccionado, botonEliminarClickeado
+   * (el de Inactivar), popupApareció, popupCerrado, notify }`; el test decide los asserts. Requiere estar en la sección "Seguros".
+   */
+  async inactivarSeguro(objetivo = 0) {
+    const fila = await this.leerSeguro(objetivo);
+    const clave = fila.Comentario || fila.Plan;
+    const seleccionado = await new DataGrid(this.driver).seleccionarFila(clave);
+    if (!seleccionado) throw new Error(`EmpleadoDetallePage: no se pudo seleccionar (checkbox) el Seguro "${clave}".`);
+    return { seleccionado, ...(await this._confirmarEliminarSeleccion(null, 'Seguros', 'Inactivar')) };
+  }
+
+  /**
+   * Grid de "Beneficios" (Recursos humanos): firma de columnas "Beneficio" + "Estado" (mismo núcleo que Capacitación y Dependientes),
+   * marcado `data-qa="grid-beneficios"`.
+   */
+  async _esperarGridBeneficios(timeout = 20000) {
+    return this._esperarGridPorFirma(['Beneficio', 'Estado'], 'grid-beneficios', timeout);
+  }
+
+  /**
+   * Filas del grid de "Beneficios" como `{ columna: valor }[]` ("Beneficio", "Comentario", "Monto", "Fecha Inicial", "Fecha Final",
+   * "Estado"). LANZA si el grid nunca se estabiliza (no confunde "no cargó" con "sin beneficios").
+   */
+  async leerFilasBeneficios() {
+    const estado = await this._esperarGridBeneficios();
+    if (!estado.listo) {
+      throw new Error(`EmpleadoDetallePage: el grid de "Beneficios" no se pudo leer (filas=${estado.filas}). ¿Cambió la firma de columnas o la sección no renderizó?`);
+    }
+    return estado.vacio ? [] : this._leerFilasGridMarcado('grid-beneficios');
+  }
+
+  /**
+   * Índice de la fila de "Beneficios" para `objetivo` (sin distinguir mayúsculas ni acentos): número = posición; texto = su "Comentario"
+   * EXACTO (la referencia de la entidad en un flujo: es único por corrida) o el NOMBRE del beneficio ("TRANSPORTE", columna
+   * "Beneficio" — lo que se dirige a mano desde el Panel). Si hay varias del mismo nombre gana la primera ACTIVA. -1 si no existe.
+   */
+  _indiceBeneficio(filas, objetivo) {
+    if (typeof objetivo === 'number') return objetivo < filas.length ? objetivo : -1;
+    const norm = (t) => String(t == null ? '' : t).normalize('NFD').replace(new RegExp('[\u0300-\u036f]', 'g'), '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const buscado = norm(objetivo);
+    const porComentario = filas.findIndex((f) => norm(f.Comentario) === buscado);
+    if (porComentario >= 0) return porComentario;
+    const porNombre = filas.map((f, i) => ({ f, i })).filter(({ f }) => norm(f.Beneficio) === buscado);
+    const activo = porNombre.find(({ f }) => /^activo$/i.test(String(f.Estado || '').trim()));
+    return (activo || porNombre[0] || { i: -1 }).i;
+  }
+
+  /** Lee (sin modificar nada) la fila de "Beneficios" de `objetivo` (nombre del beneficio, comentario exacto o índice; ver `_indiceBeneficio`). FALLA explícito si no existe. */
+  async leerBeneficio(objetivo = 0) {
+    const filas = await this.leerFilasBeneficios();
+    const indice = this._indiceBeneficio(filas, objetivo);
+    if (indice < 0) {
+      throw new Error(`EmpleadoDetallePage: no se encontró el Beneficio ${JSON.stringify(objetivo)} en la sección "Beneficios". Beneficios: ${JSON.stringify(filas.map((f) => f.Beneficio))}.`);
+    }
+    return filas[indice];
+  }
+
+  /**
+   * Abre la pantalla "Crear Beneficio" (botón "Agregar" de la barra de "Beneficios"; NAVEGA a una pantalla propia).
+   * Requiere estar en la sección "Beneficios". Devuelve una `BeneficioFormPage` cargada.
+   */
+  async abrirAgregarBeneficio() {
+    await this.esperarSinLoader().catch(() => {});
+    const btn = await this.waitVisible(By.xpath("//*[self::button or contains(@class,'dx-button')][normalize-space(.)='Agregar']"));
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', btn);
+    await btn.click();
+    return new BeneficioFormPage(this.driver).estaCargado();
+  }
+
+  /**
+   * Inactiva un Beneficio: checkbox de su fila + botón "Inactivar" de la barra (+ confirmación si la app la pide). `objetivo`:
+   * nombre del beneficio (primera fila activa con ese nombre), comentario exacto o índice (0 = primera). Devuelve `{ seleccionado, botonEliminarClickeado (el de Inactivar), popupApareció,
+   * popupCerrado, notify }`; el test decide los asserts. Requiere estar en la sección "Beneficios".
+   */
+  async inactivarBeneficio(objetivo = 0) {
+    const fila = await this.leerBeneficio(objetivo);
+    // Se selecciona por el comentario (único por corrida) y, si la fila no lo tiene, por el nombre del beneficio.
+    const clave = fila.Comentario || fila.Beneficio;
+    const seleccionado = await new DataGrid(this.driver).seleccionarFila(clave);
+    if (!seleccionado) throw new Error(`EmpleadoDetallePage: no se pudo seleccionar (checkbox) el Beneficio "${clave}".`);
+    return { seleccionado, ...(await this._confirmarEliminarSeleccion(null, 'Beneficios', 'Inactivar')) };
+  }
+
+  /**
+   * Grid de "Herramientas": firma de columnas "Fecha de asignación" + "Opciones" (mismo núcleo que Capacitación y Dependientes),
+   * marcado `data-qa="grid-herramientas"`.
+   */
+  async _esperarGridHerramientas(timeout = 20000) {
+    return this._esperarGridPorFirma(['Fecha de asignación', 'Opciones'], 'grid-herramientas', timeout);
+  }
+
+  /**
+   * Filas del grid de "Herramientas" como `{ columna: valor }[]` ("Fecha de asignación", "Descripción", "Referencia", "Fecha de
+   * Devolución"). LANZA si el grid nunca se estabiliza (no confunde "no cargó" con "sin herramientas").
+   */
+  async leerFilasHerramientas() {
+    const estado = await this._esperarGridHerramientas();
+    if (!estado.listo) {
+      throw new Error(`EmpleadoDetallePage: el grid de "Herramientas" no se pudo leer (filas=${estado.filas}). ¿Cambió la firma de columnas o la sección no renderizó?`);
+    }
+    return estado.vacio ? [] : this._leerFilasGridMarcado('grid-herramientas');
+  }
+
+  /** Índice de la fila de "Herramientas" para `objetivo`: número = posición; texto = "Descripción" EXACTA (sin distinguir mayúsculas). -1 si no existe. */
+  _indiceHerramienta(filas, objetivo) {
+    if (typeof objetivo === 'number') return objetivo < filas.length ? objetivo : -1;
+    const buscado = String(objetivo).trim().toLowerCase();
+    return filas.findIndex((f) => String(f['Descripción'] || '').trim().toLowerCase() === buscado);
+  }
+
+  /**
+   * Abre la pantalla de ADJUNTOS de una Herramienta: en la columna "Opciones" de su fila, el botón de 3 puntos verticales abre un
+   * dropdown ("Retornar" -> popup con mini form, "Adjuntar" -> pantalla propia); aquí se elige "Adjuntar". `objetivo`: descripción
+   * EXACTA o índice (0 = primera). Devuelve una `HerramientaAdjuntosPage` cargada. Requiere estar en la sección "Herramientas".
+   */
+  async abrirAdjuntarHerramienta(objetivo = 0) {
+    await this._elegirOpcionHerramienta(objetivo, 'Adjuntar');
+    return new HerramientaAdjuntosPage(this.driver).estaCargado();
+  }
+
+  /**
+   * Lee (sin modificar nada) la fila de "Herramientas" de `objetivo` — descripción EXACTA o índice (0 = primera) — como `{ columna:
+   * valor }` ("Fecha de asignación", "Descripción", "Referencia", "Fecha de Devolución"). FALLA explícito si no existe.
+   */
+  async leerHerramienta(objetivo = 0) {
+    const filas = await this.leerFilasHerramientas();
+    const indice = this._indiceHerramienta(filas, objetivo);
+    if (indice < 0) {
+      throw new Error(`EmpleadoDetallePage: no se encontró la Herramienta ${JSON.stringify(objetivo)} en la sección "Herramientas". Filas: ${JSON.stringify(filas.map((f) => f['Descripción']))}.`);
+    }
+    return filas[indice];
+  }
+
+  /**
+   * Elimina una Herramienta: checkbox de su fila + botón "Eliminar" + "Aceptar" en el popup (la columna "Opciones" solo tiene
+   * Retornar y Adjuntar). `objetivo`: descripción EXACTA o índice (0 = primera). Devuelve `{ seleccionado, botonEliminarClickeado,
+   * popupApareció, popupCerrado, notify }`; el test decide los asserts. Requiere estar en la sección "Herramientas".
+   */
+  async eliminarHerramienta(objetivo = 0) {
+    const fila = await this.leerHerramienta(objetivo);
+    // Se selecciona por el texto de la fila (descripción) para no depender del orden del DOM.
+    const seleccionado = await new DataGrid(this.driver).seleccionarFila(fila['Descripción']);
+    if (!seleccionado) throw new Error(`EmpleadoDetallePage: no se pudo seleccionar (checkbox) la Herramienta "${fila['Descripción']}".`);
+    return { seleccionado, ...(await this._confirmarEliminarSeleccion(null, 'Herramientas')) };
+  }
+
+  /**
+   * Abre el popup "Retornar Herramienta" de una fila: Opciones (3 puntos) > "Retornar". `objetivo`: descripción EXACTA o índice
+   * (0 = primera). Devuelve una `HerramientaRetornoPage` cargada. Requiere estar en la sección "Herramientas".
+   */
+  async abrirRetornarHerramienta(objetivo = 0) {
+    await this._elegirOpcionHerramienta(objetivo, 'Retornar');
+    return new HerramientaRetornoPage(this.driver).estaCargado();
+  }
+
+  /**
+   * Abre la pantalla "Crear asignación" (botón "Agregar" de la barra de "Herramientas"; NAVEGA a una pantalla propia, no es inline).
+   * Requiere estar en la sección "Herramientas". Devuelve una `HerramientaFormPage` cargada.
+   */
+  async abrirAgregarHerramienta() {
+    await this.esperarSinLoader().catch(() => {});
+    const btn = await this.waitVisible(By.xpath("//*[self::button or contains(@class,'dx-button')][normalize-space(.)='Agregar']"));
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', btn);
+    await btn.click();
+    return new HerramientaFormPage(this.driver).estaCargado();
+  }
+
+  /** Abre el dropdown de Opciones (3 puntos) de la fila `objetivo` de "Herramientas" y clickea la opción `opcion`. */
+  async _elegirOpcionHerramienta(objetivo, opcion) {
+    const filas = await this.leerFilasHerramientas();
+    if (!filas.length) throw new Error(`EmpleadoDetallePage: la sección "Herramientas" no tiene filas (${opcion}).`);
+    const indice = this._indiceHerramienta(filas, objetivo);
+    const filasDom = await this.driver.findElements(By.css('[data-qa="grid-herramientas"] .dx-data-row'));
+    if (indice < 0 || !filasDom[indice]) {
+      throw new Error(`EmpleadoDetallePage: no se encontró la fila de "Herramientas" para ${JSON.stringify(objetivo)} (${opcion}).`);
+    }
+    const boton = await filasDom[indice].findElement(By.css('td:last-child .dx-dropdownbutton .dx-button'));
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"})', boton);
+    await boton.click();
+    const item = await this.waitVisible(
+      By.xpath(`//*[contains(@class,'dx-dropdownbutton-popup-wrapper')]//*[contains(@class,'dx-list-item')][normalize-space(.)='${opcion}']`)
+    );
+    await item.click();
+  }
+
+  /**
+   * Grid de "Dependientes": se ubica por la FIRMA de columnas "Parentesco" + "Acción" (única entre las secciones del detalle) y se
+   * marca `data-qa="grid-dependientes"` — mismo criterio y núcleo que "Capacitación" (`_esperarGridPorFirma`).
+   */
+  async _esperarGridDependientes(timeout = 20000) {
+    return this._esperarGridPorFirma(['Parentesco', 'Acción'], 'grid-dependientes', timeout);
+  }
+
+  /**
+   * Filas del grid de "Dependientes" como `{ columna: valor }[]` ("Parentesco", "Tipo ID", "Identificación", "Nombre" = nombres +
+   * apellidos, …). LANZA si el grid nunca se estabiliza (no confunde "no cargó" con "sin dependientes").
+   */
+  async leerFilasDependientes() {
+    const estado = await this._esperarGridDependientes();
+    if (!estado.listo) {
+      throw new Error(`EmpleadoDetallePage: el grid de "Dependientes" no se pudo leer (filas=${estado.filas}). ¿Cambió la firma de columnas o la sección no renderizó?`);
+    }
+    return estado.vacio ? [] : this._leerFilasGridMarcado('grid-dependientes');
+  }
+
+  /**
+   * Índice de la fila de "Dependientes" que corresponde a `objetivo`: número = posición (0 = primera); texto = la fila cuya
+   * "Identificación" o "Nombre" coincide EXACTO (sin distinguir mayúsculas). -1 si no existe.
+   */
+  _indiceDependiente(filas, objetivo) {
+    if (typeof objetivo === 'number') return objetivo < filas.length ? objetivo : -1;
+    const buscado = String(objetivo).trim().toLowerCase();
+    return filas.findIndex((f) => [f['Identificación'], f.Nombre].some((v) => String(v || '').trim().toLowerCase() === buscado));
+  }
+
+  /**
+   * Edita un Dependiente por el ÍCONO "Editar" de la columna "Acción" (abre el MISMO form inline que "Agregar", precargado).
+   * `objetivo`: identificación o nombre EXACTO del dependiente, o índice (0 = primero). Requiere estar en "Dependientes".
+   */
+  async abrirEditarDependiente(objetivo = 0) {
+    const filas = await this.leerFilasDependientes();
+    if (!filas.length) throw new Error('EmpleadoDetallePage: la sección "Dependientes" no tiene filas (Editar).');
+    await this._clickIconoFilaGrid('grid-dependientes', this._indiceDependiente(filas, objetivo), 'Editar', `"Dependientes" para ${JSON.stringify(objetivo)}`);
+    return new DependienteFormPage(this.driver).estaCargado();
+  }
+
+  /**
+   * Elimina un Dependiente: checkbox de su fila + botón "Eliminar" + "Aceptar" en el popup (la columna "Acción" no tiene ícono de
+   * eliminar). `objetivo`: identificación/nombre EXACTO o índice (0 = primero). Devuelve `{ seleccionado,
+   * botonEliminarClickeado, popupApareció, popupCerrado, notify }`; el test decide los asserts.
+   */
+  async eliminarDependiente(objetivo = 0) {
+    const filas = await this.leerFilasDependientes();
+    const indice = this._indiceDependiente(filas, objetivo);
+    if (indice < 0) throw new Error(`EmpleadoDetallePage: no se encontró el Dependiente ${JSON.stringify(objetivo)} en la sección "Dependientes".`);
+    // Se selecciona por el texto único de la fila (identificación) para no depender del orden del DOM.
+    const clave = filas[indice]['Identificación'] || filas[indice].Nombre;
+    const seleccionado = await new DataGrid(this.driver).seleccionarFila(clave);
+    if (!seleccionado) throw new Error(`EmpleadoDetallePage: no se pudo seleccionar (checkbox) el Dependiente "${clave}".`);
+    return { seleccionado, ...(await this._confirmarEliminarSeleccion(null, 'Dependientes')) };
+  }
+
+  /**
    * Espera (poll) a que el grid de "Capacitación" TERMINE su fetch y lo MARCA
    * con `data-qa="grid-capacitacion"` para que el resto de métodos lo ubiquen
    * por CSS.
@@ -450,23 +780,36 @@ class EmpleadoDetallePage extends BasePage {
    * mostrar"). Devuelve `{ listo, filas, vacio }`.
    */
   async _esperarGridCapacitacion(timeout = 20000) {
+    return this._esperarGridPorFirma(['Frecuencia', 'Acción'], 'grid-capacitacion', timeout);
+  }
+
+  /**
+   * Núcleo COMÚN de las secciones-listado del detalle (Capacitación, Dependientes): espera a que el grid
+   * `.clean-grid.genericDataGrid` cuyo header contiene TODAS las columnas de `firma` termine de cargar y lo marca con
+   * `data-qa=<qa>`. Devuelve `{ listo, filas, vacio }` (criterio de "listo" descrito en `_esperarGridCapacitacion`).
+   */
+  async _esperarGridPorFirma(firma, qa, timeout = 20000) {
     await this.esperarSinLoader().catch(() => {});
     let estado = { listo: false, filas: 0, vacio: false };
     let previo = -1;
     await this.driver
       .wait(async () => {
-        const r = await this.driver.executeScript(() => {
-          const grid = Array.from(document.querySelectorAll('.clean-grid.genericDataGrid')).find((g) => {
-            const h = Array.from(g.querySelectorAll('.dx-header-row td')).map((c) => (c.textContent || '').trim());
-            return h.includes('Frecuencia') && h.includes('Acción');
-          });
-          if (!grid) return { marcado: false, filas: 0, vacio: false };
-          grid.setAttribute('data-qa', 'grid-capacitacion');
-          const filas = grid.querySelectorAll('.dx-data-row').length;
-          const nodata = grid.querySelector('.dx-datagrid-nodata');
-          const vacio = filas === 0 && !!nodata && !!nodata.offsetParent && /no hay datos/i.test(nodata.textContent || '');
-          return { marcado: true, filas, vacio };
-        });
+        const r = await this.driver.executeScript(
+          (columnas, marca) => {
+            const grid = Array.from(document.querySelectorAll('.clean-grid.genericDataGrid')).find((g) => {
+              const h = Array.from(g.querySelectorAll('.dx-header-row td')).map((c) => (c.textContent || '').trim());
+              return columnas.every((c) => h.includes(c));
+            });
+            if (!grid) return { marcado: false, filas: 0, vacio: false };
+            grid.setAttribute('data-qa', marca);
+            const filas = grid.querySelectorAll('.dx-data-row').length;
+            const nodata = grid.querySelector('.dx-datagrid-nodata');
+            const vacio = filas === 0 && !!nodata && !!nodata.offsetParent && /no hay datos/i.test(nodata.textContent || '');
+            return { marcado: true, filas, vacio };
+          },
+          firma,
+          qa
+        );
         const estable = r.marcado && r.filas > 0 && r.filas === previo;
         previo = r.filas;
         estado = { listo: estable || r.vacio, filas: r.filas, vacio: r.vacio };
@@ -474,6 +817,68 @@ class EmpleadoDetallePage extends BasePage {
       }, timeout)
       .catch(() => {});
     return estado;
+  }
+
+  /** Filas `{ columna: valor }[]` del grid marcado con `data-qa=<qa>` (las columnas sin título quedan fuera). */
+  async _leerFilasGridMarcado(qa) {
+    return this.driver.executeScript((marca) => {
+      const grid = document.querySelector(`[data-qa="${marca}"]`);
+      if (!grid) return [];
+      const headers = Array.from(grid.querySelectorAll('.dx-header-row td')).map((h) => h.innerText.replace(/\s+/g, ' ').trim());
+      return Array.from(grid.querySelectorAll('.dx-data-row')).map((row) => {
+        const obj = {};
+        Array.from(row.querySelectorAll('td')).forEach((c, i) => {
+          const k = headers[i];
+          if (k) obj[k] = c.innerText.replace(/\s+/g, ' ').trim();
+        });
+        return obj;
+      });
+    }, qa);
+  }
+
+  /**
+   * Click en el ícono `titulo` de la columna "Acción" del grid marcado `qa`, en la fila `indice` (ya resuelto sobre `datos`,
+   * las filas leídas con `_leerFilasGridMarcado`). Falla explícito si la fila no existe.
+   */
+  async _clickIconoFilaGrid(qa, indice, titulo, descripcion) {
+    const filas = await this.driver.findElements(By.css(`[data-qa="${qa}"] .dx-data-row`));
+    const fila = indice >= 0 ? filas[indice] : undefined;
+    if (!fila) throw new Error(`EmpleadoDetallePage: no se encontró la fila de ${descripcion} (${titulo}).`);
+    const icono = await fila.findElement(By.xpath(`.//td[last()]//img[@title=${JSON.stringify(titulo)}]`));
+    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"});arguments[0].click()', icono);
+  }
+
+  /**
+   * Eliminar de una sección-listado: con la fila YA seleccionada (checkbox), clickea "Eliminar" de la barra y confirma el popup
+   * con "Aceptar". Devuelve `{ botonEliminarClickeado, popupApareció, popupCerrado, notify }`; `raiz` acota la búsqueda del botón.
+   */
+  async _confirmarEliminarSeleccion(raiz, seccion, boton = 'Eliminar') {
+    const botonEliminarClickeado = await this.driver.executeScript((sel, nombreBoton) => {
+      const page = document.querySelector(sel) || document.body;
+      const btn = Array.from(page.querySelectorAll('button, .dx-button, [role="button"]')).find(
+        (b) => b.offsetParent && (b.textContent || '').trim().toLowerCase() === nombreBoton.toLowerCase()
+      );
+      if (!btn) return false;
+      btn.scrollIntoView({ block: 'center' });
+      btn.click();
+      return true;
+    }, raiz, boton);
+    if (!botonEliminarClickeado) {
+      throw new Error(`EmpleadoDetallePage: no se encontró el botón "${boton}" de la sección "${seccion}".`);
+    }
+    const popup = new Popup(this.driver);
+    const popupApareció = await popup
+      .esperarVisible(5000)
+      .then(() => true)
+      .catch(() => false);
+    let notify = '';
+    if (popupApareció) {
+      await popup.accionar(/aceptar|confirmar|s[ií]/i, { etiqueta: 'Aceptar' });
+      await popup.esperarCerrado(8000);
+      notify = await this.notify.esperarTexto(6000);
+    }
+    const popupCerrado = !(await popup.estaVisible());
+    return { botonEliminarClickeado, popupApareció, popupCerrado, notify };
   }
 
   /**
@@ -492,20 +897,7 @@ class EmpleadoDetallePage extends BasePage {
       );
     }
     if (estado.vacio) return [];
-    return this.driver.executeScript(() => {
-      const grid = document.querySelector('[data-qa="grid-capacitacion"]');
-      if (!grid) return [];
-      const headers = Array.from(grid.querySelectorAll('.dx-header-row td')).map((h) => h.innerText.replace(/\s+/g, ' ').trim());
-      return Array.from(grid.querySelectorAll('.dx-data-row')).map((row) => {
-        const celdas = Array.from(row.querySelectorAll('td'));
-        const obj = {};
-        celdas.forEach((c, i) => {
-          const k = headers[i];
-          if (k) obj[k] = c.innerText.replace(/\s+/g, ' ').trim();
-        });
-        return obj;
-      });
-    });
+    return this._leerFilasGridMarcado('grid-capacitacion');
   }
 
   /**
@@ -546,15 +938,7 @@ class EmpleadoDetallePage extends BasePage {
       const buscado = String(objetivo).trim().toLowerCase();
       indice = datos.findIndex((d) => String(d.Nombre || '').trim().toLowerCase() === buscado);
     }
-    const filas = await this.driver.findElements(By.css('[data-qa="grid-capacitacion"] .dx-data-row'));
-    const fila = indice >= 0 ? filas[indice] : undefined;
-    if (!fila) {
-      throw new Error(
-        `EmpleadoDetallePage: no se encontró la fila de "Capacitación" para ${JSON.stringify(objetivo)} (${titulo}).`
-      );
-    }
-    const icono = await fila.findElement(By.xpath(`.//td[last()]//img[@title=${JSON.stringify(titulo)}]`));
-    await this.driver.executeScript('arguments[0].scrollIntoView({block:"center"});arguments[0].click()', icono);
+    await this._clickIconoFilaGrid('grid-capacitacion', indice, titulo, `"Capacitación" para ${JSON.stringify(objetivo)}`);
   }
 
   /**
@@ -585,6 +969,42 @@ class EmpleadoDetallePage extends BasePage {
     await this.esperarSinLoader().catch(() => {});
     await this._clickIconoFilaCapacitacion(objetivo, 'Adjuntar documento');
     return new CapacitacionAdjuntosPage(this.driver).estaCargado();
+  }
+
+  /**
+   * Abre una sección de "Documentos" (acordeón del sidemenu) y espera su contenido. El contenido vive dentro del
+   * panel del Empleado (no navega): ver `SeccionDocumentosPage`.
+   */
+  async _abrirSeccionDocumentos(nombre) {
+    const abierta = await this.abrirSeccion(nombre);
+    const titulo = await this.esperarTituloContenido(nombre);
+    if (!titulo.coincide || !abierta.activada) {
+      throw new Error(`EmpleadoDetallePage: la sección "${nombre}" no quedó activa. Títulos vistos: ${JSON.stringify(titulo.vistos)}.`);
+    }
+  }
+
+  /** Sección Documentos > "Análisis médicos". Devuelve una `AnalisisMedicoAdjuntosPage` cargada. */
+  async abrirAnalisisMedicos() {
+    await this._abrirSeccionDocumentos('Análisis médicos');
+    return new AnalisisMedicoAdjuntosPage(this.driver).estaCargado();
+  }
+
+  /** Sección Documentos > "Contratos". Devuelve una `ContratoAdjuntosPage` cargada. */
+  async abrirContratos() {
+    await this._abrirSeccionDocumentos('Contratos');
+    return new ContratoAdjuntosPage(this.driver).estaCargado();
+  }
+
+  /** Sección Documentos > "Otros Documentos". Devuelve una `OtroDocumentoAdjuntosPage` cargada. */
+  async abrirOtrosDocumentos() {
+    await this._abrirSeccionDocumentos('Otros Documentos');
+    return new OtroDocumentoAdjuntosPage(this.driver).estaCargado();
+  }
+
+  /** Sección Documentos > "Cartas". Devuelve una `CartaAdjuntosPage` cargada. */
+  async abrirCartas() {
+    await this._abrirSeccionDocumentos('Cartas');
+    return new CartaAdjuntosPage(this.driver).estaCargado();
   }
 
   /**
@@ -625,35 +1045,8 @@ class EmpleadoDetallePage extends BasePage {
       );
     }
 
-    const botonEliminarClickeado = await this.driver.executeScript(() => {
-      const page = document.querySelector('.capacitaciones-page') || document.body;
-      const btn = Array.from(page.querySelectorAll('button, .dx-button, [role="button"]')).find(
-        (b) => b.offsetParent && /^eliminar$/i.test((b.textContent || '').trim())
-      );
-      if (!btn) return false;
-      btn.scrollIntoView({ block: 'center' });
-      btn.click();
-      return true;
-    });
-    if (!botonEliminarClickeado) {
-      throw new Error('EmpleadoDetallePage: no se encontró el botón "Eliminar" de la sección "Capacitación".');
-    }
-
-    const popup = new Popup(this.driver);
-    const popupApareció = await popup
-      .esperarVisible(5000)
-      .then(() => true)
-      .catch(() => false);
-
-    let notify = '';
-    if (popupApareció) {
-      await popup.accionar(/aceptar/i, { etiqueta: 'Aceptar' });
-      await popup.esperarCerrado(8000);
-      notify = await this.notify.esperarTexto(6000);
-    }
-    const popupCerrado = !(await popup.estaVisible());
-
-    return { nombre: nombre || '(primera)', seleccionado, botonEliminarClickeado, popupApareció, popupCerrado, notify };
+    const r = await this._confirmarEliminarSeleccion('.capacitaciones-page', 'Capacitación');
+    return { nombre: nombre || '(primera)', seleccionado, ...r };
   }
 
   /**

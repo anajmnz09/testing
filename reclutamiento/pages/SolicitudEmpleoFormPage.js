@@ -58,7 +58,7 @@ const ESTRATEGIAS = {
   Requisición: { estrategia: 'searchAndSelect', entidad: 'requisicion', campo: 'nombre' },
   'Fecha Ingreso': 'datePicker',
   Etiquetas: { estrategia: 'custom', fn: (form, label, valor) => form.escribirTagLibre(label, valor) },
-  Comentario: 'text',
+  Comentario: { estrategia: 'text', dato: 'comentario.texto' },
 };
 
 class SolicitudEmpleoFormPage extends BasePage {

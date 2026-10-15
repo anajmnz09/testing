@@ -28,16 +28,16 @@ const { ConfiguracionEntidadDetallePage } = require('@triple/core');
  */
 const ESTRATEGIAS = {
   Nombre: 'text',
-  Descripción: 'text',
+  Descripción: { estrategia: 'text', dato: 'puesto.descripcion' },
   'Clasificación 1': 'searchAndSelect',
   'Límite de personas': 'text',
   'Monto tope de comisión': 'text',
-  Requisitos: 'text',
+  Requisitos: { estrategia: 'text', dato: 'puesto.requisitos' },
   'Clasificación 2': 'searchAndSelect',
   'Referencia (MT)': 'text',
   'Rango salarial mínimo': 'text',
   'Rango salarial máximo': 'text',
-  Responsabilidades: 'text',
+  Responsabilidades: { estrategia: 'text', dato: 'puesto.responsabilidades' },
   'Clasificación 3': 'searchAndSelect',
   'Nivel del puesto': 'text',
 };

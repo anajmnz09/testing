@@ -309,5 +309,141 @@
     "% Empresa": "",
     "% Empleado": "",
     "Dependiente directo": false
+  },
+  "editar-dependiente": {
+    "Nombre de Empleado con el Dependiente": "",
+    "Identificación o nombre del Dependiente a editar (opcional)": "",
+    "Parentesco": "",
+    "Tipo ID": "",
+    "Identificación": "",
+    "Nombres": "",
+    "Apellidos": "",
+    "Género": "",
+    "Fecha de nacimiento": "",
+    "Edad": "",
+    "Discapacidad": "",
+    "Proveedor de seguros": "",
+    "Plan de seguro": "",
+    "Tarifa": "",
+    "% Empresa": "",
+    "% Empleado": "",
+    "Dependiente directo": false
+  },
+  "eliminar-dependiente": {
+    "Nombre de Empleado con el Dependiente a eliminar": "",
+    "Identificación o nombre del Dependiente a eliminar (opcional)": ""
+  },
+  "consultar-dependiente": {
+    "Nombre de Empleado con el Dependiente": "aarón bautista",
+    "Identificación o nombre del Dependiente a consultar (opcional)": "sofía"
+  },
+  "adjuntar-herramienta": {
+    "Nombre del Empleado con la Herramienta": "",
+    "Descripción de la Herramienta a la que se adjunta (opcional)": "",
+    "archivo": ""
+  },
+  "descargar-documento-herramienta": {
+    "Nombre del Empleado con la Herramienta": "",
+    "Descripción de la Herramienta con el documento (opcional)": "",
+    "Nombre del Documento a descargar (opcional)": ""
+  },
+  "eliminar-documento-herramienta": {
+    "Nombre del Empleado con la Herramienta": "",
+    "Descripción de la Herramienta con el documento (opcional)": "",
+    "Nombre del Documento a eliminar (opcional)": ""
+  },
+  "agregar-herramienta": {
+    "Nombre de Empleado que recibe la Herramienta": "",
+    "Fecha de asignación": "",
+    "Referencia": "",
+    "Descripción": ""
+  },
+  "retornar-herramienta": {
+    "Nombre del Empleado con la Herramienta a retornar": "",
+    "Descripción de la Herramienta a retornar (opcional)": "",
+    "Fecha finalización": ""
+  },
+  "consultar-herramienta": {
+    "Nombre del Empleado con la Herramienta": "",
+    "Descripción de la Herramienta a consultar (opcional)": ""
+  },
+  "eliminar-herramienta": {
+    "Nombre del Empleado con la Herramienta a eliminar": "",
+    "Descripción de la Herramienta a eliminar (opcional)": ""
+  },
+  "agregar-beneficio": {
+    "Nombre de Empleado que recibe el Beneficio": "",
+    "Beneficio": "",
+    "Monto": "",
+    "Estado": "",
+    "Comentario": "",
+    "Fecha Inicial": "",
+    "Fecha Final": ""
+  },
+  "inactivar-beneficio": {
+    "Nombre del Empleado con el Beneficio a inactivar": "",
+    "Nombre del Beneficio a inactivar (opcional)": ""
+  },
+  "agregar-seguro": {
+    "Nombre de Empleado que recibe el Seguro": "",
+    "Proveedor de seguros": "",
+    "Plan de seguro": "",
+    "Tarifa": "",
+    "Comentario": "",
+    "Estado": "",
+    "% Empresa": "",
+    "% Empleado": ""
+  },
+  "inactivar-seguro": {
+    "Nombre del Empleado con el Seguro a inactivar": "",
+    "Nombre del Plan de seguro a inactivar (opcional)": ""
+  },
+  "adjuntar-analisis-medico": {
+    "Nombre del Empleado con Documentos de Análisis médicos": "",
+    "archivo": ""
+  },
+  "descargar-analisis-medico": {
+    "Nombre del Empleado con Documentos de Análisis médicos": "",
+    "Nombre del Documento a descargar (opcional)": ""
+  },
+  "eliminar-analisis-medico": {
+    "Nombre del Empleado con Documentos de Análisis médicos": "",
+    "Nombre del Documento a eliminar (opcional)": ""
+  },
+  "adjuntar-contrato": {
+    "Nombre del Empleado con Documentos de Contratos": "",
+    "archivo": ""
+  },
+  "adjuntar-otro-documento": {
+    "Nombre del Empleado con Documentos de Otros Documentos": "",
+    "archivo": ""
+  },
+  "adjuntar-carta": {
+    "Nombre del Empleado con Documentos de Cartas": "",
+    "archivo": ""
+  },
+  "descargar-contrato": {
+    "Nombre del Empleado con Documentos de Contratos": "",
+    "Nombre del Documento a descargar (opcional)": ""
+  },
+  "descargar-otro-documento": {
+    "Nombre del Empleado con Documentos de Otros Documentos": "",
+    "Nombre del Documento a descargar (opcional)": ""
+  },
+  "descargar-carta": {
+    "Nombre del Empleado con Documentos de Cartas": "",
+    "Nombre del Documento a descargar (opcional)": ""
+  },
+  "eliminar-contrato": {
+    "Nombre del Empleado con Documentos de Contratos": "",
+    "Nombre del Documento a eliminar (opcional)": ""
+  },
+  "eliminar-otro-documento": {
+    "Nombre del Empleado con Documentos de Otros Documentos": "",
+    "Nombre del Documento a eliminar (opcional)": ""
+  },
+  "eliminar-carta": {
+    "Nombre del Empleado con Documentos de Cartas": "",
+    "Nombre del Documento a eliminar (opcional)": ""
   }
 }

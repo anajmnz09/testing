@@ -2,8 +2,7 @@ const assert = require('assert');
 const { testContext, evidence } = require('@triple/core');
 const logger = require('@triple/core/utils/logger');
 const fixtures = require('../support/fixtures');
-const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'agregar-experiencia';
 const CLAVE_BUSQUEDA = 'Nombre de Empleado que recibe la Experiencia';
@@ -47,8 +46,8 @@ describe('Empleados - Agregar Experiencia (Resumen/CV)', function () {
     const abierta = await detalle.abrirSeccion('Resumen/CV');
     assert.ok(abierta.activada, `No se pudo activar la sección "Resumen/CV" para "${nombreUsado}".`);
 
-    const puesto = nombreUnicoQA(testContext.get(CASO, 'Puesto'), bancos.experiencia.texto('puesto'));
-    const lugar = bancos.experiencia.valor(testContext.get(CASO, 'Lugar'), 'lugar');
+    const puesto = datos.valor(testContext.get(CASO, 'Puesto'), { fuente: 'experiencia.puesto', unico: true });
+    const lugar = datos.valor(testContext.get(CASO, 'Lugar'), 'experiencia.lugar');
     const fechaInicio = testContext.get(CASO, 'Fecha de inicio') || '01/01/2020';
     const fechaFin = testContext.get(CASO, 'Fecha finalización');
     const descripcion = testContext.get(CASO, 'Descripción');

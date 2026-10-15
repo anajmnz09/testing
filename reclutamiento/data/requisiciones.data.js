@@ -7,13 +7,13 @@
  * los datos genéricos coherentes (textos) y la configuración de los casos.
  */
 
-const datosPrueba = require('@triple/core/utils/datosPrueba');
+const datos = require('@triple/core/utils/datos');
 
 // Nombre de requisición único y relacionado con el Puesto del test
 // ("Analista de RRHH - Proyecto Aurora K3X9A", máx. 45 caracteres). Sin Puesto conocido usa un
 // nombre genérico. `caso` se conserva por compatibilidad de firma.
 function nombreQA(caso, puesto) {
-  return datosPrueba.nombreRequisicion(puesto);
+  return datos.resolver('requisicion.nombre', { puesto });
 }
 
 module.exports = {
@@ -28,5 +28,5 @@ module.exports = {
   },
   // Comentario para crear-req-comentarios.
   // Comentario dinámico (no único) para crear-req-comentarios/agregar-comentario.
-  comentario: (puesto) => datosPrueba.texto('comentario', { puesto }),
+  comentario: (puesto) => datos.resolver('texto.comentario', { puesto }),
 };

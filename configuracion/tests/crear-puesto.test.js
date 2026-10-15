@@ -4,7 +4,7 @@ const logger = require('@triple/core/utils/logger');
 const PuestoDetallePage = require('../pages/PuestoDetallePage');
 const fixtures = require('../support/fixtures');
 const { nombreUnicoQA } = require('../support/nombresQA');
-const bancos = require('../support/bancos');
+const datos = require('@triple/core/utils/datos');
 
 const CASO = 'crear-puesto';
 // Input Model del formulario: se siembran en el Execution Context TODOS los
@@ -41,9 +41,8 @@ describe('Configuración - Crear Puesto', function () {
     logger.info(`${CASO}: nombre elegido -> "${nombrePuesto}"`);
     await form.setCampo('Nombre', nombrePuesto);
 
-    const descripcion = bancos.puesto.valor(testContext.get(CASO, 'Descripción'), 'descripcion');
-    const requisitos = bancos.puesto.valor(testContext.get(CASO, 'Requisitos'), 'requisitos');
-    const responsabilidades = bancos.puesto.valor(testContext.get(CASO, 'Responsabilidades'), 'responsabilidades');
+    // Descripción / Requisitos / Responsabilidades: lo dirigido en el Panel o, si no, la fuente declarada en ESTRATEGIAS.
+    const { Descripción: descripcion, Requisitos: requisitos, Responsabilidades: responsabilidades } = datos.deFormulario(CASO, PuestoDetallePage.ESTRATEGIAS);
     await form.setCampo('Descripción', descripcion);
     await form.setCampo('Requisitos', requisitos);
     await form.setCampo('Responsabilidades', responsabilidades);
